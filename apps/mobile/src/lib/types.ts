@@ -73,6 +73,9 @@ export interface RosterEntry {
 
 export interface MatchDetail extends Match {
   roster: RosterEntry[];
+  score_a: number | null;
+  score_b: number | null;
+  events: MatchEvent[];
 }
 
 export interface RatingInput {
@@ -90,4 +93,95 @@ export interface NewMatchInput {
   skill_level: SkillLevel;
   visibility: 'public' | 'private';
   title?: string;
+}
+
+// ---------- بطاقة اللاعب والإحصائيات ----------
+export interface Attributes {
+  pace: number; // السرعة
+  shooting: number; // التسديد
+  passing: number; // التمرير
+  dribbling: number; // المراوغة
+  defending: number; // الدفاع
+  physical: number; // البدنية
+}
+
+export interface PlayerStats {
+  matches: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goals: number;
+  assists: number;
+  mvps: number;
+}
+
+export interface PlayerCard {
+  profile: Profile;
+  overall: number;
+  attributes: Attributes;
+  stats: PlayerStats;
+}
+
+export type LeaderKind = 'goals' | 'assists' | 'mvps' | 'rating';
+export interface LeaderRow {
+  profile: Profile;
+  value: number;
+}
+
+export type PitchSlot = 'GK' | 'LB' | 'CB1' | 'CB2' | 'RB' | 'CM1' | 'CM2' | 'CM3' | 'LW' | 'ST' | 'RW';
+export interface TeamOfWeekEntry {
+  slot: PitchSlot;
+  card: PlayerCard;
+}
+
+// ---------- نتيجة المباراة ----------
+export interface MatchEvent {
+  player_id: string;
+  kind: 'goal' | 'assist';
+}
+export interface MatchResultInput {
+  score_a: number;
+  score_b: number;
+  events: MatchEvent[];
+}
+
+// ---------- البطولات ----------
+export type TournamentStatus = 'registration' | 'ongoing' | 'finished';
+export interface Tournament {
+  id: string;
+  name: string;
+  venue_name: string;
+  players_per_side: number;
+  team_count: number;
+  registered_teams: number;
+  team_fee: number;
+  player_fee: number;
+  prize: string | null;
+  status: TournamentStatus;
+  starts_on: string;
+  format: string; // مثلاً: مجموعات + إقصائي
+}
+
+export interface TournamentTeam {
+  id: string;
+  name: string;
+  group_name: string | null;
+  captain_id: string | null;
+}
+
+export interface Fixture {
+  id: string;
+  stage: string; // 'group' | 'quarter' | 'semi' | 'final'
+  group_name: string | null;
+  home_id: string | null;
+  away_id: string | null;
+  home_score: number | null;
+  away_score: number | null;
+  starts_at: string | null;
+}
+
+export interface TournamentDetail extends Tournament {
+  teams: TournamentTeam[];
+  fixtures: Fixture[];
+  scorers: LeaderRow[];
 }

@@ -2,9 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 import type { Api, ProfileInput } from './types';
-import type { Match, MatchDetail, Profile, RosterEntry, Venue } from '../types';
+import { attributesFromRating, overallOf, pickTeamOfWeek } from '../stats';
+import type { Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue } from '../types';
 
-const PROFILE_COLS = 'id, full_name, city, preferred_position, skill_rating, reliability_score, matches_played';
+const PROFILE_COLS = 'id, full_name, city, preferred_position, skill_rating, reliability_score, matches_played, attributes';
+const EMPTY_STATS: PlayerStats = { matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0 };
 
 /** يحوّل الرقم المحلي العراقي (07xxxxxxxxx) إلى الصيغة الدولية */
 export function toE164(phone: string) {
@@ -30,7 +32,27 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
 
   const uid = async () => (await sb.auth.getSession()).data.session?.user.id ?? null;
   const num = (x: unknown) => Number(x ?? 0);
-  const mapProfile = (p: any): Profile => ({ ...p, skill_rating: num(p.skill_rating), reliability_score: num(p.reliability_score) });
+  const mapProfile = (p: any): Profile => {
+    const { attributes: _a, ...rest } = p;
+    return { ...rest, skill_rating: num(rest.skill_rating), reliability_score: num(rest.reliability_score) };
+  };
+  const toCard = (p: any, st?: Partial<PlayerStats>): PlayerCard => {
+    const profile = mapProfile(p);
+    const attributes: Attributes = p.attributes ?? attributesFromRating(profile.skill_rating, profile.preferred_position);
+    const stats = { ...EMPTY_STATS, ...(st ?? {}) };
+    return { profile: { ...profile, matches_played: stats.matches || profile.matches_played }, attributes, overall: overallOf(attributes, profile.preferred_position), stats };
+  };
+  /** بطاقات كل اللاعبين الذين لديهم إحصائيات (منذ تاريخ اختياري) */
+  async function cardsSince(since: Date | null): Promise<PlayerCard[]> {
+    const { data: st, error } = await sb.rpc('player_stats', { p_since: since?.toISOString() ?? null, p_player: null });
+    fail(error);
+    const rows = (st ?? []) as (PlayerStats & { player_id: string })[];
+    if (!rows.length) return [];
+    const { data: ps, error: e2 } = await sb.from('profiles').select(PROFILE_COLS).in('id', rows.map((r) => r.player_id));
+    fail(e2);
+    return (ps ?? []).map((p: any) => toCard(p, rows.find((r) => r.player_id === p.id)));
+  }
+  const monthAgo = () => new Date(Date.now() - 30 * 24 * 3600 * 1000);
 
   return {
     isDemo: false,
@@ -136,8 +158,13 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
         .in('status', ['joined', 'waitlist'])
         .order('joined_at');
       fail(e2);
+      const { data: sc } = await sb.from('matches').select('score_a, score_b').eq('id', id).maybeSingle();
+      const { data: ev } = await sb.from('match_events').select('player_id, kind').eq('match_id', id);
       return {
         ...(m as Match),
+        score_a: sc?.score_a ?? null,
+        score_b: sc?.score_b ?? null,
+        events: (ev ?? []) as MatchEvent[],
         roster: (roster ?? []).map((r: any) => ({ ...r, position: r.position ?? r.profile?.preferred_position ?? null, profile: mapProfile(r.profile) })) as RosterEntry[],
       };
     },
@@ -166,6 +193,73 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
         const { error: e2 } = await sb.from('match_mvp_votes').insert({ match_id: matchId, voter_id: me, player_id: mvpId });
         fail(e2);
       }
+    },
+    async submitResult(matchId, input) {
+      const { error } = await sb.rpc('submit_match_result', {
+        p_match_id: matchId,
+        p_score_a: input.score_a,
+        p_score_b: input.score_b,
+        p_events: input.events,
+      });
+      fail(error);
+    },
+
+    async getPlayerCard(playerId) {
+      const { data: p, error } = await sb.from('profiles').select(PROFILE_COLS).eq('id', playerId).maybeSingle();
+      fail(error);
+      if (!p) return null;
+      const { data: st } = await sb.rpc('player_stats', { p_since: null, p_player: playerId });
+      return toCard(p, (st ?? [])[0]);
+    },
+    async getLeaderboard(kind, limit = 10): Promise<LeaderRow[]> {
+      if (kind === 'rating') {
+        const { data, error } = await sb.from('profiles').select(PROFILE_COLS).not('city', 'is', null).order('skill_rating', { ascending: false }).limit(limit);
+        fail(error);
+        return (data ?? []).map((p: any) => ({ profile: mapProfile(p), value: num(p.skill_rating) }));
+      }
+      const cards = await cardsSince(null);
+      return cards
+        .map((c) => ({ profile: c.profile, value: c.stats[kind] }))
+        .filter((r) => r.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, limit);
+    },
+    async getTeamOfWeek() {
+      return pickTeamOfWeek(await cardsSince(new Date(Date.now() - 7 * 24 * 3600 * 1000)));
+    },
+    async getPlayerOfMonth() {
+      const cards = await cardsSince(monthAgo());
+      const score = (c: PlayerCard) => c.stats.goals * 3 + c.stats.assists * 2 + c.stats.mvps * 4 + c.stats.wins;
+      return cards.sort((a, b) => score(b) - score(a))[0] ?? null;
+    },
+
+    async listTournaments() {
+      const { data, error } = await sb.from('tournament_cards').select('*').order('starts_on', { ascending: false });
+      fail(error);
+      return (data ?? []) as Tournament[];
+    },
+    async getTournament(id): Promise<TournamentDetail | null> {
+      const { data: t, error } = await sb.from('tournament_cards').select('*').eq('id', id).maybeSingle();
+      fail(error);
+      if (!t) return null;
+      const [teams, fixtures, scorers] = await Promise.all([
+        sb.from('tournament_teams').select('id, name, group_name, captain_id').eq('tournament_id', id).order('created_at'),
+        sb.from('tournament_fixtures').select('id, stage, group_name, home_id, away_id, home_score, away_score, starts_at').eq('tournament_id', id).order('starts_at'),
+        sb.from('tournament_scorers').select(`goals, profile:profiles(${PROFILE_COLS})`).eq('tournament_id', id).order('goals', { ascending: false }).limit(20),
+      ]);
+      fail(teams.error);
+      fail(fixtures.error);
+      fail(scorers.error);
+      return {
+        ...(t as Tournament),
+        teams: teams.data ?? [],
+        fixtures: fixtures.data ?? [],
+        scorers: (scorers.data ?? []).map((r: any) => ({ profile: mapProfile(r.profile), value: r.goals })),
+      };
+    },
+    async registerTeam(tournamentId, teamName) {
+      const { error } = await sb.rpc('register_team', { p_tournament_id: tournamentId, p_name: teamName });
+      fail(error);
     },
   };
 }

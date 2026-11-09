@@ -5,7 +5,7 @@ import { Button, Card, Chip, ErrorText, Loading, Row, Screen, Text } from '../..
 import { api } from '../../lib/api';
 import { errMsg, useAsync, useSession } from '../../lib/session';
 import type { RatingInput } from '../../lib/types';
-import { colors, fonts } from '../../theme';
+import { fonts, useColors } from '../../theme';
 
 type Axis = 'skill' | 'teamwork' | 'sportsmanship';
 const AXES: [Axis, string][] = [
@@ -15,6 +15,7 @@ const AXES: [Axis, string][] = [
 ];
 
 function StarsInput({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const colors = useColors();
   return (
     <Row style={{ gap: 2, flexWrap: 'nowrap' }}>
       {[1, 2, 3, 4, 5].map((n) => (
@@ -30,6 +31,7 @@ export default function RateScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { userId } = useSession();
+  const colors = useColors();
   const { data: m, loading } = useAsync(() => api.getMatch(id), [id]);
   const [scores, setScores] = useState<Record<string, Record<Axis, number>>>({});
   const [mvp, setMvp] = useState<string | null>(null);

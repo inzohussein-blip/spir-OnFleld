@@ -1,5 +1,22 @@
 import type { BusyRange } from '../slots';
-import type { Match, MatchDetail, NewMatchInput, Position, Profile, RatingInput, RosterStatus, Team, Venue } from '../types';
+import type {
+  LeaderKind,
+  LeaderRow,
+  Match,
+  MatchDetail,
+  MatchResultInput,
+  NewMatchInput,
+  PlayerCard,
+  Position,
+  Profile,
+  RatingInput,
+  RosterStatus,
+  Team,
+  TeamOfWeekEntry,
+  Tournament,
+  TournamentDetail,
+  Venue,
+} from '../types';
 
 export interface ProfileInput {
   full_name: string;
@@ -30,4 +47,15 @@ export interface Api {
   leaveMatch(id: string): Promise<void>;
   saveTeams(id: string, assignments: Record<string, Team>): Promise<void>;
   submitRatings(matchId: string, ratings: RatingInput[], mvpId: string | null): Promise<void>;
+  /** المنظّم يسجّل النتيجة والأهداف والتمريرات الحاسمة بعد المباراة */
+  submitResult(matchId: string, input: MatchResultInput): Promise<void>;
+
+  getPlayerCard(playerId: string): Promise<PlayerCard | null>;
+  getLeaderboard(kind: LeaderKind, limit?: number): Promise<LeaderRow[]>;
+  getTeamOfWeek(): Promise<TeamOfWeekEntry[]>;
+  getPlayerOfMonth(): Promise<PlayerCard | null>;
+
+  listTournaments(): Promise<Tournament[]>;
+  getTournament(id: string): Promise<TournamentDetail | null>;
+  registerTeam(tournamentId: string, teamName: string): Promise<void>;
 }

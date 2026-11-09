@@ -2,11 +2,12 @@ import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { formatDateTime, formatFormat, formatIQD, SKILL_LABEL } from '../lib/format';
 import type { Match } from '../lib/types';
-import { colors } from '../theme';
+import { useColors } from '../theme';
 import { Badge, Card, Progress, Row, Text } from './ui';
 
 export function MatchCard({ match }: { match: Match }) {
   const router = useRouter();
+  const colors = useColors();
   const left = match.max_players - match.joined_count;
   const statusBadge =
     match.status === 'finished' ? (

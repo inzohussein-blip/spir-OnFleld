@@ -1,45 +1,56 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Share, StyleSheet, View } from 'react-native';
+import { Pressable, Share, View } from 'react-native';
 import { Badge, Button, Card, ErrorText, Loading, Progress, Row, Screen, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { formatDateTime, formatFormat, formatIQD, POSITION_LABEL, SKILL_LABEL } from '../../lib/format';
 import { errMsg, useAsync, useSession } from '../../lib/session';
 import { balanceTeams } from '../../lib/teamBalance';
-import type { RosterEntry, Team } from '../../lib/types';
-import { colors, fonts } from '../../theme';
+import type { MatchDetail, RosterEntry, Team } from '../../lib/types';
+import { fonts, themed, useColors } from '../../theme';
 
-function PlayerRow({ r, me }: { r: RosterEntry; me: boolean }) {
+function PlayerRow({ r, me, onPress }: { r: RosterEntry; me: boolean; onPress: () => void }) {
+  const st = useStyles();
+  const c = useColors();
   return (
-    <Row style={styles.player}>
-      <Text style={styles.initial}>{r.profile.full_name.slice(0, 1)}</Text>
+    <Pressable onPress={onPress} style={st.player}>
+      <View style={st.initial}><Text style={{ fontFamily: fonts.bold, color: c.primary }}>{r.profile.full_name.slice(0, 1)}</Text></View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: fonts.semibold }}>
           {r.profile.full_name}
           {me ? ' (أنت)' : ''}
         </Text>
-        <Text variant="small" style={{ color: colors.muted }}>
+        <Text variant="small" style={{ color: c.muted }}>
           {POSITION_LABEL[r.position ?? r.profile.preferred_position]} · ★ {r.profile.skill_rating.toFixed(1)} · التزام {Math.round(r.profile.reliability_score)}%
         </Text>
       </View>
-    </Row>
+    </Pressable>
   );
 }
 
-function TeamColumn({ team, players, me }: { team: Team; players: RosterEntry[]; me: string | null }) {
+function TeamColumn({ team, players, me, m }: { team: Team; players: RosterEntry[]; me: string | null; m: MatchDetail }) {
+  const st = useStyles();
+  const c = useColors();
   const total = players.reduce((s, r) => s + r.profile.skill_rating, 0);
-  const color = team === 'A' ? colors.teamA : colors.teamB;
+  const color = team === 'A' ? c.teamA : c.teamB;
+  const count = (pid: string, kind: 'goal' | 'assist') => m.events.filter((e) => e.player_id === pid && e.kind === kind).length;
   return (
-    <View style={[styles.teamCol, { borderColor: color }]}>
+    <View style={[st.teamCol, { borderColor: color }]}>
       <Text style={{ fontFamily: fonts.bold, color }}>{team === 'A' ? 'الفريق الأزرق' : 'الفريق البرتقالي'}</Text>
-      <Text variant="small" style={{ color: colors.muted }}>مجموع المستوى {total.toFixed(1)}</Text>
-      {players.map((r) => (
-        <Text key={r.player_id} variant="small" numberOfLines={1}>
-          {r.position === 'goalkeeper' || r.profile.preferred_position === 'goalkeeper' ? '🧤 ' : '• '}
-          {r.profile.full_name}
-          {r.player_id === me ? ' (أنت)' : ''}
-        </Text>
-      ))}
+      <Text variant="small" style={{ color: c.muted }}>مجموع المستوى {total.toFixed(1)}</Text>
+      {players.map((r) => {
+        const g = count(r.player_id, 'goal');
+        const a = count(r.player_id, 'assist');
+        return (
+          <Text key={r.player_id} variant="small" numberOfLines={1}>
+            {r.position === 'goalkeeper' || r.profile.preferred_position === 'goalkeeper' ? '🧤 ' : '• '}
+            {r.profile.full_name}
+            {r.player_id === me ? ' (أنت)' : ''}
+            {g ? ` ⚽${g > 1 ? `×${g}` : ''}` : ''}
+            {a ? ` 🅰️${a > 1 ? `×${a}` : ''}` : ''}
+          </Text>
+        );
+      })}
     </View>
   );
 }
@@ -47,6 +58,8 @@ function TeamColumn({ team, players, me }: { team: Team; players: RosterEntry[];
 export default function MatchScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const c = useColors();
+  const st = useStyles();
   const { userId } = useSession();
   const { data: m, error, loading, reload } = useAsync(() => api.getMatch(id), [id]);
   useFocusEffect(useCallback(() => void reload(), [reload]));
@@ -60,9 +73,12 @@ export default function MatchScreen() {
   const waitlist = m.roster.filter((r) => r.status === 'waitlist');
   const mine = m.roster.find((r) => r.player_id === userId);
   const isOrganizer = m.organizer_id === userId;
+  const started = new Date(m.starts_at) < new Date();
   const finished = new Date(m.ends_at) < new Date();
   const left = m.max_players - joined.length;
   const hasTeams = joined.some((r) => r.team);
+  const hasResult = m.score_a != null && m.score_b != null;
+  const openPlayer = (pid: string) => router.push({ pathname: '/player/[id]', params: { id: pid } });
 
   async function act(fn: () => Promise<unknown>) {
     setBusy(true);
@@ -110,16 +126,24 @@ export default function MatchScreen() {
         </Row>
       </Card>
 
-      <Card>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <Text variant="h2">{joined.length} / {m.max_players} لاعب</Text>
-          <Text style={{ fontFamily: fonts.bold, color: left > 0 ? colors.primary : colors.accent }}>
-            {finished ? 'انتهت' : left > 0 ? `باقي ${left}` : 'مكتملة'}
-          </Text>
-        </Row>
-        <Progress value={joined.length} max={m.max_players} />
-        {waitlist.length ? <Text variant="small" style={{ color: colors.muted }}>قائمة الانتظار: {waitlist.length}</Text> : null}
-      </Card>
+      {hasResult ? (
+        <View style={st.scoreBoard}>
+          <View style={st.scoreSide}><Text style={[st.scoreTeam, { color: '#9CC8FF' }]}>الأزرق</Text></View>
+          <Text style={st.scoreBig}>{m.score_a} - {m.score_b}</Text>
+          <View style={st.scoreSide}><Text style={[st.scoreTeam, { color: '#FFC08A' }]}>البرتقالي</Text></View>
+        </View>
+      ) : (
+        <Card>
+          <Row style={{ justifyContent: 'space-between' }}>
+            <Text variant="h2">{joined.length} / {m.max_players} لاعب</Text>
+            <Text style={{ fontFamily: fonts.bold, color: left > 0 ? c.primary : c.accent }}>
+              {finished ? 'انتهت' : left > 0 ? `باقي ${left}` : 'مكتملة'}
+            </Text>
+          </Row>
+          <Progress value={joined.length} max={m.max_players} />
+          {waitlist.length ? <Text variant="small" style={{ color: c.muted }}>قائمة الانتظار: {waitlist.length}</Text> : null}
+        </Card>
+      )}
 
       <ErrorText message={actionError} />
 
@@ -127,43 +151,52 @@ export default function MatchScreen() {
         mine ? (
           <>
             {mine.status === 'waitlist' ? (
-              <Card style={{ backgroundColor: '#FFF4CC', borderColor: '#FFF4CC' }}>
-                <Text>أنت في قائمة الانتظار — ستنضم تلقائياً عند انسحاب أحد اللاعبين.</Text>
+              <Card style={{ backgroundColor: c.warnSoft, borderColor: c.warnSoft }}>
+                <Text style={{ color: c.warnText }}>أنت في قائمة الانتظار — ستنضم تلقائياً عند انسحاب أحد اللاعبين.</Text>
               </Card>
             ) : null}
-            <Button title="انسحاب من المباراة" variant="danger" loading={busy} onPress={() => act(() => api.leaveMatch(m.id))} />
+            <Button title="انسحاب من المباراة" variant="danger" icon="exit" loading={busy} onPress={() => act(() => api.leaveMatch(m.id))} />
           </>
         ) : (
-          <Button title={left > 0 ? 'انضم للمباراة' : 'سجّل في قائمة الانتظار'} loading={busy} onPress={() => act(() => api.joinMatch(m.id))} />
+          <Button title={left > 0 ? 'انضم للمباراة' : 'سجّل في قائمة الانتظار'} icon="add-circle" loading={busy} onPress={() => act(() => api.joinMatch(m.id))} />
         )
-      ) : mine?.status === 'joined' ? (
-        <Button title="⭐ قيّم اللاعبين" onPress={() => router.push({ pathname: '/match/rate', params: { id: m.id } })} />
       ) : null}
 
-      <Button title="📤 مشاركة الدعوة (واتساب)" variant="outline" onPress={share} />
+      {isOrganizer && started && hasTeams ? (
+        <Button
+          title={hasResult ? 'تعديل النتيجة والهدّافين' : 'سجّل النتيجة والهدّافين'}
+          icon="create"
+          variant={hasResult ? 'outline' : 'primary'}
+          onPress={() => router.push({ pathname: '/match/result', params: { id: m.id } })}
+        />
+      ) : null}
+      {finished && mine?.status === 'joined' ? (
+        <Button title="قيّم اللاعبين واختر رجل المباراة" icon="star" variant="outline" onPress={() => router.push({ pathname: '/match/rate', params: { id: m.id } })} />
+      ) : null}
+      {!finished ? <Button title="مشاركة الدعوة (واتساب)" icon="share-social" variant="outline" onPress={share} /> : null}
 
       <Text variant="h2">الفريقان</Text>
       {hasTeams ? (
         <Row style={{ alignItems: 'stretch', flexWrap: 'nowrap' }}>
-          <TeamColumn team="A" players={joined.filter((r) => r.team === 'A')} me={userId} />
-          <TeamColumn team="B" players={joined.filter((r) => r.team === 'B')} me={userId} />
+          <TeamColumn team="A" players={joined.filter((r) => r.team === 'A')} me={userId} m={m} />
+          <TeamColumn team="B" players={joined.filter((r) => r.team === 'B')} me={userId} m={m} />
         </Row>
       ) : (
         <Text variant="muted">لم يُقسَّم الفريقان بعد.</Text>
       )}
       {isOrganizer && !finished && joined.length >= 2 ? (
-        <Button title={hasTeams ? '🔀 أعد التقسيم تلقائياً' : '⚖️ قسّم الفريقين حسب المستوى'} variant="outline" loading={busy} onPress={autoBalance} />
+        <Button title={hasTeams ? 'أعد التقسيم تلقائياً' : 'قسّم الفريقين حسب المستوى'} icon="git-compare" variant="outline" loading={busy} onPress={autoBalance} />
       ) : null}
 
       <Text variant="h2">اللاعبون</Text>
       <Card style={{ gap: 0, paddingVertical: 4 }}>
-        {joined.map((r) => <PlayerRow key={r.player_id} r={r} me={r.player_id === userId} />)}
+        {joined.map((r) => <PlayerRow key={r.player_id} r={r} me={r.player_id === userId} onPress={() => openPlayer(r.player_id)} />)}
       </Card>
       {waitlist.length ? (
         <>
           <Text variant="h2">قائمة الانتظار</Text>
           <Card style={{ gap: 0, paddingVertical: 4 }}>
-            {waitlist.map((r) => <PlayerRow key={r.player_id} r={r} me={r.player_id === userId} />)}
+            {waitlist.map((r) => <PlayerRow key={r.player_id} r={r} me={r.player_id === userId} onPress={() => openPlayer(r.player_id)} />)}
           </Card>
         </>
       ) : null}
@@ -171,11 +204,12 @@ export default function MatchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  player: { paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, flexWrap: 'nowrap' },
-  initial: {
-    width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primarySoft, color: colors.primaryDark, textAlign: 'center',
-    lineHeight: 38, fontFamily: fonts.bold, overflow: 'hidden',
-  },
-  teamCol: { flex: 1, borderWidth: 2, borderRadius: 14, padding: 10, gap: 2, backgroundColor: '#fff' },
-});
+const useStyles = themed((c) => ({
+  player: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.border },
+  initial: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  teamCol: { flex: 1, borderWidth: 2, borderRadius: 14, padding: 10, gap: 2, backgroundColor: c.card },
+  scoreBoard: { backgroundColor: '#13201A', borderRadius: 18, paddingVertical: 18, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },
+  scoreSide: { flex: 1, alignItems: 'center' },
+  scoreTeam: { fontFamily: fonts.bold, fontSize: 15 },
+  scoreBig: { fontFamily: fonts.bold, fontSize: 40, lineHeight: 56, color: '#fff', writingDirection: 'ltr' },
+}));

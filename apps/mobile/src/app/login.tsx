@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, ErrorText, Input, Text } from '../components/ui';
 import { api } from '../lib/api';
 import { errMsg, useSession } from '../lib/session';
-import { colors, fonts } from '../theme';
+import { fonts, themed, useColors } from '../theme';
 
 export default function Login() {
   const { refresh } = useSession();
+  const colors = useColors();
+  const styles = useStyles();
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [step, setStep] = useState<'phone' | 'code'>('phone');
@@ -27,7 +29,7 @@ export default function Login() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.primary }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.header }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.hero}>
           <Text style={styles.logo}>⚽</Text>
@@ -60,7 +62,7 @@ export default function Login() {
           )}
           {api.isDemo ? (
             <View style={styles.demo}>
-              <Text variant="small" style={{ color: '#7A5B00' }}>
+              <Text variant="small" style={{ color: colors.warnText }}>
                 وضع تجريبي: أدخل أي رقم، والرمز هو 1234
               </Text>
             </View>
@@ -71,11 +73,11 @@ export default function Login() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = themed((colors) => ({
   hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
   logo: { fontSize: 64 },
   brand: { fontFamily: fonts.bold, fontSize: 40, color: '#fff', lineHeight: 60 },
   tagline: { color: '#DDF3E5', fontSize: 16 },
   sheet: { backgroundColor: colors.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, gap: 14, paddingBottom: 40 },
-  demo: { backgroundColor: '#FFF4CC', padding: 10, borderRadius: 10 },
-});
+  demo: { backgroundColor: colors.warnSoft, padding: 10, borderRadius: 10 },
+}));

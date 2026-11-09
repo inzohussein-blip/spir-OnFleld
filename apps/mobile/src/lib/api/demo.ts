@@ -1,14 +1,36 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Api, ProfileInput } from './types';
 import type { BusyRange } from '../slots';
-import type { Match, MatchDetail, NewMatchInput, Position, Profile, RatingInput, RosterEntry, RosterStatus, Team, Venue } from '../types';
+import { attributesFromRating, overallOf, pickTeamOfWeek } from '../stats';
+import type {
+  Attributes,
+  Fixture,
+  LeaderKind,
+  LeaderRow,
+  Match,
+  MatchDetail,
+  MatchEvent,
+  NewMatchInput,
+  PlayerCard,
+  PlayerStats,
+  Position,
+  Profile,
+  RatingInput,
+  RosterEntry,
+  RosterStatus,
+  Team,
+  Tournament,
+  TournamentDetail,
+  TournamentTeam,
+  Venue,
+} from '../types';
 
 /**
  * وضع تجريبي: بيانات وهمية محفوظة على الجهاز، حتى يمكن تجربة التطبيق
  * كاملاً قبل ربطه بـ Supabase. رمز التحقق في هذا الوضع: 1234
  */
 
-const KEY = 'balmalaab-demo-v1';
+const KEY = 'balmalaab-demo-v2';
 const ME = 'me';
 
 interface StoredMatch {
@@ -25,14 +47,26 @@ interface StoredMatch {
   price: number;
   roster: { player_id: string; status: RosterStatus; team: Team | null; joined_at: string }[];
   ratedBy: string[];
+  score_a: number | null;
+  score_b: number | null;
+  events: MatchEvent[];
+  mvpVotes: { voter_id: string; player_id: string }[];
+}
+
+interface StoredTournament extends Omit<Tournament, 'registered_teams'> {
+  teams: TournamentTeam[];
+  fixtures: Fixture[];
+  goals: { player_id: string; count: number }[];
 }
 
 interface DB {
   signedIn: boolean;
   profiles: Profile[];
+  attributes: Record<string, Attributes>;
   venues: Venue[];
   matches: StoredMatch[];
   ratings: { match_id: string; rater_id: string; ratee_id: string; score: number }[];
+  tournaments: StoredTournament[];
 }
 
 const NAMES: [string, Position, number][] = [
@@ -47,7 +81,21 @@ const NAMES: [string, Position, number][] = [
   ['كرار مهدي', 'midfielder', 4.0],
   ['يوسف سلام', 'forward', 2.9],
   ['عمر خالد', 'defender', 3.6],
+  ['باقر رعد', 'defender', 4.2],
+  ['مرتضى نزار', 'midfielder', 4.3],
+  ['منتظر صباح', 'forward', 3.7],
+  ['أمير هشام', 'defender', 3.1],
+  ['رضا فؤاد', 'midfielder', 3.5],
 ];
+
+/** مولّد أرقام شبه عشوائية ثابت، حتى تكون البيانات التجريبية نفسها في كل مرة */
+function rng(seed: number) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 2 ** 32;
+  };
+}
 
 function at(daysFromNow: number, hour: number) {
   const d = new Date();
@@ -57,15 +105,26 @@ function at(daysFromNow: number, hour: number) {
 }
 
 function seed(): DB {
+  const rand = rng(42);
   const profiles: Profile[] = NAMES.map(([full_name, preferred_position, skill_rating], i) => ({
     id: `p${i}`,
     full_name,
-    city: 'بغداد',
+    city: i % 5 === 4 ? 'البصرة' : 'بغداد',
     preferred_position,
     skill_rating,
-    reliability_score: 85 + ((i * 7) % 15),
-    matches_played: 10 + i * 3,
+    reliability_score: 80 + Math.round(rand() * 20),
+    matches_played: 0,
   }));
+  const attributes: Record<string, Attributes> = {};
+  for (const p of profiles) {
+    const base = attributesFromRating(p.skill_rating, p.preferred_position);
+    const jitter = (n: number) => Math.max(20, Math.min(99, n + Math.round((rand() - 0.5) * 10)));
+    attributes[p.id] = {
+      pace: jitter(base.pace), shooting: jitter(base.shooting), passing: jitter(base.passing),
+      dribbling: jitter(base.dribbling), defending: jitter(base.defending), physical: jitter(base.physical),
+    };
+  }
+
   const venues: Venue[] = [
     {
       id: 'v1', name: 'ملاعب النخيل', city: 'بغداد', address: 'المنصور، قرب ساحة الرواد', amenities: ['موقف سيارات', 'مشروبات', 'إنارة ليلية'], is_verified: true,
@@ -79,20 +138,95 @@ function seed(): DB {
       fields: [{ id: 'f3', venue_id: 'v2', name: 'الصالة', players_per_side: 5, surface: 'باركيه', is_indoor: true, default_price: 50000, open_hour: 14, close_hour: 24 }],
     },
     {
+      id: 'v4', name: 'ملعب الرافدين', city: 'بغداد', address: 'زيونة', amenities: ['ملعب كامل', 'مدرجات', 'إنارة ليلية'], is_verified: true,
+      fields: [{ id: 'f5', venue_id: 'v4', name: 'الملعب الكبير', players_per_side: 11, surface: 'عشب طبيعي', is_indoor: false, default_price: 150000, open_hour: 15, close_hour: 23 }],
+    },
+    {
       id: 'v3', name: 'ملعب الشباب', city: 'البصرة', address: 'العشار', amenities: ['إنارة ليلية'], is_verified: false,
       fields: [{ id: 'f4', venue_id: 'v3', name: 'الملعب الرئيسي', players_per_side: 6, surface: 'عشب صناعي', is_indoor: false, default_price: 35000, open_hour: 17, close_hour: 23 }],
     },
   ];
+
   const roster = (ids: number[], team = false) =>
     ids.map((i, k) => ({ player_id: `p${i}`, status: 'joined' as RosterStatus, team: team ? ((k % 2 ? 'B' : 'A') as Team) : null, joined_at: at(-1, 10 + k) }));
+  const base = { reserves: 2, ratedBy: [], score_a: null, score_b: null, events: [], mvpVotes: [] };
+
   const matches: StoredMatch[] = [
-    { id: 'm1', field_id: 'f1', organizer_id: 'p0', title: 'خماسي الخميس', players_per_side: 5, reserves: 2, skill_level: 'intermediate', visibility: 'public', starts_at: at(1, 21), ends_at: at(1, 22), price: 40000, roster: roster([0, 1, 2, 3, 4, 5, 6]), ratedBy: [] },
-    { id: 'm2', field_id: 'f2', organizer_id: 'p4', title: 'سباعي الجمعة', players_per_side: 7, reserves: 2, skill_level: 'open', visibility: 'public', starts_at: at(2, 20), ends_at: at(2, 22), price: 120000, roster: roster([4, 7, 8, 9, 10]), ratedBy: [] },
-    { id: 'm3', field_id: 'f3', organizer_id: 'p2', title: 'صالة الليل', players_per_side: 5, reserves: 1, skill_level: 'advanced', visibility: 'public', starts_at: at(0, 23), ends_at: at(1, 0), price: 50000, roster: roster([2, 1, 0, 8, 4, 6, 3, 10, 9]), ratedBy: [] },
-    // مباراة منتهية شاركتَ فيها — لتجربة التقييم
-    { id: 'm0', field_id: 'f1', organizer_id: ME, title: 'مباراة الأمس', players_per_side: 3, reserves: 0, skill_level: 'open', visibility: 'private', starts_at: at(0, -3), ends_at: at(0, -2), price: 40000, roster: [...roster([0, 1, 3, 5, 9], true), { player_id: ME, status: 'joined', team: 'B', joined_at: at(-2, 9) }], ratedBy: [] },
+    { ...base, id: 'm1', field_id: 'f1', organizer_id: 'p0', title: 'خماسي الخميس', players_per_side: 5, skill_level: 'intermediate', visibility: 'public', starts_at: at(1, 21), ends_at: at(1, 22), price: 40000, roster: roster([0, 1, 2, 3, 4, 5, 6]) },
+    { ...base, id: 'm2', field_id: 'f2', organizer_id: 'p4', title: 'سباعي الجمعة', players_per_side: 7, skill_level: 'open', visibility: 'public', starts_at: at(2, 20), ends_at: at(2, 22), price: 120000, roster: roster([4, 7, 8, 9, 10]) },
+    { ...base, id: 'm3', field_id: 'f3', organizer_id: 'p2', title: 'صالة الليل', players_per_side: 5, skill_level: 'advanced', visibility: 'public', starts_at: at(0, 23), ends_at: at(1, 0), price: 50000, roster: roster([2, 1, 0, 8, 4, 6, 3, 10, 9]) },
+    { ...base, id: 'm4', field_id: 'f5', organizer_id: 'p11', title: 'ملعب كامل — السبت', players_per_side: 11, skill_level: 'open', visibility: 'public', starts_at: at(3, 18), ends_at: at(3, 20), price: 300000, roster: roster([11, 12, 13, 14, 15, 0, 2, 5, 7, 9, 10, 3, 6, 8]) },
   ];
-  return { signedIn: false, profiles, venues, matches, ratings: [] };
+
+  // مباريات منتهية بنتائج — تغذّي الإحصائيات والمتصدرين
+  for (let k = 0; k < 6; k++) {
+    const ids = Array.from({ length: 16 }, (_, i) => i).sort(() => rand() - 0.5).slice(0, 10);
+    const r = roster(ids, true);
+    const sa = Math.floor(rand() * 7);
+    const sb = Math.floor(rand() * 7);
+    const events: MatchEvent[] = [];
+    const scorerFrom = (team: Team, n: number) => {
+      const side = r.filter((x) => x.team === team).map((x) => x.player_id);
+      const weighted = side.sort((a, b) => (profiles.find((p) => p.id === b)!.preferred_position === 'forward' ? 1 : 0) - (profiles.find((p) => p.id === a)!.preferred_position === 'forward' ? 1 : 0));
+      for (let g = 0; g < n; g++) {
+        const scorer = weighted[Math.floor(rand() * rand() * weighted.length)];
+        events.push({ player_id: scorer, kind: 'goal' });
+        const others = side.filter((x) => x !== scorer);
+        if (rand() > 0.3) events.push({ player_id: others[Math.floor(rand() * others.length)], kind: 'assist' });
+      }
+    };
+    scorerFrom('A', sa);
+    scorerFrom('B', sb);
+    const top = events.filter((e) => e.kind === 'goal').map((e) => e.player_id)[0] ?? r[0].player_id;
+    matches.push({
+      ...base, id: `h${k}`, field_id: k % 2 ? 'f1' : 'f3', organizer_id: r[0].player_id, title: `مباراة ${k + 1} من الشهر`, players_per_side: 5,
+      skill_level: 'open', visibility: 'public', starts_at: at(-(k * 3 + 2), 21), ends_at: at(-(k * 3 + 2), 22), price: 40000, roster: r,
+      score_a: sa, score_b: sb, events, mvpVotes: r.slice(0, 4).map((x) => ({ voter_id: x.player_id, player_id: top })),
+    });
+  }
+  // مباراة منتهية شاركتَ فيها أنت ونظّمتها — لتجربة التقييم وتسجيل النتيجة
+  matches.push({
+    ...base, id: 'm0', field_id: 'f1', organizer_id: ME, title: 'مباراة الأمس', players_per_side: 3, reserves: 0, skill_level: 'open', visibility: 'private',
+    starts_at: at(0, -3), ends_at: at(0, -2), price: 40000, roster: [...roster([0, 1, 3, 5, 9], true), { player_id: ME, status: 'joined', team: 'B', joined_at: at(-2, 9) }],
+  });
+
+  // ---------- البطولات ----------
+  const teamNames = ['النسور', 'الصقور', 'الرافدين', 'دجلة', 'الفرات', 'النخيل', 'بابل', 'سومر'];
+  const t1Teams: TournamentTeam[] = teamNames.map((name, i) => ({ id: `t1-${i}`, name, group_name: i < 4 ? 'أ' : 'ب', captain_id: `p${i}` }));
+  const t1Fixtures: Fixture[] = [];
+  let n = 0;
+  for (const g of ['أ', 'ب']) {
+    const ts = t1Teams.filter((t) => t.group_name === g);
+    for (let i = 0; i < ts.length; i++)
+      for (let j = i + 1; j < ts.length; j++) {
+        const played = n < 8;
+        t1Fixtures.push({
+          id: `t1-f${n}`, stage: 'group', group_name: g, home_id: ts[i].id, away_id: ts[j].id,
+          home_score: played ? Math.floor(rand() * 5) : null, away_score: played ? Math.floor(rand() * 5) : null,
+          starts_at: at(played ? -10 + n : n - 6, 20),
+        });
+        n++;
+      }
+  }
+  for (const [stage, count] of [['semi', 2], ['final', 1]] as const)
+    for (let i = 0; i < count; i++)
+      t1Fixtures.push({ id: `t1-${stage}${i}`, stage, group_name: null, home_id: null, away_id: null, home_score: null, away_score: null, starts_at: at(stage === 'semi' ? 8 : 12, 20) });
+
+  const tournaments: StoredTournament[] = [
+    {
+      id: 't1', name: 'دوري بالملعب — الموسم الأول', venue_name: 'ملاعب النخيل', players_per_side: 5, team_count: 8,
+      team_fee: 25000, player_fee: 2500, prize: 'كأس + 500,000 د.ع', status: 'ongoing', starts_on: at(-10, 20), format: 'مجموعتان ثم نصف النهائي',
+      teams: t1Teams, fixtures: t1Fixtures, goals: [0, 4, 12, 13, 8, 1].map((i, k) => ({ player_id: `p${i}`, count: 7 - k })),
+    },
+    {
+      id: 't2', name: 'بطولة الملعب الكامل', venue_name: 'ملعب الرافدين', players_per_side: 11, team_count: 16,
+      team_fee: 100000, player_fee: 5000, prize: 'كأس + ميداليات', status: 'registration', starts_on: at(14, 17), format: '4 مجموعات ثم إقصائي',
+      teams: ['الأبطال', 'المستقبل', 'الأمل', 'الزوراء'].map((name, i) => ({ id: `t2-${i}`, name, group_name: null, captain_id: `p${i + 10}` })),
+      fixtures: [], goals: [],
+    },
+  ];
+
+  return { signedIn: false, profiles, attributes, venues, matches, ratings: [], tournaments };
 }
 
 let cache: DB | null = null;
@@ -133,7 +267,37 @@ function toMatch(d: DB, m: StoredMatch): Match {
   };
 }
 
-const delay = () => new Promise((r) => setTimeout(r, 150));
+function statsOf(d: DB, playerId: string): PlayerStats {
+  const s: PlayerStats = { matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0 };
+  for (const m of d.matches) {
+    if (m.score_a == null || m.score_b == null) continue;
+    const r = m.roster.find((x) => x.player_id === playerId && x.status === 'joined');
+    if (!r) continue;
+    s.matches++;
+    if (r.team) {
+      const mine = r.team === 'A' ? m.score_a : m.score_b;
+      const theirs = r.team === 'A' ? m.score_b : m.score_a;
+      if (mine > theirs) s.wins++;
+      else if (mine < theirs) s.losses++;
+      else s.draws++;
+    }
+    s.goals += m.events.filter((e) => e.player_id === playerId && e.kind === 'goal').length;
+    s.assists += m.events.filter((e) => e.player_id === playerId && e.kind === 'assist').length;
+    const votes = new Map<string, number>();
+    for (const v of m.mvpVotes) votes.set(v.player_id, (votes.get(v.player_id) ?? 0) + 1);
+    const best = [...votes.entries()].sort((a, b) => b[1] - a[1])[0];
+    if (best && best[0] === playerId) s.mvps++;
+  }
+  return s;
+}
+
+function cardOf(d: DB, p: Profile): PlayerCard {
+  const attributes = d.attributes[p.id] ?? attributesFromRating(p.skill_rating, p.preferred_position);
+  const stats = statsOf(d, p.id);
+  return { profile: { ...p, matches_played: stats.matches }, attributes, overall: overallOf(attributes, p.preferred_position), stats };
+}
+
+const delay = () => new Promise((r) => setTimeout(r, 120));
 
 export const demoApi: Api = {
   isDemo: true,
@@ -155,7 +319,9 @@ export const demoApi: Api = {
     await save();
   },
   async getMyProfile() {
-    return (await db()).profiles.find((p) => p.id === ME) ?? null;
+    const d = await db();
+    const p = d.profiles.find((x) => x.id === ME);
+    return p ? { ...p, matches_played: statsOf(d, ME).matches } : null;
   },
   async saveProfile(input: ProfileInput) {
     const d = await db();
@@ -195,7 +361,8 @@ export const demoApi: Api = {
       id, field_id: input.field_id, organizer_id: ME, title: input.title || null, players_per_side: input.players_per_side, reserves: 2,
       skill_level: input.skill_level, visibility: input.visibility, starts_at: starts.toISOString(), ends_at: ends.toISOString(),
       price: loc.field.default_price * input.hours,
-      roster: [{ player_id: ME, status: 'joined', team: null, joined_at: new Date().toISOString() }], ratedBy: [],
+      roster: [{ player_id: ME, status: 'joined', team: null, joined_at: new Date().toISOString() }],
+      ratedBy: [], score_a: null, score_b: null, events: [], mvpVotes: [],
     });
     await save();
     return id;
@@ -226,7 +393,7 @@ export const demoApi: Api = {
         return { ...r, position: profile?.preferred_position ?? null, profile };
       })
       .filter((r) => r.profile);
-    return { ...toMatch(d, m), roster };
+    return { ...toMatch(d, m), roster, score_a: m.score_a, score_b: m.score_b, events: m.events };
   },
   async joinMatch(id) {
     const d = await db();
@@ -262,7 +429,7 @@ export const demoApi: Api = {
     for (const r of m.roster) r.team = assignments[r.player_id] ?? null;
     await save();
   },
-  async submitRatings(matchId, ratings: RatingInput[], _mvpId) {
+  async submitRatings(matchId, ratings: RatingInput[], mvpId) {
     const d = await db();
     const m = d.matches.find((x) => x.id === matchId);
     if (!m) throw new Error('المباراة غير موجودة');
@@ -273,11 +440,76 @@ export const demoApi: Api = {
       const p = d.profiles.find((x) => x.id === r.ratee_id);
       if (p) {
         const all = d.ratings.filter((x) => x.ratee_id === p.id).map((x) => x.score);
-        // نمزج المستوى السابق مع التقييمات الجديدة
         p.skill_rating = Math.round(((p.skill_rating * 5 + all.reduce((a, b) => a + b, 0)) / (5 + all.length)) * 100) / 100;
       }
     }
+    if (mvpId) m.mvpVotes.push({ voter_id: ME, player_id: mvpId });
     m.ratedBy.push(ME);
+    await save();
+  },
+  async submitResult(matchId, input) {
+    const d = await db();
+    const m = d.matches.find((x) => x.id === matchId);
+    if (!m) throw new Error('المباراة غير موجودة');
+    if (m.organizer_id !== ME) throw new Error('فقط منظّم المباراة يسجّل النتيجة');
+    const goals = (t: Team) => input.events.filter((e) => e.kind === 'goal' && m.roster.find((r) => r.player_id === e.player_id)?.team === t).length;
+    if (goals('A') > input.score_a || goals('B') > input.score_b) throw new Error('عدد الهدّافين أكبر من نتيجة الفريق');
+    m.score_a = input.score_a;
+    m.score_b = input.score_b;
+    m.events = input.events;
+    await save();
+  },
+
+  async getPlayerCard(playerId) {
+    const d = await db();
+    const p = d.profiles.find((x) => x.id === playerId);
+    return p ? cardOf(d, p) : null;
+  },
+  async getLeaderboard(kind: LeaderKind, limit = 10): Promise<LeaderRow[]> {
+    const d = await db();
+    const rows = d.profiles.map((p) => {
+      const s = statsOf(d, p.id);
+      const value = kind === 'goals' ? s.goals : kind === 'assists' ? s.assists : kind === 'mvps' ? s.mvps : p.skill_rating;
+      return { profile: p, value };
+    });
+    return rows.filter((r) => r.value > 0).sort((a, b) => b.value - a.value).slice(0, limit);
+  },
+  async getTeamOfWeek() {
+    const d = await db();
+    return pickTeamOfWeek(d.profiles.filter((p) => p.id !== ME).map((p) => cardOf(d, p)));
+  },
+  async getPlayerOfMonth() {
+    const d = await db();
+    const cards = d.profiles.map((p) => cardOf(d, p));
+    const score = (c: PlayerCard) => c.stats.goals * 3 + c.stats.assists * 2 + c.stats.mvps * 4 + c.stats.wins;
+    return cards.sort((a, b) => score(b) - score(a))[0] ?? null;
+  },
+
+  async listTournaments() {
+    await delay();
+    const d = await db();
+    return d.tournaments.map(({ teams, fixtures: _f, goals: _g, ...t }) => ({ ...t, registered_teams: teams.length }));
+  },
+  async getTournament(id): Promise<TournamentDetail | null> {
+    const d = await db();
+    const t = d.tournaments.find((x) => x.id === id);
+    if (!t) return null;
+    const { goals, ...rest } = t;
+    const scorers = goals
+      .map((g) => ({ profile: d.profiles.find((p) => p.id === g.player_id)!, value: g.count }))
+      .filter((r) => r.profile)
+      .sort((a, b) => b.value - a.value);
+    return { ...rest, registered_teams: t.teams.length, scorers };
+  },
+  async registerTeam(tournamentId, teamName) {
+    const d = await db();
+    const t = d.tournaments.find((x) => x.id === tournamentId);
+    if (!t) throw new Error('البطولة غير موجودة');
+    if (t.status !== 'registration') throw new Error('التسجيل مغلق لهذه البطولة');
+    if (t.teams.length >= t.team_count) throw new Error('اكتمل عدد الفرق');
+    if (t.teams.some((x) => x.captain_id === ME)) throw new Error('سجّلت فريقاً في هذه البطولة مسبقاً');
+    if (teamName.trim().length < 2) throw new Error('اكتب اسم الفريق');
+    t.teams.push({ id: `${t.id}-${Date.now()}`, name: teamName.trim(), group_name: null, captain_id: ME });
     await save();
   },
 };

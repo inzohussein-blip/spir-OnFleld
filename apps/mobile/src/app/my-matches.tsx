@@ -1,9 +1,9 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
-import { MatchCard } from '../../components/MatchCard';
-import { Empty, ErrorText, Loading, Screen, Text } from '../../components/ui';
-import { api } from '../../lib/api';
-import { useAsync } from '../../lib/session';
+import { MatchCard } from '../components/MatchCard';
+import { Empty, ErrorText, Loading, Screen, Text } from '../components/ui';
+import { api } from '../lib/api';
+import { useAsync } from '../lib/session';
 
 export default function MyMatches() {
   const { data, error, loading, reload } = useAsync(() => api.listMyMatches(), []);

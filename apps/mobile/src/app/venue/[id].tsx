@@ -1,19 +1,21 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Badge, Button, Card, Chip, ErrorText, Input, Loading, Row, Screen, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { formatDay, formatFormat, formatHour, formatIQD, SKILL_LABEL } from '../../lib/format';
 import { errMsg, useAsync } from '../../lib/session';
 import { computeSlots, nextDays, type BusyRange } from '../../lib/slots';
 import type { SkillLevel } from '../../lib/types';
-import { colors, fonts } from '../../theme';
+import { fonts, themed, useColors } from '../../theme';
 
 const LEVELS: SkillLevel[] = ['open', 'beginner', 'intermediate', 'advanced'];
 
 export default function VenueScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const colors = useColors();
+  const styles = useStyles();
   const { data: venue, loading, error } = useAsync(() => api.getVenue(id), [id]);
 
   const days = useMemo(() => nextDays(7), []);
@@ -116,8 +118,8 @@ export default function VenueScreen() {
               }}
               style={[styles.slot, !s.available && styles.slotBusy, selected && styles.slotSelected]}
             >
-              <Text style={[styles.slotText, !s.available && { color: colors.muted }, selected && { color: '#fff' }]}>{formatHour(s.hour)}</Text>
-              <Text variant="small" style={[!s.available && { color: colors.muted }, selected && { color: '#fff' }]}>
+              <Text style={[styles.slotText, !s.available && { color: colors.muted }, selected && { color: colors.onPrimary }]}>{formatHour(s.hour)}</Text>
+              <Text variant="small" style={[!s.available && { color: colors.muted }, selected && { color: colors.onPrimary }]}>
                 {s.available ? 'متاح' : 'محجوز'}
               </Text>
             </Pressable>
@@ -169,10 +171,10 @@ export default function VenueScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = themed((colors) => ({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  slot: { width: '23%', minWidth: 72, flexGrow: 1, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.primary, alignItems: 'center', backgroundColor: '#fff' },
-  slotBusy: { borderColor: colors.border, backgroundColor: '#ECEFED' },
+  slot: { width: '23%', minWidth: 72, flexGrow: 1, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.primary, alignItems: 'center', backgroundColor: colors.card },
+  slotBusy: { borderColor: colors.border, backgroundColor: colors.cardAlt },
   slotSelected: { backgroundColor: colors.primary },
   slotText: { fontFamily: fonts.bold, color: colors.primary },
-});
+}));

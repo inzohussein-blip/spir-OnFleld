@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { I18nManager, Platform } from 'react-native';
 import { Loading } from '../components/ui';
 import { SessionProvider, useSession } from '../lib/session';
-import { colors, fonts } from '../theme';
+import { fonts, ThemeProvider, useTheme } from '../theme';
 
 // العربية: اتجاه من اليمين لليسار
 if (Platform.OS !== 'web' && !I18nManager.isRTL) {
@@ -20,6 +20,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
 
 function Gate() {
   const { ready, userId, profile } = useSession();
+  const { colors: c, scheme } = useTheme();
   const segments = useSegments();
   const router = useRouter();
 
@@ -31,35 +32,51 @@ function Gate() {
     else if (userId && profile && first === 'login') router.replace('/');
   }, [ready, userId, profile, segments, router]);
 
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') document.body.style.backgroundColor = c.bg;
+  }, [c.bg]);
+
   if (!ready) return <Loading />;
 
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.primary },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontFamily: fonts.bold },
-        contentStyle: { backgroundColor: colors.bg },
-        headerBackTitle: 'رجوع',
-      }}
-    >
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-      <Stack.Screen name="onboarding" options={{ title: 'ملفك كلاعب' }} />
-      <Stack.Screen name="venue/[id]" options={{ title: 'الساحة' }} />
-      <Stack.Screen name="match/[id]" options={{ title: 'المباراة' }} />
-      <Stack.Screen name="match/rate" options={{ title: 'تقييم اللاعبين' }} />
-    </Stack>
+    <>
+      <StatusBar style={scheme === 'dark' ? 'light' : 'light'} />
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: c.header },
+          headerTintColor: '#fff',
+          headerTitleStyle: { fontFamily: fonts.bold },
+          contentStyle: { backgroundColor: c.bg },
+          headerBackTitle: 'رجوع',
+        }}
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ title: 'ملفك كلاعب' }} />
+        <Stack.Screen name="venue/[id]" options={{ title: 'الساحة' }} />
+        <Stack.Screen name="matches" options={{ title: 'المباريات' }} />
+        <Stack.Screen name="my-matches" options={{ title: 'مبارياتي' }} />
+        <Stack.Screen name="match/[id]" options={{ title: 'المباراة' }} />
+        <Stack.Screen name="match/rate" options={{ title: 'تقييم اللاعبين' }} />
+        <Stack.Screen name="match/result" options={{ title: 'تسجيل النتيجة' }} />
+        <Stack.Screen name="player/[id]" options={{ title: 'بطاقة اللاعب' }} />
+        <Stack.Screen name="tournament/[id]" options={{ title: 'البطولة' }} />
+      </Stack>
+    </>
   );
 }
 
 export default function RootLayout() {
   const [loaded] = useFonts({ Cairo_400Regular, Cairo_600SemiBold, Cairo_700Bold });
-  if (!loaded) return <Loading />;
   return (
-    <SessionProvider>
-      <StatusBar style="light" />
-      <Gate />
-    </SessionProvider>
+    <ThemeProvider>
+      {loaded ? (
+        <SessionProvider>
+          <Gate />
+        </SessionProvider>
+      ) : (
+        <Loading />
+      )}
+    </ThemeProvider>
   );
 }

@@ -1,4 +1,4 @@
-import type { Position, SkillLevel } from './types';
+import type { Position, SkillLevel, TournamentStatus } from './types';
 
 const DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 const MONTHS = ['كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران', 'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'];
@@ -45,3 +45,9 @@ export const SKILL_LABEL: Record<SkillLevel, string> = {
 export const formatFormat = (perSide: number) => `${perSide} × ${perSide}`;
 
 export const stars = (r: number) => `★ ${r.toFixed(1)}`;
+
+export const TOURNAMENT_STATUS: Record<TournamentStatus, { label: string; tone: 'green' | 'yellow' | 'gray' }> = {
+  registration: { label: 'التسجيل مفتوح', tone: 'green' },
+  ongoing: { label: 'البطولة بدأت', tone: 'yellow' },
+  finished: { label: 'انتهت', tone: 'gray' },
+};
