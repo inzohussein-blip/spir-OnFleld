@@ -20,7 +20,7 @@ export default function Stats() {
         onChange={setTab}
         options={[
           { value: 'leaders', label: 'المتصدرون', icon: 'podium' },
-          { value: 'xi', label: 'تشكيلة الأسبوع', icon: 'people' },
+          { value: 'xi', label: 'تشكيلة الشهر', icon: 'people' },
           { value: 'potm', label: 'لاعب الشهر', icon: 'star' },
         ]}
       />
@@ -68,10 +68,10 @@ function Leaders() {
 function TeamOfWeek() {
   const { data, loading } = useAsync(() => api.getTeamOfWeek(), []);
   if (loading && !data) return <Loading />;
-  if (!data || data.length < 5) return <Empty title="لم تكتمل تشكيلة الأسبوع" hint="تُختار تلقائياً من أفضل اللاعبين أداءً في مباريات الأسبوع." icon="people-outline" />;
+  if (!data || data.length < 5) return <Empty title="لم تكتمل تشكيلة الشهر" hint="تُختار تلقائياً من أفضل اللاعبين أداءً في مباريات الشهر." icon="people-outline" />;
   return (
     <>
-      <SectionTitle title="تشكيلة الأسبوع" hint="4-3-3 · حسب التقييم والأهداف والصناعة وجوائز رجل المباراة" />
+      <SectionTitle title="تشكيلة الشهر" hint="4-3-3 + احتياطيان · حسب التقييم والأهداف والصناعة وجوائز رجل المباراة" />
       <Pitch lineup={data} />
     </>
   );

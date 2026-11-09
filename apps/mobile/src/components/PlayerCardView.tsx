@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { POSITION_CODE, tierOf, type CardTier } from '../lib/stats';
+import { arcadeOverall, POSITION_CODE, tierOf, type CardTier } from '../lib/stats';
 import type { Attributes, PlayerCard } from '../lib/types';
 import { fonts } from '../theme';
 import { Text } from './ui';
@@ -12,7 +12,7 @@ const TIERS: Record<CardTier, { bg: string; edge: string; fg: string; label: str
   bronze: { bg: '#C98B5A', edge: '#8A5530', fg: '#2B1607', label: 'برونزية' },
   silver: { bg: '#C9D2D8', edge: '#8796A0', fg: '#1C262C', label: 'فضية' },
   gold: { bg: '#F0C64A', edge: '#B38A12', fg: '#2E2203', label: 'ذهبية' },
-  elite: { bg: '#0F7A3E', edge: '#F2B705', fg: '#FFFFFF', label: 'نخبة' },
+  elite: { bg: '#1E4FD8', edge: '#F5B700', fg: '#FFFFFF', label: 'نخبة' },
 };
 
 const ATTRS: [keyof Attributes, string][] = [
@@ -24,8 +24,12 @@ const ATTRS: [keyof Attributes, string][] = [
   ['physical', 'بدنية'],
 ];
 
-export function PlayerCardView({ card, onPress, width = 220 }: { card: PlayerCard; onPress?: () => void; width?: number }) {
-  const tier = TIERS[tierOf(card.overall)];
+const ARCADE = { bg: '#DCE6FF', edge: '#1E4FD8', fg: '#101828', label: 'أركيد' };
+
+/** mode: «full» بطاقة 11 ضد 11 (حسب المركز)، «arcade» بطاقة المباريات السريعة */
+export function PlayerCardView({ card, onPress, width = 220, mode = 'full' }: { card: PlayerCard; onPress?: () => void; width?: number; mode?: 'full' | 'arcade' }) {
+  const overall = mode === 'arcade' ? arcadeOverall(card.attributes) : card.overall;
+  const tier = mode === 'arcade' ? ARCADE : TIERS[tierOf(overall)];
   const k = width / 220;
   return (
     <Pressable onPress={onPress} disabled={!onPress} style={{ alignSelf: 'center' }}>
@@ -36,7 +40,7 @@ export function PlayerCardView({ card, onPress, width = 220 }: { card: PlayerCar
 
         <View style={[s.top, { padding: 12 * k }]}>
           <View style={{ alignItems: 'center' }}>
-            <Text style={{ fontFamily: fonts.bold, fontSize: 38 * k, lineHeight: 44 * k, color: tier.fg }}>{card.overall}</Text>
+            <Text style={{ fontFamily: fonts.bold, fontSize: 38 * k, lineHeight: 44 * k, color: tier.fg }}>{overall}</Text>
             <Text style={{ fontFamily: fonts.semibold, fontSize: 13 * k, color: tier.fg }}>{POSITION_CODE[card.profile.preferred_position]}</Text>
           </View>
           <View style={[s.avatar, { width: 84 * k, height: 84 * k, borderRadius: 42 * k, borderColor: tier.edge }]}>
@@ -59,8 +63,8 @@ export function PlayerCardView({ card, onPress, width = 220 }: { card: PlayerCar
         </View>
 
         <View style={[s.ribbon, { backgroundColor: tier.edge }]}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 11 * k, color: tierOf(card.overall) === 'elite' ? '#13201A' : '#fff' }}>
-            بالملعب · بطاقة {tier.label}
+          <Text style={{ fontFamily: fonts.bold, fontSize: 11 * k, color: mode === 'full' && tierOf(overall) === 'elite' ? '#101828' : '#fff' }}>
+            {mode === 'arcade' ? 'بطاقة الأركيد' : `بطاقة 11 ضد 11 · ${tier.label}`}
           </Text>
         </View>
       </View>

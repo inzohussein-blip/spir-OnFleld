@@ -18,7 +18,10 @@ export default function PlayerScreen() {
     <Screen>
       <Stack.Screen options={{ title: card.profile.full_name }} />
       <View style={{ backgroundColor: c.primary, borderRadius: 20, paddingVertical: 20, alignItems: 'center', gap: 10 }}>
-        <PlayerCardView card={card} width={230} />
+        <Row style={{ flexWrap: 'nowrap', justifyContent: 'center', gap: 12 }}>
+          <PlayerCardView card={card} width={150} mode="arcade" />
+          <PlayerCardView card={card} width={150} />
+        </Row>
         <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: c.onPrimary }}>{card.profile.full_name}</Text>
         <Row style={{ justifyContent: 'center' }}>
           <Badge label={POSITION_LABEL[card.profile.preferred_position]} tone="yellow" />

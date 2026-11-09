@@ -29,7 +29,7 @@ export default function Login() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.header }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.primary }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.hero}>
           <Text style={styles.logo}>⚽</Text>

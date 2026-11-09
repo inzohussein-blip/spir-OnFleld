@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Badge, Card, Chip, Empty, ErrorText, Loading, Row, Screen, Text } from '../../components/ui';
-import { api } from '../../lib/api';
-import { formatFormat, formatIQD } from '../../lib/format';
-import { useAsync } from '../../lib/session';
+import { Badge, Card, Chip, Empty, ErrorText, Loading, Row, Screen, Text } from '../components/ui';
+import { api } from '../lib/api';
+import { formatFormat, formatIQD } from '../lib/format';
+import { useAsync } from '../lib/session';
 
 export default function Venues() {
   const router = useRouter();

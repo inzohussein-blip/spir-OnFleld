@@ -16,6 +16,13 @@ import type {
   Tournament,
   TournamentDetail,
   Venue,
+  Trial,
+  Post,
+  PostCategory,
+  ChatChannel,
+  ChatMessage,
+  ChannelKind,
+  Wallet,
 } from '../types';
 
 export interface ProfileInput {
@@ -58,4 +65,22 @@ export interface Api {
   listTournaments(): Promise<Tournament[]>;
   getTournament(id: string): Promise<TournamentDetail | null>;
   registerTeam(tournamentId: string, teamName: string): Promise<void>;
+
+  listTrials(): Promise<Trial[]>;
+  getTrial(id: string): Promise<Trial | null>;
+  applyToTrial(id: string): Promise<void>;
+  /** تنبيه عند فتح اختبارات جديدة */
+  getTrialAlert(): Promise<boolean>;
+  setTrialAlert(on: boolean): Promise<void>;
+
+  listPosts(category: PostCategory): Promise<Post[]>;
+  getPost(id: string): Promise<Post | null>;
+
+  listChannels(): Promise<ChatChannel[]>;
+  listMessages(channel: ChannelKind): Promise<ChatMessage[]>;
+  sendMessage(channel: ChannelKind, body: string): Promise<void>;
+
+  getWallet(): Promise<Wallet>;
+  listPlayers(query: string): Promise<Profile[]>;
+  deleteAccount(): Promise<void>;
 }

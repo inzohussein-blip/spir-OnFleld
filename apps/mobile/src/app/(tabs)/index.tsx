@@ -9,7 +9,7 @@ import { useAsync, useSession } from '../../lib/session';
 import { fonts, themed, useColors } from '../../theme';
 
 const BANNERS: { title: string; body: string; icon: IconName; bg: string; href: Href }[] = [
-  { title: 'دوري بالملعب', body: 'التسجيل مفتوح لبطولة الملعب الكامل — سجّل فريقك الآن', icon: 'trophy', bg: '#0F7A3E', href: '/tournaments' },
+  { title: 'دوري بالملعب', body: 'التسجيل مفتوح لبطولة الملعب الكامل — سجّل فريقك الآن', icon: 'trophy', bg: '#1E4FD8', href: '/tournaments' },
   { title: 'حجوزات الصباح', body: 'أسعار أقل للساعات قبل الـ 4 عصراً في الساحات المشاركة', icon: 'sunny', bg: '#B07A00', href: '/venues' },
   { title: 'ادعُ شلتك', body: 'أنشئ مباراة وشارك الرابط على واتساب ويكتمل العدد بسرعة', icon: 'people', bg: '#1E4E8C', href: '/venues' },
 ];
@@ -49,14 +49,14 @@ export default function Home() {
       </ScrollView>
 
       <SectionTitle title="أقسام المباريات" hint="اختر نوع المباراة المناسب لك" />
-      <Pressable onPress={() => router.push({ pathname: '/matches', params: { type: 'full' } })} style={[st.typeCard, { backgroundColor: '#14753F' }]}>
+      <Pressable onPress={() => router.push({ pathname: '/matches', params: { type: 'full' } })} style={[st.typeCard, { backgroundColor: '#1C8B4A' }]}>
         <PitchLines />
         <Badge label="ملعب كامل" tone="yellow" />
         <Text style={st.typeTitle}>11 ضد 11</Text>
         <Text style={st.typeBody}>مباريات الملعب الكامل والتشكيلات</Text>
         <View style={st.typeBtn}><Text style={st.typeBtnText}>استعرض المباريات</Text></View>
       </Pressable>
-      <Pressable onPress={() => router.push({ pathname: '/matches', params: { type: 'small' } })} style={[st.typeCard, { backgroundColor: '#0E5C8A' }]}>
+      <Pressable onPress={() => router.push({ pathname: '/matches', params: { type: 'small' } })} style={[st.typeCard, { backgroundColor: '#1E4FD8' }]}>
         <PitchLines />
         <Badge label="سريع" tone="green" />
         <Text style={st.typeTitle}>خماسي · سداسي · سباعي</Text>

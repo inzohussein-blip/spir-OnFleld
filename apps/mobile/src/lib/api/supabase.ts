@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 import type { Api, ProfileInput } from './types';
 import { attributesFromRating, overallOf, pickTeamOfWeek } from '../stats';
-import type { Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue } from '../types';
+import type { ChannelKind, ChatChannel, ChatMessage, Post, Trial, Wallet, Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue } from '../types';
 
 const PROFILE_COLS = 'id, full_name, city, preferred_position, skill_rating, reliability_score, matches_played, attributes';
 const EMPTY_STATS: PlayerStats = { matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0 };
@@ -225,7 +225,7 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
         .slice(0, limit);
     },
     async getTeamOfWeek() {
-      return pickTeamOfWeek(await cardsSince(new Date(Date.now() - 7 * 24 * 3600 * 1000)));
+      return pickTeamOfWeek(await cardsSince(monthAgo()));
     },
     async getPlayerOfMonth() {
       const cards = await cardsSince(monthAgo());
@@ -245,7 +245,7 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
       const [teams, fixtures, scorers] = await Promise.all([
         sb.from('tournament_teams').select('id, name, group_name, captain_id').eq('tournament_id', id).order('created_at'),
         sb.from('tournament_fixtures').select('id, stage, group_name, home_id, away_id, home_score, away_score, starts_at').eq('tournament_id', id).order('starts_at'),
-        sb.from('tournament_scorers').select(`goals, profile:profiles(${PROFILE_COLS})`).eq('tournament_id', id).order('goals', { ascending: false }).limit(20),
+        sb.from('tournament_scorers').select(`goals, assists, yellow_cards, red_cards, profile:profiles(${PROFILE_COLS})`).eq('tournament_id', id).order('goals', { ascending: false }).limit(50),
       ]);
       fail(teams.error);
       fail(fixtures.error);
@@ -254,12 +254,122 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
         ...(t as Tournament),
         teams: teams.data ?? [],
         fixtures: fixtures.data ?? [],
-        scorers: (scorers.data ?? []).map((r: any) => ({ profile: mapProfile(r.profile), value: r.goals })),
+        scorers: (scorers.data ?? []).filter((r: any) => r.goals > 0).map((r: any) => ({ profile: mapProfile(r.profile), value: r.goals })),
+        player_stats: (scorers.data ?? []).map((r: any) => ({ profile: mapProfile(r.profile), goals: r.goals, assists: r.assists, yellow: r.yellow_cards, red: r.red_cards })),
       };
     },
     async registerTeam(tournamentId, teamName) {
       const { error } = await sb.rpc('register_team', { p_tournament_id: tournamentId, p_name: teamName });
       fail(error);
     },
+
+    async listTrials() {
+      const { data, error } = await sb.rpc('list_trials', { p_id: null });
+      fail(error);
+      return (data ?? []).map(mapTrial);
+    },
+    async getTrial(id) {
+      const { data, error } = await sb.rpc('list_trials', { p_id: id });
+      fail(error);
+      return data?.[0] ? mapTrial(data[0]) : null;
+    },
+    async applyToTrial(id) {
+      const { error } = await sb.rpc('apply_to_trial', { p_trial_id: id });
+      fail(error);
+    },
+    async getTrialAlert() {
+      const me = await uid();
+      if (!me) return false;
+      const { data } = await sb.from('trial_alerts').select('player_id').eq('player_id', me).maybeSingle();
+      return !!data;
+    },
+    async setTrialAlert(on) {
+      const me = await uid();
+      if (!me) throw new Error('يجب تسجيل الدخول');
+      const { error } = on ? await sb.from('trial_alerts').upsert({ player_id: me }) : await sb.from('trial_alerts').delete().eq('player_id', me);
+      fail(error);
+    },
+
+    async listPosts(category) {
+      const { data, error } = await sb.from('posts').select('*').eq('category', category).order('created_at', { ascending: false }).limit(50);
+      fail(error);
+      return (data ?? []).map(mapPost);
+    },
+    async getPost(id) {
+      const { data, error } = await sb.from('posts').select('*').eq('id', id).maybeSingle();
+      fail(error);
+      return data ? mapPost(data) : null;
+    },
+
+    async listChannels(): Promise<ChatChannel[]> {
+      const me = await uid();
+      const last = async (k: ChannelKind) => {
+        let q = sb.from('chat_messages').select('body, created_at, sender:profiles(full_name, role)').eq('channel', k).order('created_at', { ascending: false }).limit(1);
+        if (k === 'support' && me) q = q.eq('thread_owner', me);
+        const { data } = await q;
+        const m: any = data?.[0];
+        return m ? { sender_name: m.sender?.role === 'admin' ? 'إدارة بالملعب' : m.sender?.full_name ?? '', body: m.body, created_at: m.created_at } : null;
+      };
+      const [g, a, sp] = await Promise.all([last('general'), last('announcements'), last('support')]);
+      return [
+        { id: 'general', title: 'المحادثة العامة', subtitle: 'نقاشات اللاعبين', last_message: g, important: false, can_post: true },
+        { id: 'announcements', title: 'التبليغات', subtitle: 'إعلانات رسمية من الإدارة', last_message: a, important: true, can_post: false },
+        { id: 'support', title: 'محادثة الإدارة', subtitle: 'تواصل خاص ومباشر مع الإدارة', last_message: sp, important: false, can_post: true },
+      ];
+    },
+    async listMessages(channel): Promise<ChatMessage[]> {
+      const me = await uid();
+      let q = sb.from('chat_messages').select('id, channel, sender_id, body, created_at, sender:profiles(full_name, role)').eq('channel', channel).order('created_at', { ascending: false }).limit(100);
+      if (channel === 'support' && me) q = q.eq('thread_owner', me);
+      const { data, error } = await q;
+      fail(error);
+      return (data ?? []).reverse().map((m: any) => ({
+        id: String(m.id), channel: m.channel, sender_id: m.sender_id, body: m.body, created_at: m.created_at,
+        is_admin: m.sender?.role === 'admin', sender_name: m.sender?.role === 'admin' ? 'إدارة بالملعب' : m.sender?.full_name ?? '',
+      }));
+    },
+    async sendMessage(channel, body) {
+      const me = await uid();
+      if (!me) throw new Error('يجب تسجيل الدخول');
+      const text = body.trim();
+      if (!text) return;
+      const { error } = await sb.from('chat_messages').insert({ channel, sender_id: me, body: text.slice(0, 1000), thread_owner: channel === 'support' ? me : null });
+      fail(error);
+    },
+
+    async getWallet(): Promise<Wallet> {
+      const { data, error } = await sb.from('wallet_transactions').select('id, kind, amount, note, created_at').order('created_at', { ascending: false }).limit(100);
+      fail(error);
+      const transactions = (data ?? []).map((t: any) => ({ ...t, id: String(t.id) }));
+      return { balance: transactions.reduce((s, t) => s + t.amount, 0), transactions };
+    },
+    async listPlayers(query) {
+      let q = sb.from('profiles').select(PROFILE_COLS).not('city', 'is', null).is('deleted_at', null).order('skill_rating', { ascending: false }).limit(100);
+      if (query.trim()) q = q.ilike('full_name', `%${query.trim()}%`);
+      const { data, error } = await q;
+      fail(error);
+      return (data ?? []).map(mapProfile);
+    },
+    async deleteAccount() {
+      const { error } = await sb.rpc('delete_my_account');
+      fail(error);
+      await sb.auth.signOut();
+    },
+  };
+}
+
+function mapTrial(t: any): Trial {
+  return {
+    id: t.id, club_name: t.club_name, title: t.title, description: t.description, age_min: t.age_min, age_max: t.age_max,
+    positions: t.positions ?? [], venue_name: t.venue_name, trial_date: t.trial_date, status: t.status, is_free: t.is_free,
+    verified_club: t.verified_club, applicants: t.applicants ?? 0,
+    my_application: t.my_status ? { status: t.my_status, scout_note: t.my_note ?? null } : null,
+  };
+}
+
+function mapPost(p: any): Post {
+  return {
+    id: p.id, category: p.category, title: p.title, body: p.body, venue_name: p.venue_name, cover_color: p.cover_color,
+    media_count: (p.media_urls ?? []).length, created_at: p.created_at,
   };
 }

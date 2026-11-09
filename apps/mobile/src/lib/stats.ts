@@ -104,5 +104,16 @@ export function pickTeamOfWeek(cards: PlayerCard[]): { slot: PitchSlot; card: Pl
     const pick = pool.find((c) => !used.has(c.profile.id) && (s.pos !== 'goalkeeper'));
     if (pick) { used.add(pick.profile.id); out.push({ slot: s.slot, card: pick }); }
   }
+  // دكة الاحتياط: أفضل لاعبَين متبقيين
+  for (const slot of ['SUB1', 'SUB2'] as const) {
+    const pick = pool.find((c) => !used.has(c.profile.id));
+    if (pick) { used.add(pick.profile.id); out.push({ slot, card: pick }); }
+  }
   return out;
+}
+
+/** تقييم «بطاقة الأركيد» للمباريات السريعة: السرعة والمراوغة أهم */
+export function arcadeOverall(a: Attributes): number {
+  const v = a.pace * 0.25 + a.dribbling * 0.25 + a.shooting * 0.2 + a.passing * 0.15 + a.physical * 0.1 + a.defending * 0.05;
+  return Math.round(Math.max(1, Math.min(99, v)));
 }

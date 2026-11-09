@@ -23,6 +23,13 @@ import type {
   TournamentDetail,
   TournamentTeam,
   Venue,
+  Trial,
+  ApplicationStatus,
+  Post,
+  ChatMessage,
+  ChannelKind,
+  ChatChannel,
+  Wallet,
 } from '../types';
 
 /**
@@ -30,7 +37,7 @@ import type {
  * كاملاً قبل ربطه بـ Supabase. رمز التحقق في هذا الوضع: 1234
  */
 
-const KEY = 'balmalaab-demo-v2';
+const KEY = 'balmalaab-demo-v3';
 const ME = 'me';
 
 interface StoredMatch {
@@ -56,8 +63,10 @@ interface StoredMatch {
 interface StoredTournament extends Omit<Tournament, 'registered_teams'> {
   teams: TournamentTeam[];
   fixtures: Fixture[];
-  goals: { player_id: string; count: number }[];
+  stats: { player_id: string; goals: number; assists: number; yellow: number; red: number }[];
 }
+
+type StoredTrial = Omit<Trial, 'my_application'>;
 
 interface DB {
   signedIn: boolean;
@@ -67,6 +76,12 @@ interface DB {
   matches: StoredMatch[];
   ratings: { match_id: string; rater_id: string; ratee_id: string; score: number }[];
   tournaments: StoredTournament[];
+  trials: StoredTrial[];
+  applications: { trial_id: string; status: ApplicationStatus; scout_note: string | null }[];
+  trialAlert: boolean;
+  posts: Post[];
+  messages: ChatMessage[];
+  wallet: Wallet;
 }
 
 const NAMES: [string, Position, number][] = [
@@ -216,17 +231,68 @@ function seed(): DB {
     {
       id: 't1', name: 'دوري بالملعب — الموسم الأول', venue_name: 'ملاعب النخيل', players_per_side: 5, team_count: 8,
       team_fee: 25000, player_fee: 2500, prize: 'كأس + 500,000 د.ع', status: 'ongoing', starts_on: at(-10, 20), format: 'مجموعتان ثم نصف النهائي',
-      teams: t1Teams, fixtures: t1Fixtures, goals: [0, 4, 12, 13, 8, 1].map((i, k) => ({ player_id: `p${i}`, count: 7 - k })),
+      teams: t1Teams, fixtures: t1Fixtures,
+      stats: [0, 4, 12, 13, 8, 1, 6, 11, 3].map((i, k) => ({ player_id: `p${i}`, goals: Math.max(0, 7 - k), assists: (k * 3) % 5, yellow: k % 3 === 0 ? 1 : 0, red: k === 6 ? 1 : 0 })),
     },
     {
       id: 't2', name: 'بطولة الملعب الكامل', venue_name: 'ملعب الرافدين', players_per_side: 11, team_count: 16,
       team_fee: 100000, player_fee: 5000, prize: 'كأس + ميداليات', status: 'registration', starts_on: at(14, 17), format: '4 مجموعات ثم إقصائي',
       teams: ['الأبطال', 'المستقبل', 'الأمل', 'الزوراء'].map((name, i) => ({ id: `t2-${i}`, name, group_name: null, captain_id: `p${i + 10}` })),
-      fixtures: [], goals: [],
+      fixtures: [], stats: [],
     },
   ];
 
-  return { signedIn: false, profiles, attributes, venues, matches, ratings: [], tournaments };
+  // ---------- اختبارات الأندية ----------
+  const trials: StoredTrial[] = [
+    {
+      id: 'tr1', club_name: 'أكاديمية النجوم', title: 'اختبارات الناشئين 2026', verified_club: true, is_free: true,
+      description: 'الأكاديمية تبحث عن مواهب بأعمار 14–18. الكشّافون يراجعون بطاقتك وإحصائياتك قبل الاختبار، وبعده تستلم النتيجة وملاحظات الكشّاف.',
+      age_min: 14, age_max: 18, positions: ['forward', 'midfielder'], venue_name: 'ملعب الرافدين', trial_date: at(9, 16), status: 'open', applicants: 37,
+    },
+    {
+      id: 'tr2', club_name: 'نادي الشباب الرياضي', title: 'اختبار حراس المرمى', verified_club: true, is_free: true,
+      description: 'اختبار مخصص لحراس المرمى بأعمار 16–21 مع مدرب الحراس في النادي.',
+      age_min: 16, age_max: 21, positions: ['goalkeeper'], venue_name: 'ملاعب النخيل', trial_date: at(16, 10), status: 'upcoming', applicants: 0,
+    },
+    {
+      id: 'tr3', club_name: 'أكاديمية دجلة', title: 'اختبارات المدافعين', verified_club: false, is_free: false,
+      description: 'اختبار لمراكز الدفاع. رسوم رمزية 5,000 د.ع تشمل التصوير وتقرير الأداء.',
+      age_min: 15, age_max: 20, positions: ['defender'], venue_name: 'الصالة الذهبية', trial_date: at(-5, 17), status: 'closed', applicants: 52,
+    },
+  ];
+
+  // ---------- المنشورات ----------
+  const posts: Post[] = [
+    { id: 'po1', category: 'full', title: 'صور وفيديوهات مباراة الملعب الكامل — ملعب الرافدين', body: 'لقطات من مباراة السبت الماضي على ملعب الرافدين: 4 أهداف، وحارس الفريق الأزرق كان نجم المباراة. شوف الصور واحفظ لقطاتك.', venue_name: 'ملعب الرافدين', cover_color: '#1E4FD8', media_count: 24, created_at: at(-1, 22) },
+    { id: 'po2', category: 'full', title: 'ملخص الجولة الثالثة من دوري بالملعب', body: 'النسور تتصدر المجموعة أ بفارق الأهداف، والفرات يحسم صدارة المجموعة ب. الجولة القادمة الأسبوع الجاي.', venue_name: 'ملاعب النخيل', cover_color: '#163CA8', media_count: 12, created_at: at(-3, 21) },
+    { id: 'po3', category: 'full', title: 'صور مباراة الجمعة — ملاعب النخيل', body: 'مباراة قوية انتهت 3-3. شكراً لكل اللاعبين على الروح الرياضية.', venue_name: 'ملاعب النخيل', cover_color: '#0F2E7A', media_count: 18, created_at: at(-6, 20) },
+    { id: 'po4', category: 'small', title: 'أسرع هدف هذا الشهر بالخماسي ⚡', body: 'هدف بعد 9 ثواني من صافرة البداية في الصالة الذهبية — مقطع الفيديو بالمنشور.', venue_name: 'الصالة الذهبية', cover_color: '#E65100', media_count: 1, created_at: at(-2, 23) },
+  ];
+
+  // ---------- المحادثات ----------
+  const msg = (id: string, channel: ChannelKind, sender: string, body: string, ago: number, isAdmin = false): ChatMessage => {
+    const p = profiles.find((x) => x.id === sender);
+    return { id, channel, sender_id: sender, sender_name: isAdmin ? 'إدارة بالملعب' : p?.full_name ?? 'لاعب', is_admin: isAdmin, body, created_at: new Date(Date.now() - ago * 60000).toISOString() };
+  };
+  const messages: ChatMessage[] = [
+    msg('c1', 'general', 'p0', 'شباب منو جاي خماسي الخميس؟ باقي 3 لاعبين', 180),
+    msg('c2', 'general', 'p4', 'آني جاي إن شاء الله 💪', 170),
+    msg('c3', 'general', 'p12', 'شنو أخبار البطولة؟ متى القرعة؟', 40),
+    msg('c4', 'announcements', 'admin', 'شباب هذه هي مبارياتكم: تابعوا جدول دوري بالملعب من قسم البطولات، والقرعة الجاية يوم السبت.', 60 * 20, true),
+    msg('c5', 'announcements', 'admin', 'تم فتح التسجيل لبطولة الملعب الكامل — عدد الفرق محدود.', 60 * 2, true),
+    msg('c6', 'support', 'admin', 'أهلاً بك! هنا تكدر تتواصل مع الإدارة مباشرة لأي استفسار أو مشكلة.', 60 * 24 * 2, true),
+  ];
+
+  const wallet: Wallet = {
+    balance: 7500,
+    transactions: [
+      { id: 'w1', kind: 'reward', amount: 5000, note: 'مكافأة رجل المباراة', created_at: at(-4, 22) },
+      { id: 'w2', kind: 'topup', amount: 10000, note: 'شحن رصيد', created_at: at(-8, 12) },
+      { id: 'w3', kind: 'payment', amount: -7500, note: 'حصتك من حجز ملاعب النخيل', created_at: at(-8, 20) },
+    ],
+  };
+
+  return { signedIn: false, profiles, attributes, venues, matches, ratings: [], tournaments, trials, applications: [], trialAlert: false, posts, messages, wallet };
 }
 
 let cache: DB | null = null;
@@ -488,18 +554,18 @@ export const demoApi: Api = {
   async listTournaments() {
     await delay();
     const d = await db();
-    return d.tournaments.map(({ teams, fixtures: _f, goals: _g, ...t }) => ({ ...t, registered_teams: teams.length }));
+    return d.tournaments.map(({ teams, fixtures: _f, stats: _s, ...t }) => ({ ...t, registered_teams: teams.length }));
   },
   async getTournament(id): Promise<TournamentDetail | null> {
     const d = await db();
     const t = d.tournaments.find((x) => x.id === id);
     if (!t) return null;
-    const { goals, ...rest } = t;
-    const scorers = goals
-      .map((g) => ({ profile: d.profiles.find((p) => p.id === g.player_id)!, value: g.count }))
-      .filter((r) => r.profile)
-      .sort((a, b) => b.value - a.value);
-    return { ...rest, registered_teams: t.teams.length, scorers };
+    const { stats, ...rest } = t;
+    const player_stats = stats
+      .map((g) => ({ profile: d.profiles.find((p) => p.id === g.player_id)!, goals: g.goals, assists: g.assists, yellow: g.yellow, red: g.red }))
+      .filter((r) => r.profile);
+    const scorers = player_stats.filter((r) => r.goals > 0).map((r) => ({ profile: r.profile, value: r.goals })).sort((a, b) => b.value - a.value);
+    return { ...rest, registered_teams: t.teams.length, scorers, player_stats };
   },
   async registerTeam(tournamentId, teamName) {
     const d = await db();
@@ -510,6 +576,80 @@ export const demoApi: Api = {
     if (t.teams.some((x) => x.captain_id === ME)) throw new Error('سجّلت فريقاً في هذه البطولة مسبقاً');
     if (teamName.trim().length < 2) throw new Error('اكتب اسم الفريق');
     t.teams.push({ id: `${t.id}-${Date.now()}`, name: teamName.trim(), group_name: null, captain_id: ME });
+    await save();
+  },
+
+  async listTrials() {
+    await delay();
+    const d = await db();
+    return d.trials.map((t) => ({ ...t, my_application: d.applications.find((a) => a.trial_id === t.id) ?? null }));
+  },
+  async getTrial(id) {
+    const d = await db();
+    const t = d.trials.find((x) => x.id === id);
+    return t ? { ...t, my_application: d.applications.find((a) => a.trial_id === t.id) ?? null } : null;
+  },
+  async applyToTrial(id) {
+    const d = await db();
+    const t = d.trials.find((x) => x.id === id);
+    if (!t) throw new Error('الاختبار غير موجود');
+    if (t.status !== 'open') throw new Error('التقديم غير متاح لهذا الاختبار');
+    if (d.applications.some((a) => a.trial_id === id)) throw new Error('قدّمت على هذا الاختبار مسبقاً');
+    d.applications.push({ trial_id: id, status: 'pending', scout_note: null });
+    t.applicants++;
+    await save();
+  },
+  async getTrialAlert() {
+    return (await db()).trialAlert;
+  },
+  async setTrialAlert(on) {
+    (await db()).trialAlert = on;
+    await save();
+  },
+
+  async listPosts(category) {
+    await delay();
+    return (await db()).posts.filter((p) => p.category === category).sort((a, b) => b.created_at.localeCompare(a.created_at));
+  },
+  async getPost(id) {
+    return (await db()).posts.find((p) => p.id === id) ?? null;
+  },
+
+  async listChannels(): Promise<ChatChannel[]> {
+    const d = await db();
+    const last = (k: ChannelKind) => {
+      const m = d.messages.filter((x) => x.channel === k).sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+      return m ? { sender_name: m.sender_name, body: m.body, created_at: m.created_at } : null;
+    };
+    return [
+      { id: 'general', title: 'المحادثة العامة', subtitle: 'نقاشات اللاعبين', last_message: last('general'), important: false, can_post: true },
+      { id: 'announcements', title: 'التبليغات', subtitle: 'إعلانات رسمية من الإدارة', last_message: last('announcements'), important: true, can_post: false },
+      { id: 'support', title: 'محادثة الإدارة', subtitle: 'تواصل خاص ومباشر مع الإدارة', last_message: last('support'), important: false, can_post: true },
+    ];
+  },
+  async listMessages(channel) {
+    const d = await db();
+    return d.messages.filter((m) => m.channel === channel && (channel !== 'support' || m.sender_id === ME || m.is_admin)).sort((a, b) => a.created_at.localeCompare(b.created_at));
+  },
+  async sendMessage(channel, body) {
+    const d = await db();
+    if (channel === 'announcements') throw new Error('التبليغات للإدارة فقط');
+    const text = body.trim();
+    if (!text) return;
+    const me = d.profiles.find((p) => p.id === ME);
+    d.messages.push({ id: `c${Date.now()}`, channel, sender_id: ME, sender_name: me?.full_name ?? 'أنا', is_admin: false, body: text.slice(0, 1000), created_at: new Date().toISOString() });
+    await save();
+  },
+
+  async getWallet() {
+    return (await db()).wallet;
+  },
+  async listPlayers(query) {
+    const q = query.trim();
+    return (await db()).profiles.filter((p) => p.id !== ME && (!q || p.full_name.includes(q))).sort((a, b) => b.skill_rating - a.skill_rating);
+  },
+  async deleteAccount() {
+    cache = seed();
     await save();
   },
 };

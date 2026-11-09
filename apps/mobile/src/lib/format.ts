@@ -51,3 +51,21 @@ export const TOURNAMENT_STATUS: Record<TournamentStatus, { label: string; tone: 
   ongoing: { label: 'البطولة بدأت', tone: 'yellow' },
   finished: { label: 'انتهت', tone: 'gray' },
 };
+
+export const TRIAL_STATUS: Record<'upcoming' | 'open' | 'closed', { label: string; tone: 'green' | 'yellow' | 'gray' }> = {
+  open: { label: 'التقديم مفتوح', tone: 'green' },
+  upcoming: { label: 'قريباً', tone: 'yellow' },
+  closed: { label: 'مغلق', tone: 'gray' },
+};
+
+/** «منذ ساعتين» / «أمس» / التاريخ */
+export function timeAgo(iso: string) {
+  const diff = (Date.now() - new Date(iso).getTime()) / 60000;
+  if (diff < 1) return 'الآن';
+  if (diff < 60) return `قبل ${Math.round(diff)} د`;
+  if (diff < 60 * 24) return `قبل ${Math.round(diff / 60)} س`;
+  if (diff < 60 * 48) return 'أمس';
+  return formatDay(new Date(iso));
+}
+
+export const APP_LABEL = { pending: 'بانتظار الكشّاف', accepted: 'مقبول 🎉', rejected: 'لم تُقبل هذه المرة' } as const;

@@ -42,8 +42,10 @@ test('تشكيلة الأسبوع: حارس واحد و11 لاعباً بدون 
     attributes: attributesFromRating(3, p),
     stats: { matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0 },
   }));
-  const xi = pickTeamOfWeek(cards);
+  const all = pickTeamOfWeek(cards);
+  const xi = all.filter((x) => !x.slot.startsWith('SUB'));
   assert.equal(xi.length, 11);
-  assert.equal(new Set(xi.map((x) => x.card.profile.id)).size, 11);
+  assert.equal(all.length, 13); // + احتياطيان
+  assert.equal(new Set(all.map((x) => x.card.profile.id)).size, 13);
   assert.equal(xi.find((x) => x.slot === 'GK')?.card.profile.preferred_position, 'goalkeeper');
 });

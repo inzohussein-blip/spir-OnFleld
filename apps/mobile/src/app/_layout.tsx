@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { I18nManager, Platform } from 'react-native';
 import { Loading } from '../components/ui';
 import { SessionProvider, useSession } from '../lib/session';
-import { fonts, ThemeProvider, useTheme } from '../theme';
+import { fonts, headerText, ThemeProvider, useTheme } from '../theme';
 
 // العربية: اتجاه من اليمين لليسار
 if (Platform.OS !== 'web' && !I18nManager.isRTL) {
@@ -40,11 +40,12 @@ function Gate() {
 
   return (
     <>
-      <StatusBar style={scheme === 'dark' ? 'light' : 'light'} />
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: c.header },
-          headerTintColor: '#fff',
+          headerTintColor: headerText(c),
+          headerShadowVisible: false,
           headerTitleStyle: { fontFamily: fonts.bold },
           contentStyle: { backgroundColor: c.bg },
           headerBackTitle: 'رجوع',
@@ -61,6 +62,14 @@ function Gate() {
         <Stack.Screen name="match/result" options={{ title: 'تسجيل النتيجة' }} />
         <Stack.Screen name="player/[id]" options={{ title: 'بطاقة اللاعب' }} />
         <Stack.Screen name="tournament/[id]" options={{ title: 'البطولة' }} />
+        <Stack.Screen name="venues" options={{ title: 'الساحات' }} />
+        <Stack.Screen name="profile" options={{ title: 'حسابي' }} />
+        <Stack.Screen name="chats" options={{ title: 'المحادثات' }} />
+        <Stack.Screen name="chat/[id]" options={{ title: 'المحادثة' }} />
+        <Stack.Screen name="trial/[id]" options={{ title: 'الاختبار' }} />
+        <Stack.Screen name="post/[id]" options={{ title: 'المنشور' }} />
+        <Stack.Screen name="wallet" options={{ title: 'المحفظة' }} />
+        <Stack.Screen name="players" options={{ title: 'اللاعبين' }} />
       </Stack>
     </>
   );

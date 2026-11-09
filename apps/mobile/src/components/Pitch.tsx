@@ -4,7 +4,7 @@ import type { PitchSlot, TeamOfWeekEntry } from '../lib/types';
 import { MiniCard } from './PlayerCardView';
 
 // مواقع المراكز على أرضية الملعب (نسبة مئوية من العرض/الارتفاع) — تشكيلة 4-3-3
-const POS: Record<PitchSlot, { x: number; y: number; label: string }> = {
+const POS: Record<Exclude<PitchSlot, 'SUB1' | 'SUB2'>, { x: number; y: number; label: string }> = {
   LW: { x: 14, y: 6, label: 'جناح' },
   ST: { x: 50, y: 2, label: 'مهاجم' },
   RW: { x: 86, y: 6, label: 'جناح' },
@@ -20,7 +20,11 @@ const POS: Record<PitchSlot, { x: number; y: number; label: string }> = {
 
 export function Pitch({ lineup }: { lineup: TeamOfWeekEntry[] }) {
   const router = useRouter();
+  const open = (id: string) => router.push({ pathname: '/player/[id]', params: { id } });
+  const starters = lineup.filter((e) => e.slot !== 'SUB1' && e.slot !== 'SUB2');
+  const bench = lineup.filter((e) => e.slot === 'SUB1' || e.slot === 'SUB2');
   return (
+    <View style={{ gap: 10 }}>
     <View style={s.pitch}>
       {Array.from({ length: 8 }, (_, i) => (
         <View key={i} style={[s.band, { top: `${i * 12.5}%`, opacity: i % 2 ? 0.0 : 0.08 }]} />
@@ -30,14 +34,22 @@ export function Pitch({ lineup }: { lineup: TeamOfWeekEntry[] }) {
       <View style={s.circle} />
       <View style={[s.box, { top: 0, borderTopWidth: 0 }]} />
       <View style={[s.box, { bottom: 0, borderBottomWidth: 0 }]} />
-      {lineup.map(({ slot, card }) => {
-        const p = POS[slot];
+      {starters.map(({ slot, card }) => {
+        const p = POS[slot as keyof typeof POS];
         return (
           <View key={slot} style={[s.slot, { left: `${p.x}%`, top: `${p.y}%` }]}>
-            <MiniCard card={card} label={p.label} onPress={() => router.push({ pathname: '/player/[id]', params: { id: card.profile.id } })} />
+            <MiniCard card={card} label={p.label} onPress={() => open(card.profile.id)} />
           </View>
         );
       })}
+    </View>
+    {bench.length ? (
+      <View style={s.bench}>
+        {bench.map(({ slot, card }, i) => (
+          <MiniCard key={slot} card={card} label={`احتياط ${i + 1}`} onPress={() => open(card.profile.id)} />
+        ))}
+      </View>
+    ) : null}
     </View>
   );
 }
@@ -51,4 +63,5 @@ const s = StyleSheet.create({
   circle: { position: 'absolute', top: '50%', left: '50%', width: 90, height: 90, marginLeft: -45, marginTop: -45, borderRadius: 45, borderWidth: 2, borderColor: line },
   box: { position: 'absolute', left: '25%', right: '25%', height: '13%', borderWidth: 2, borderColor: line, marginVertical: 8 },
   slot: { position: 'absolute', marginLeft: -31 },
+  bench: { flexDirection: 'row', justifyContent: 'center', gap: 16, backgroundColor: '#14532D', borderRadius: 14, paddingVertical: 10 },
 });

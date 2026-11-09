@@ -2,15 +2,16 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 import { LeaderList } from '../../components/LeaderList';
+import { Ionicons } from '@expo/vector-icons';
 import { Badge, Button, Card, Empty, ErrorText, Input, Loading, Row, Screen, Segmented, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { formatDateTime, formatIQD, TOURNAMENT_STATUS as STATUS_LABEL } from '../../lib/format';
 import { errMsg, useAsync, useSession } from '../../lib/session';
 import { computeStandings } from '../../lib/stats';
-import type { Fixture, TournamentTeam } from '../../lib/types';
+import type { Fixture, TournamentDetail, TournamentTeam } from '../../lib/types';
 import { fonts, themed, useColors } from '../../theme';
 
-type Tab = 'standings' | 'fixtures' | 'scorers' | 'teams';
+type Tab = 'standings' | 'fixtures' | 'board' | 'teams';
 const STAGE: Record<string, string> = { group: 'دور المجموعات', round16: 'دور الـ 16', quarter: 'ربع النهائي', semi: 'نصف النهائي', final: 'النهائي' };
 
 export default function TournamentScreen() {
@@ -86,9 +87,9 @@ export default function TournamentScreen() {
         value={tab}
         onChange={setTab}
         options={[
-          { value: 'standings', label: 'الترتيب', icon: 'grid' },
+          { value: 'standings', label: 'القرعة', icon: 'grid' },
           { value: 'fixtures', label: 'المباريات', icon: 'calendar' },
-          { value: 'scorers', label: 'الهدافون', icon: 'football' },
+          { value: 'board', label: 'اللوحة', icon: 'stats-chart' },
           { value: 'teams', label: 'الفرق', icon: 'people' },
         ]}
       />
@@ -145,13 +146,7 @@ export default function TournamentScreen() {
         )
       ) : null}
 
-      {tab === 'scorers' ? (
-        t.scorers.length ? (
-          <Card><LeaderList rows={t.scorers} unit="هدف" onPress={(pid) => router.push({ pathname: '/player/[id]', params: { id: pid } })} /></Card>
-        ) : (
-          <Empty title="ماكو بيانات بعد" hint="تظهر قائمة الهدافين بعد أول مباراة." icon="football-outline" />
-        )
-      ) : null}
+      {tab === 'board' ? <TournamentBoard t={t} onOpen={(pid) => router.push({ pathname: '/player/[id]', params: { id: pid } })} /> : null}
 
       {tab === 'teams' ? (
         <Card style={{ gap: 0 }}>
@@ -166,6 +161,67 @@ export default function TournamentScreen() {
         </Card>
       ) : null}
     </Screen>
+  );
+}
+
+type BoardTab = 'stats' | 'potm';
+
+/** لوحة البطولة: الهدافون، صنّاع اللعب، الكروت، لاعب البطولة */
+function TournamentBoard({ t, onOpen }: { t: TournamentDetail; onOpen: (playerId: string) => void }) {
+  const c = useColors();
+  const [sub, setSub] = useState<BoardTab>('stats');
+  const ps = t.player_stats;
+  const rows = (pick: (r: (typeof ps)[number]) => number) =>
+    ps.map((r) => ({ profile: r.profile, value: pick(r) })).filter((r) => r.value > 0).sort((a, b) => b.value - a.value).slice(0, 5);
+  const best = [...ps].sort((a, b) => b.goals * 3 + b.assists * 2 - b.red * 3 - b.yellow - (a.goals * 3 + a.assists * 2 - a.red * 3 - a.yellow))[0];
+
+  const section = (title: string, hint: string, icon: 'football' | 'git-merge' | 'card', color: string, list: { profile: (typeof ps)[number]['profile']; value: number }[], unit: string) => (
+    <Card key={title}>
+      <Row style={{ flexWrap: 'nowrap' }}>
+        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name={icon} size={20} color="#fff" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text variant="h2">{title}</Text>
+          <Text variant="small" style={{ color: c.muted }}>{hint}</Text>
+        </View>
+      </Row>
+      {list.length ? <LeaderList rows={list} unit={unit} onPress={onOpen} /> : <Text variant="muted" style={{ textAlign: 'center', paddingVertical: 10 }}>ماكو بيانات بعد</Text>}
+    </Card>
+  );
+
+  return (
+    <>
+      <Segmented<BoardTab>
+        value={sub}
+        onChange={setSub}
+        options={[
+          { value: 'stats', label: 'الإحصائيات', icon: 'stats-chart' },
+          { value: 'potm', label: 'لاعب البطولة', icon: 'ribbon' },
+        ]}
+      />
+      {sub === 'stats' ? (
+        <>
+          {section('الهدافون', 'أكثر اللاعبين تسجيلاً بالبطولة', 'football', '#1C8B4A', rows((r) => r.goals), 'هدف')}
+          {section('صنّاع اللعب', 'أكثر اللاعبين صناعة بالبطولة', 'git-merge', c.primary, rows((r) => r.assists), 'صناعة')}
+          {section('الكروت', 'أكثر اللاعبين حصولاً على الإنذارات (الأحمر = 2)', 'card', c.danger, rows((r) => r.yellow + r.red * 2), 'إنذار')}
+        </>
+      ) : best ? (
+        <Card style={{ alignItems: 'center' }}>
+          <Ionicons name="ribbon" size={40} color={c.accent} />
+          <Text variant="title">{best.profile.full_name}</Text>
+          <Text variant="muted">لاعب البطولة حتى الآن</Text>
+          <Row style={{ justifyContent: 'center' }}>
+            <Badge label={`⚽ ${best.goals} هدف`} />
+            <Badge label={`🅰️ ${best.assists} صناعة`} tone="gray" />
+            <Badge label={`🟨 ${best.yellow}  🟥 ${best.red}`} tone="gray" />
+          </Row>
+          <Button title="عرض البطاقة" variant="ghost" onPress={() => onOpen(best.profile.id)} />
+        </Card>
+      ) : (
+        <Empty title="لم يُحدد لاعب البطولة بعد" icon="ribbon-outline" />
+      )}
+    </>
   );
 }
 

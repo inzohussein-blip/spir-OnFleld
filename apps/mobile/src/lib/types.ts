@@ -128,7 +128,7 @@ export interface LeaderRow {
   value: number;
 }
 
-export type PitchSlot = 'GK' | 'LB' | 'CB1' | 'CB2' | 'RB' | 'CM1' | 'CM2' | 'CM3' | 'LW' | 'ST' | 'RW';
+export type PitchSlot = 'GK' | 'LB' | 'CB1' | 'CB2' | 'RB' | 'CM1' | 'CM2' | 'CM3' | 'LW' | 'ST' | 'RW' | 'SUB1' | 'SUB2';
 export interface TeamOfWeekEntry {
   slot: PitchSlot;
   card: PlayerCard;
@@ -184,4 +184,80 @@ export interface TournamentDetail extends Tournament {
   teams: TournamentTeam[];
   fixtures: Fixture[];
   scorers: LeaderRow[];
+  player_stats: TournamentPlayerStat[];
+}
+
+// ---------- اختبارات الأندية (الكشافة) ----------
+export type TrialStatus = 'upcoming' | 'open' | 'closed';
+export type ApplicationStatus = 'pending' | 'accepted' | 'rejected';
+export interface Trial {
+  id: string;
+  club_name: string;
+  title: string;
+  description: string;
+  age_min: number;
+  age_max: number;
+  positions: Position[];
+  venue_name: string;
+  trial_date: string;
+  status: TrialStatus;
+  is_free: boolean;
+  verified_club: boolean;
+  applicants: number;
+  my_application: { status: ApplicationStatus; scout_note: string | null } | null;
+}
+
+// ---------- المنشورات ----------
+export type PostCategory = 'full' | 'small';
+export interface Post {
+  id: string;
+  category: PostCategory;
+  title: string;
+  body: string;
+  venue_name: string | null;
+  cover_color: string;
+  media_count: number;
+  created_at: string;
+}
+
+// ---------- المحادثات ----------
+export type ChannelKind = 'general' | 'announcements' | 'support';
+export interface ChatChannel {
+  id: ChannelKind;
+  title: string;
+  subtitle: string;
+  last_message: { sender_name: string; body: string; created_at: string } | null;
+  important: boolean;
+  can_post: boolean;
+}
+export interface ChatMessage {
+  id: string;
+  channel: ChannelKind;
+  sender_id: string;
+  sender_name: string;
+  is_admin: boolean;
+  body: string;
+  created_at: string;
+}
+
+// ---------- المحفظة ----------
+export interface WalletTx {
+  id: string;
+  kind: 'topup' | 'payment' | 'reward' | 'refund';
+  amount: number; // موجب = إضافة، سالب = خصم
+  note: string;
+  created_at: string;
+}
+export interface Wallet {
+  balance: number;
+  transactions: WalletTx[];
+}
+
+// ---------- إحصائيات البطولة ----------
+export interface TournamentPlayerStat {
+  profile: Profile;
+  goals: number;
+  assists: number;
+  yellow: number;
+  red: number;
 }
