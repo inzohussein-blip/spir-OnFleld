@@ -1,0 +1,78 @@
+# بناء تطبيق الأندرويد (APK) على خوادم GitHub — بدون حساب EAS
+name: Android APK
+
+on:
+  push:
+    paths: ['apps/mobile/**', '.github/workflows/android.yml']
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: apps/mobile
+    env:
+      # اختياري: أضفهما في Settings → Secrets → Actions لربط التطبيق بـ Supabase
+      # بدونهما يعمل التطبيق بالوضع التجريبي
+      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: تثبيت المكتبات
+        run: npm ci
+
+      - name: فحص الأنواع والاختبارات
+        run: |
+          npx tsc --noEmit
+          npm test
+
+      - name: توليد مشروع الأندرويد
+        run: npx expo prebuild --platform android --no-install
+
+      - name: بناء APK
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: تسمية الملف
+        run: |
+          mkdir -p out
+          cp android/app/build/outputs/apk/release/app-release.apk "out/balmalaab-${GITHUB_SHA::7}.apk"
+
+      - name: رفع الـ APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: balmalaab-android
+          path: apps/mobile/out/*.apk
+          retention-days: 30
+
+      - name: نشر إصدار (عند وسم v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: apps/mobile/out/*.apk
+          prerelease: true
