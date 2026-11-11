@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { api } from './api';
 import type { Profile } from './types';
 
@@ -50,23 +50,45 @@ export function useSession() {
 export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setData(await fn());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  const [doneKey, setDoneKey] = useState<string | null>(null);
+  const [reloading, setReloading] = useState(false);
+  // آخر نسخة من الدالة، وتسلسل الطلبات حتى لا يكتب ردّ قديم فوق ردّ أحدث
+  const fnRef = useRef(fn);
+  const seq = useRef(0);
   useEffect(() => {
-    load();
-  }, [load]);
-  return { data, error, loading, reload: load, setData };
+    fnRef.current = fn;
+  });
+  const key = JSON.stringify(deps);
+
+  const run = useCallback(async (k: string) => {
+    const mine = ++seq.current;
+    try {
+      const result = await fnRef.current();
+      if (mine === seq.current) {
+        setData(result);
+        setError(null);
+      }
+    } catch (e) {
+      if (mine === seq.current) setError(errMsg(e));
+    } finally {
+      if (mine === seq.current) setDoneKey(k);
+    }
+  }, []);
+
+  useEffect(() => {
+    void run(key);
+  }, [key, run]);
+
+  const reload = useCallback(async () => {
+    setReloading(true);
+    try {
+      await run(key);
+    } finally {
+      setReloading(false);
+    }
+  }, [key, run]);
+
+  return { data, error, loading: doneKey !== key || reloading, reload, setData };
 }
 
 export const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));

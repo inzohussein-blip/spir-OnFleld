@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 import type { Api, ProfileInput } from './types';
+import { toWesternDigits } from '../format';
 import { attributesFromRating, overallOf, pickTeamOfWeek } from '../stats';
 import type { ChannelKind, ChatChannel, ChatMessage, Post, Trial, Wallet, Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue } from '../types';
 
@@ -10,7 +11,7 @@ const EMPTY_STATS: PlayerStats = { matches: 0, wins: 0, draws: 0, losses: 0, goa
 
 /** يحوّل الرقم المحلي العراقي (07xxxxxxxxx) إلى الصيغة الدولية */
 export function toE164(phone: string) {
-  const digits = phone.replace(/\D/g, '');
+  const digits = toWesternDigits(phone).replace(/\D/g, '');
   if (digits.startsWith('964')) return `+${digits}`;
   if (digits.startsWith('0')) return `+964${digits.slice(1)}`;
   return `+964${digits}`;

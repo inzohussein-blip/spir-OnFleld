@@ -127,11 +127,18 @@ export default function TournamentScreen() {
               {list.map((f) => (
                 <Card key={f.id}>
                   <Row style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
-                    <Text style={st.teamCell} numberOfLines={1}>{teamName_(f.home_id)}</Text>
-                    <View style={st.score}>
-                      <Text style={st.scoreText}>{f.home_score ?? '-'} : {f.away_score ?? '-'}</Text>
+                    <View style={[st.teamBox, { alignItems: 'flex-start' }]}>
+                      <Text style={st.teamCell} numberOfLines={1}>{teamName_(f.home_id)}</Text>
                     </View>
-                    <Text style={[st.teamCell, { textAlign: 'left' }]} numberOfLines={1}>{teamName_(f.away_id)}</Text>
+                    {/* المضيف ونتيجته على جهة البداية (اليمين) */}
+                    <View style={st.score}>
+                      <Text style={st.scoreText}>{f.home_score ?? '-'}</Text>
+                      <Text style={st.scoreSep}>:</Text>
+                      <Text style={st.scoreText}>{f.away_score ?? '-'}</Text>
+                    </View>
+                    <View style={[st.teamBox, { alignItems: 'flex-end' }]}>
+                      <Text style={st.teamCell} numberOfLines={1}>{teamName_(f.away_id)}</Text>
+                    </View>
                   </Row>
                   <Text variant="small" style={{ color: c.muted, textAlign: 'center' }}>
                     {f.group_name ? `المجموعة ${f.group_name} · ` : ''}
@@ -233,9 +240,11 @@ const useStyles = themed((c) => ({
   tr: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: c.border, borderRadius: 6 },
   th: { width: 36, textAlign: 'center', color: c.muted, fontSize: 12 },
   td: { width: 36, textAlign: 'center', fontSize: 14 },
-  teamCell: { flex: 1, fontFamily: fonts.semibold, fontSize: 15 },
-  score: { backgroundColor: c.cardAlt, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 2, marginHorizontal: 8 },
-  scoreText: { fontFamily: fonts.bold, fontSize: 18, writingDirection: 'ltr' },
+  teamBox: { flex: 1 },
+  teamCell: { fontFamily: fonts.semibold, fontSize: 15 },
+  score: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.cardAlt, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 2, marginHorizontal: 8 },
+  scoreText: { fontFamily: fonts.bold, fontSize: 18 },
+  scoreSep: { fontFamily: fonts.bold, fontSize: 16, color: c.muted },
   teamRow: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border, flexWrap: 'nowrap' },
   shield: { width: 34, height: 34, borderRadius: 10, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
 }));

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { type ComponentProps, type ReactNode } from 'react';
+import { Children, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -12,14 +12,22 @@ import {
   type TextProps,
   type ViewStyle,
 } from 'react-native';
+import { toWesternDigits } from '../lib/format';
 import { fonts, radius, themed, useColors } from '../theme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 type Variant = 'body' | 'title' | 'h2' | 'muted' | 'small';
 
-export function Text({ variant = 'body', style, ...rest }: TextProps & { variant?: Variant }) {
+/** كل النصوص تُعرض بالأرقام 1,2,3 حتى لو أدخلها المستخدم بأرقام عربية-هندية */
+const western = (children: ReactNode) => Children.map(children, (ch) => (typeof ch === 'string' ? toWesternDigits(ch) : ch));
+
+export function Text({ variant = 'body', style, children, ...rest }: TextProps & { variant?: Variant }) {
   const s = useStyles();
-  return <RNText {...rest} style={[s.base, s[variant], style]} />;
+  return (
+    <RNText {...rest} style={[s.base, s[variant], style]}>
+      {western(children)}
+    </RNText>
+  );
 }
 
 export function Icon({ name, size = 20, color }: { name: IconName; size?: number; color?: string }) {
@@ -92,11 +100,16 @@ export function Button({
 export function Input(props: TextInputProps & { label?: string }) {
   const s = useStyles();
   const c = useColors();
-  const { label, style, ...rest } = props;
+  const { label, style, onChangeText, ...rest } = props;
   return (
     <View style={{ gap: 6 }}>
       {label ? <Text variant="small">{label}</Text> : null}
-      <TextInput placeholderTextColor={c.muted} {...rest} style={[s.input, style]} />
+      <TextInput
+        placeholderTextColor={c.muted}
+        {...rest}
+        onChangeText={onChangeText ? (v) => onChangeText(toWesternDigits(v)) : undefined}
+        style={[s.input, style]}
+      />
     </View>
   );
 }

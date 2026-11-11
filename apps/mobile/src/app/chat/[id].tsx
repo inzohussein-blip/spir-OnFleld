@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, TextInput, View } from 'react-native';
 import { ErrorText, Loading, Text } from '../../components/ui';
 import { api } from '../../lib/api';
-import { timeAgo } from '../../lib/format';
+import { timeAgo, toWesternDigits } from '../../lib/format';
 import { errMsg, useAsync, useSession } from '../../lib/session';
 import type { ChannelKind, ChatMessage } from '../../lib/types';
 import { fonts, themed, useColors } from '../../theme';
@@ -76,7 +76,7 @@ export default function ChatRoom() {
         <View style={st.composer}>
           <TextInput
             value={text}
-            onChangeText={setText}
+            onChangeText={(v) => setText(toWesternDigits(v))}
             placeholder="اكتب رسالة…"
             placeholderTextColor={c.muted}
             style={st.input}

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
 import { Card, Empty, Loading, Row, Screen, SectionTitle, Text, type IconName } from '../components/ui';
 import { api } from '../lib/api';
-import { formatIQD, timeAgo } from '../lib/format';
+import { formatIQD, formatSigned, timeAgo } from '../lib/format';
 import { useAsync } from '../lib/session';
 import type { WalletTx } from '../lib/types';
 import { fonts, useColors } from '../theme';
@@ -38,9 +38,7 @@ export default function WalletScreen() {
               <Text style={{ fontFamily: fonts.semibold }}>{t.note}</Text>
               <Text variant="small" style={{ color: c.muted }}>{KIND[t.kind].label} · {timeAgo(t.created_at)}</Text>
             </View>
-            <Text style={{ fontFamily: fonts.bold, color: t.amount >= 0 ? '#1C8B4A' : c.danger, writingDirection: 'ltr' }}>
-              {t.amount >= 0 ? '+' : '−'}{formatIQD(Math.abs(t.amount))}
-            </Text>
+            <Text style={{ fontFamily: fonts.bold, color: t.amount >= 0 ? '#1C8B4A' : c.danger }}>{formatSigned(t.amount)}</Text>
           </Row>
         ))}
       </Card>

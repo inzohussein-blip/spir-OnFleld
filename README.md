@@ -36,10 +36,27 @@
 
 ## التطوير محلياً
 
+يتطلب Node.js 22.18 أو أحدث (يُبنى على GitHub بـ Node 26 LTS).
+
 ```bash
 cd apps/mobile
 npm install
 npm run web        # في المتصفح
 npm run android    # على جهاز/محاكي أندرويد
-npm run typecheck && npm test
+npm run typecheck && npm run lint && npm test
 ```
+
+## الإصدارات
+
+| المكوّن | الإصدار |
+|--------|---------|
+| Expo SDK | 58 (أحدث إصدار) — كل المكتبات الأصلية بالإصدارات المعتمدة له |
+| React Native / React | 0.88 / 19.3 |
+| TypeScript | 6.0 (الإصدار 7 غير متوافق بعد مع أدوات ESLint الخاصة بـ Expo) |
+| ESLint | 9 (الإصدار 10 غير مدعوم بعد من إعدادات Expo) |
+| Supabase JS | 2.119 |
+| Node.js في GitHub Actions | 26 LTS |
+
+## الأرقام
+
+كل الأرقام تُعرض بالصيغة 1، 2، 3 على كل الأجهزة. وإذا كتب المستخدم أرقاماً عربية-هندية (٠١٢…) في أي حقل، تتحول تلقائياً إلى 0-9.

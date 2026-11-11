@@ -37,7 +37,7 @@ export function MatchCard({ match }: { match: Match }) {
       <View style={{ gap: 4 }}>
         <Progress value={match.joined_count} max={match.max_players} />
         <Text variant="small" style={{ color: colors.muted }}>
-          {match.joined_count} / {match.max_players} لاعب
+          {match.joined_count} من {match.max_players} لاعب
         </Text>
       </View>
     </Card>

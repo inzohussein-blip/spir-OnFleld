@@ -24,7 +24,7 @@ export default function VenueScreen() {
   const [busy, setBusy] = useState<BusyRange[]>([]);
   const [startHour, setStartHour] = useState<number | null>(null);
   const [hours, setHours] = useState(1);
-  const [perSide, setPerSide] = useState(5);
+  const [perSideChoice, setPerSide] = useState<number | null>(null);
   const [level, setLevel] = useState<SkillLevel>('open');
   const [isPublic, setIsPublic] = useState(true);
   const [title, setTitle] = useState('');
@@ -33,15 +33,34 @@ export default function VenueScreen() {
 
   const field = venue?.fields.find((f) => f.id === fieldId) ?? venue?.fields[0] ?? null;
 
-  useEffect(() => {
-    if (field) setPerSide(field.players_per_side);
-  }, [field?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // الافتراضي: حجم الملعب المختار، ما لم يغيّره المستخدم
+  const perSide = perSideChoice ?? field?.players_per_side ?? 5;
+  const fieldKey = field?.id;
+  const day = days[dayIdx];
 
   useEffect(() => {
-    if (!field) return;
+    if (!fieldKey) return;
+    let alive = true;
+    api
+      .getBusy(fieldKey, day)
+      .then((b) => alive && setBusy(b))
+      .catch(() => alive && setBusy([]));
+    return () => {
+      alive = false;
+    };
+  }, [fieldKey, day]);
+
+  const pickField = (id: string) => {
+    setFieldId(id);
+    setPerSide(null);
     setStartHour(null);
-    api.getBusy(field.id, days[dayIdx]).then(setBusy).catch(() => setBusy([]));
-  }, [field?.id, dayIdx]); // eslint-disable-line react-hooks/exhaustive-deps
+    setHours(1);
+  };
+  const pickDay = (i: number) => {
+    setDayIdx(i);
+    setStartHour(null);
+    setHours(1);
+  };
 
   const slots = field ? computeSlots(field, days[dayIdx], busy) : [];
   const canExtend = (h: number, n: number) =>
@@ -92,7 +111,7 @@ export default function VenueScreen() {
       <Text variant="h2">1. اختر الملعب</Text>
       <Row>
         {venue.fields.map((f) => (
-          <Chip key={f.id} label={`${f.name} · ${formatFormat(f.players_per_side)} · ${formatIQD(f.default_price)}`} active={f.id === field.id} onPress={() => setFieldId(f.id)} />
+          <Chip key={f.id} label={`${f.name} · ${formatFormat(f.players_per_side)} · ${formatIQD(f.default_price)}`} active={f.id === field.id} onPress={() => pickField(f.id)} />
         ))}
       </Row>
       <Text variant="muted">
@@ -102,7 +121,7 @@ export default function VenueScreen() {
       <Text variant="h2">2. اختر اليوم والساعة</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
         {days.map((d, i) => (
-          <Chip key={i} label={formatDay(d)} active={i === dayIdx} onPress={() => setDayIdx(i)} />
+          <Chip key={i} label={formatDay(d)} active={i === dayIdx} onPress={() => pickDay(i)} />
         ))}
       </ScrollView>
       <View style={styles.grid}>

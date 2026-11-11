@@ -1,10 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Button, Card, ErrorText, Loading, Row, Screen, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { errMsg, useAsync } from '../../lib/session';
-import type { MatchEvent, RosterEntry, Team } from '../../lib/types';
+import type { MatchDetail, MatchEvent, RosterEntry, Team } from '../../lib/types';
 import { fonts, themed, useColors } from '../../theme';
 
 type Counts = Record<string, { goal: number; assist: number }>;
@@ -22,27 +22,28 @@ function Stepper({ value, onChange, big }: { value: number; onChange: (n: number
 
 export default function ResultScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { data: m, loading } = useAsync(() => api.getMatch(id), [id]);
+  if (loading || !m) return <Loading />;
+  return <ResultEditor m={m} />;
+}
+
+function initialCounts(m: MatchDetail): Counts {
+  const init: Counts = {};
+  for (const e of m.events) {
+    init[e.player_id] ??= { goal: 0, assist: 0 };
+    init[e.player_id][e.kind]++;
+  }
+  return init;
+}
+
+function ResultEditor({ m }: { m: MatchDetail }) {
   const router = useRouter();
   const c = useColors();
   const st = useStyles();
-  const { data: m, loading } = useAsync(() => api.getMatch(id), [id]);
-  const [score, setScore] = useState<Record<Team, number>>({ A: 0, B: 0 });
-  const [counts, setCounts] = useState<Counts>({});
+  const [score, setScore] = useState<Record<Team, number>>({ A: m.score_a ?? 0, B: m.score_b ?? 0 });
+  const [counts, setCounts] = useState<Counts>(() => initialCounts(m));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!m) return;
-    setScore({ A: m.score_a ?? 0, B: m.score_b ?? 0 });
-    const init: Counts = {};
-    for (const e of m.events) {
-      init[e.player_id] ??= { goal: 0, assist: 0 };
-      init[e.player_id][e.kind]++;
-    }
-    setCounts(init);
-  }, [m]);
-
-  if (loading || !m) return <Loading />;
   const joined = m.roster.filter((r) => r.status === 'joined' && r.team);
   const get = (pid: string, k: 'goal' | 'assist') => counts[pid]?.[k] ?? 0;
   const set = (pid: string, k: 'goal' | 'assist', n: number) => setCounts((s) => ({ ...s, [pid]: { ...{ goal: 0, assist: 0 }, ...s[pid], [k]: n } }));
@@ -60,7 +61,7 @@ export default function ResultScreen() {
     }
     setBusy(true);
     try {
-      await api.submitResult(m!.id, { score_a: score.A, score_b: score.B, events });
+      await api.submitResult(m.id, { score_a: score.A, score_b: score.B, events });
       router.back();
     } catch (e) {
       setError(errMsg(e));
@@ -73,7 +74,7 @@ export default function ResultScreen() {
     <Card key={t}>
       <Row style={{ justifyContent: 'space-between' }}>
         <Text variant="h2" style={{ color: t === 'A' ? c.teamA : c.teamB }}>{t === 'A' ? 'الفريق الأزرق' : 'الفريق البرتقالي'}</Text>
-        <Text variant="small" style={{ color: c.muted }}>أهداف مسجّلة {teamGoals(t)} / {score[t]}</Text>
+        <Text variant="small" style={{ color: c.muted }}>أهداف مسجّلة {teamGoals(t)} من {score[t]}</Text>
       </Row>
       <Row style={{ justifyContent: 'flex-end', gap: 28 }}>
         <Text variant="small" style={{ color: c.muted }}>⚽ أهداف</Text>
@@ -81,7 +82,7 @@ export default function ResultScreen() {
       </Row>
       {players.map((r) => (
         <Row key={r.player_id} style={st.playerRow}>
-          <Text style={{ flex: 1, fontFamily: fonts.semibold }} numberOfLines={1}>{r.profile.full_name}</Text>
+          <Text style={{ flex: 1, fontFamily: fonts.semibold }} numberOfLines={2}>{r.profile.full_name}</Text>
           <Stepper value={get(r.player_id, 'goal')} onChange={(n) => set(r.player_id, 'goal', n)} />
           <Stepper value={get(r.player_id, 'assist')} onChange={(n) => set(r.player_id, 'assist', n)} />
         </Row>

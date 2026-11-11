@@ -34,18 +34,18 @@ export default function Tournaments() {
               <Text style={{ color: c.onPrimary, opacity: 0.85 }}>📍 {t.venue_name} · يبدأ {formatDay(new Date(t.starts_on))}</Text>
             </View>
             <View style={{ padding: 14, gap: 10 }}>
-              <Row style={{ flexWrap: 'nowrap' }}>
+              <Row style={{ flexWrap: 'nowrap', alignItems: 'stretch' }}>
                 <Info icon="people" label={`${t.team_count} فريق`} hint={formatFormat(t.players_per_side)} />
                 <Info icon="git-network" label={t.format} hint="نظام البطولة" />
               </Row>
-              <Row style={{ flexWrap: 'nowrap' }}>
+              <Row style={{ flexWrap: 'nowrap', alignItems: 'stretch' }}>
                 <Info icon="cash" label={formatIQD(t.team_fee)} hint={`اشتراك الفريق · ${formatIQD(t.player_fee)} للاعب`} />
                 {t.prize ? <Info icon="medal" label={t.prize} hint="الجائزة" /> : null}
               </Row>
               <View style={{ gap: 4 }}>
                 <Progress value={t.registered_teams} max={t.team_count} />
                 <Text variant="small" style={{ color: c.muted }}>
-                  {t.registered_teams} / {t.team_count} فرق مسجّلة
+                  {t.registered_teams} من {t.team_count} فرق مسجّلة
                 </Text>
               </View>
             </View>
@@ -62,8 +62,8 @@ function Info({ icon, label, hint }: { icon: 'people' | 'git-network' | 'cash' |
     <View style={{ flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center', backgroundColor: c.cardAlt, borderRadius: 12, padding: 10 }}>
       <Ionicons name={icon} size={20} color={c.primary} />
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 14 }} numberOfLines={1}>{label}</Text>
-        <Text variant="small" style={{ color: c.muted }} numberOfLines={1}>{hint}</Text>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 14 }} numberOfLines={2}>{label}</Text>
+        <Text variant="small" style={{ color: c.muted }} numberOfLines={2}>{hint}</Text>
       </View>
     </View>
   );

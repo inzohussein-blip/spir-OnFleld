@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Api, ProfileInput } from './types';
 import type { BusyRange } from '../slots';
+import { toWesternDigits } from '../format';
 import { attributesFromRating, overallOf, pickTeamOfWeek } from '../stats';
 import type {
   Attributes,
@@ -372,11 +373,11 @@ export const demoApi: Api = {
   },
   async sendOtp(phone) {
     await delay();
-    if (phone.replace(/\D/g, '').length < 10) throw new Error('رقم الهاتف غير صحيح');
+    if (toWesternDigits(phone).replace(/\D/g, '').length < 10) throw new Error('رقم الهاتف غير صحيح');
   },
   async verifyOtp(_phone, code) {
     await delay();
-    if (code !== '1234') throw new Error('رمز التحقق غير صحيح (في الوضع التجريبي الرمز هو 1234)');
+    if (toWesternDigits(code).trim() !== '1234') throw new Error('رمز التحقق غير صحيح (في الوضع التجريبي الرمز هو 1234)');
     (await db()).signedIn = true;
     await save();
   },

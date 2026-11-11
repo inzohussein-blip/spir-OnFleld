@@ -42,7 +42,7 @@ function TeamColumn({ team, players, me, m }: { team: Team; players: RosterEntry
         const g = count(r.player_id, 'goal');
         const a = count(r.player_id, 'assist');
         return (
-          <Text key={r.player_id} variant="small" numberOfLines={1}>
+          <Text key={r.player_id} variant="small" numberOfLines={2}>
             {r.position === 'goalkeeper' || r.profile.preferred_position === 'goalkeeper' ? '🧤 ' : '• '}
             {r.profile.full_name}
             {r.player_id === me ? ' (أنت)' : ''}
@@ -128,14 +128,17 @@ export default function MatchScreen() {
 
       {hasResult ? (
         <View style={st.scoreBoard}>
+          {/* عناصر منفصلة: في الاتجاه من اليمين لليسار يظهر الأزرق ونتيجته يميناً */}
           <View style={st.scoreSide}><Text style={[st.scoreTeam, { color: '#9CC8FF' }]}>الأزرق</Text></View>
-          <Text style={st.scoreBig}>{m.score_a} - {m.score_b}</Text>
+          <Text style={st.scoreBig}>{m.score_a}</Text>
+          <Text style={st.scoreDash}>-</Text>
+          <Text style={st.scoreBig}>{m.score_b}</Text>
           <View style={st.scoreSide}><Text style={[st.scoreTeam, { color: '#FFC08A' }]}>البرتقالي</Text></View>
         </View>
       ) : (
         <Card>
           <Row style={{ justifyContent: 'space-between' }}>
-            <Text variant="h2">{joined.length} / {m.max_players} لاعب</Text>
+            <Text variant="h2">{joined.length} من {m.max_players} لاعب</Text>
             <Text style={{ fontFamily: fonts.bold, color: left > 0 ? c.primary : c.accent }}>
               {finished ? 'انتهت' : left > 0 ? `باقي ${left}` : 'مكتملة'}
             </Text>
@@ -208,8 +211,9 @@ const useStyles = themed((c) => ({
   player: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.border },
   initial: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
   teamCol: { flex: 1, borderWidth: 2, borderRadius: 14, padding: 10, gap: 2, backgroundColor: c.card },
-  scoreBoard: { backgroundColor: '#13201A', borderRadius: 18, paddingVertical: 18, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },
+  scoreBoard: { backgroundColor: '#0E1730', borderRadius: 18, paddingVertical: 18, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },
   scoreSide: { flex: 1, alignItems: 'center' },
   scoreTeam: { fontFamily: fonts.bold, fontSize: 15 },
-  scoreBig: { fontFamily: fonts.bold, fontSize: 40, lineHeight: 56, color: '#fff', writingDirection: 'ltr' },
+  scoreBig: { fontFamily: fonts.bold, fontSize: 40, lineHeight: 56, color: '#fff', minWidth: 36, textAlign: 'center' },
+  scoreDash: { fontFamily: fonts.bold, fontSize: 32, lineHeight: 56, color: 'rgba(255,255,255,0.6)', marginHorizontal: 6 },
 }));
