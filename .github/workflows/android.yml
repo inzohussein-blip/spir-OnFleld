@@ -49,8 +49,8 @@ jobs:
 
       - name: فحص الأنواع والتنسيق والاختبارات
         run: |
-          npx tsc --noEmit
-          npx eslint .
+          npm run typecheck
+          npm run lint
           npm test
 
       - name: توليد مشروع الأندرويد

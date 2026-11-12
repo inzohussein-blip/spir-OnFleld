@@ -6,48 +6,51 @@
     "@expo-google-fonts/cairo": "^0.4.2",
     "@expo/metro-runtime": "~58.0.17",
     "@expo/vector-icons": "^15.0.2",
-    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-async-storage/async-storage": "3.1.1",
     "@supabase/supabase-js": "^2.119.0",
     "expo": "~58.0.23",
     "expo-constants": "~58.0.15",
     "expo-font": "~58.0.11",
-    "expo-linking": "~58.0.16",
+    "expo-linking": "^58.0.17",
     "expo-localization": "~58.0.5",
-    "expo-router": "~58.0.30",
+    "expo-router": "^58.0.31",
     "expo-splash-screen": "~58.0.13",
-    "expo-status-bar": "~58.0.4",
+    "expo-status-bar": "^58.0.5",
     "expo-system-ui": "~58.0.7",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "react-native": "0.88.1",
     "react-native-safe-area-context": "~5.11.1",
     "react-native-screens": "~4.30.1",
     "react-native-web": "~0.21.4"
   },
   "devDependencies": {
+    "@eslint-react/eslint-plugin": "^5.30.2",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.6",
     "@types/react": "~19.3.0",
-    "eslint": "^9.39.5",
-    "eslint-config-expo": "^58.0.4",
-    "typescript": "~6.0.3"
+    "eslint": "^10.14.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-expo": "^1.2.1",
+    "eslint-plugin-import-x": "^4.18.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.14.0",
+    "typescript": "~6.0.3",
+    "typescript-7": "npm:typescript@^7.0.2",
+    "typescript-eslint": "^8.72.2"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "web": "expo start --web",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "node node_modules/typescript-7/bin/tsc --noEmit",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/*.test.mts",
     "build:web": "expo export --platform web && node scripts/pwa.mjs",
-    "lint": "expo lint"
+    "lint": "eslint . --max-warnings=0"
   },
   "private": true,
   "overrides": {
-    "@expo/fingerprint": {
-      "minimatch": "^11.0.8"
-    },
-    "@typescript-eslint/typescript-estree": {
-      "minimatch": "^11.0.8"
-    }
+    "minimatch@>=7.0.0 <11.0.1": "^11.0.8"
   },
   "engines": {
     "node": ">=22.18"

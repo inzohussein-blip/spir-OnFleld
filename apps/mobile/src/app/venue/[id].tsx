@@ -24,7 +24,7 @@ export default function VenueScreen() {
   const [busy, setBusy] = useState<BusyRange[]>([]);
   const [startHour, setStartHour] = useState<number | null>(null);
   const [hours, setHours] = useState(1);
-  const [perSideChoice, setPerSide] = useState<number | null>(null);
+  const [perSideChoice, setPerSideChoice] = useState<number | null>(null);
   const [level, setLevel] = useState<SkillLevel>('open');
   const [isPublic, setIsPublic] = useState(true);
   const [title, setTitle] = useState('');
@@ -52,7 +52,7 @@ export default function VenueScreen() {
 
   const pickField = (id: string) => {
     setFieldId(id);
-    setPerSide(null);
+    setPerSideChoice(null);
     setStartHour(null);
     setHours(1);
   };
@@ -121,7 +121,7 @@ export default function VenueScreen() {
       <Text variant="h2">2. اختر اليوم والساعة</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
         {days.map((d, i) => (
-          <Chip key={i} label={formatDay(d)} active={i === dayIdx} onPress={() => pickDay(i)} />
+          <Chip key={d.toISOString()} label={formatDay(d)} active={i === dayIdx} onPress={() => pickDay(i)} />
         ))}
       </ScrollView>
       <View style={styles.grid}>
@@ -158,7 +158,7 @@ export default function VenueScreen() {
       <Text variant="small">عدد اللاعبين لكل فريق</Text>
       <Row>
         {[3, 4, 5, 6, 7, 8, 9, 11].map((n) => (
-          <Chip key={n} label={formatFormat(n)} active={perSide === n} onPress={() => setPerSide(n)} />
+          <Chip key={n} label={formatFormat(n)} active={perSide === n} onPress={() => setPerSideChoice(n)} />
         ))}
       </Row>
       <Text variant="small">المستوى المطلوب</Text>

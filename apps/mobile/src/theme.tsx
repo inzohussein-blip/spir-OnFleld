@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { StyleSheet, useColorScheme } from 'react-native';
 
 export type Palette = {
@@ -88,32 +88,32 @@ interface ThemeState {
 }
 
 const KEY = 'balmalaab-theme';
-const Ctx = createContext<ThemeState>({ mode: 'system', scheme: 'light', colors: light, setMode: () => {} });
+const ThemeContext = createContext<ThemeState>({ mode: 'system', scheme: 'light', colors: light, setMode: () => {} });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const system = useColorScheme();
-  const [mode, setModeState] = useState<ThemeMode>('system');
+  const [mode, setMode] = useState<ThemeMode>('system');
 
   useEffect(() => {
     AsyncStorage.getItem(KEY)
       .then((v) => {
-        if (v === 'light' || v === 'dark' || v === 'system') setModeState(v);
+        if (v === 'light' || v === 'dark' || v === 'system') setMode(v);
       })
       .catch(() => {});
   }, []);
 
-  const setMode = useCallback((m: ThemeMode) => {
-    setModeState(m);
+  const changeMode = useCallback((m: ThemeMode) => {
+    setMode(m);
     AsyncStorage.setItem(KEY, m).catch(() => {});
   }, []);
 
   const scheme = mode === 'system' ? (system === 'dark' ? 'dark' : 'light') : mode;
-  const value = useMemo(() => ({ mode, scheme, colors: scheme === 'dark' ? dark : light, setMode }), [mode, scheme, setMode]);
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  const value = useMemo(() => ({ mode, scheme, colors: scheme === 'dark' ? dark : light, setMode: changeMode }), [mode, scheme, changeMode]);
+  return <ThemeContext value={value}>{children}</ThemeContext>;
 }
 
-export const useTheme = () => useContext(Ctx);
-export const useColors = () => useContext(Ctx).colors;
+export const useTheme = () => use(ThemeContext);
+export const useColors = () => use(ThemeContext).colors;
 
 /** أنماط تعتمد على الألوان: تُحسب مرة لكل وضع (فاتح/داكن) */
 type StylesInput = Parameters<typeof StyleSheet.create>[0];

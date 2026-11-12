@@ -106,8 +106,8 @@ export default function TournamentScreen() {
               {rows.map((r, i) => (
                 <View key={r.team.id} style={[st.tr, i < 2 && { backgroundColor: c.primarySoft }]}>
                   <Text style={[st.td, { flex: 1, textAlign: 'auto', fontFamily: fonts.semibold }]} numberOfLines={1}>{i + 1}. {r.team.name}</Text>
-                  {[r.played, r.won, r.drawn, r.lost, r.gd > 0 ? `+${r.gd}` : r.gd, r.points].map((v, k) => (
-                    <Text key={k} style={[st.td, k === 5 && { fontFamily: fonts.bold, color: c.primary }]}>{v}</Text>
+                  {([['played', r.played], ['won', r.won], ['drawn', r.drawn], ['lost', r.lost], ['gd', r.gd > 0 ? `+${r.gd}` : r.gd], ['points', r.points]] as const).map(([col, v]) => (
+                    <Text key={col} style={[st.td, col === 'points' && { fontFamily: fonts.bold, color: c.primary }]}>{v}</Text>
                   ))}
                 </View>
               ))}

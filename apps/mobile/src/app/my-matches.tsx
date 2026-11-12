@@ -3,13 +3,13 @@ import { useCallback } from 'react';
 import { MatchCard } from '../components/MatchCard';
 import { Empty, ErrorText, Loading, Screen, Text } from '../components/ui';
 import { api } from '../lib/api';
-import { useAsync } from '../lib/session';
+import { useAsync, useNow } from '../lib/session';
 
 export default function MyMatches() {
   const { data, error, loading, reload } = useAsync(() => api.listMyMatches(), []);
   useFocusEffect(useCallback(() => void reload(), [reload]));
 
-  const now = new Date().toISOString();
+  const now = new Date(useNow()).toISOString();
   const upcoming = (data ?? []).filter((m) => m.ends_at > now).reverse();
   const past = (data ?? []).filter((m) => m.ends_at <= now);
 

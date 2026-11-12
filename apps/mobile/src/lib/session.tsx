@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, use, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { api } from './api';
 import type { Profile } from './types';
 
@@ -10,7 +10,7 @@ interface SessionState {
   signOut: () => Promise<void>;
 }
 
-const Ctx = createContext<SessionState | null>(null);
+const SessionContext = createContext<SessionState | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
@@ -37,11 +37,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     refresh();
   }, [refresh]);
 
-  return <Ctx.Provider value={{ ready, userId, profile, refresh, signOut }}>{children}</Ctx.Provider>;
+  return <SessionContext value={{ ready, userId, profile, refresh, signOut }}>{children}</SessionContext>;
 }
 
 export function useSession() {
-  const s = useContext(Ctx);
+  const s = use(SessionContext);
   if (!s) throw new Error('useSession خارج SessionProvider');
   return s;
 }
@@ -54,24 +54,24 @@ export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
   const [reloading, setReloading] = useState(false);
   // آخر نسخة من الدالة، وتسلسل الطلبات حتى لا يكتب ردّ قديم فوق ردّ أحدث
   const fnRef = useRef(fn);
-  const seq = useRef(0);
+  const seqRef = useRef(0);
   useEffect(() => {
     fnRef.current = fn;
   });
   const key = JSON.stringify(deps);
 
   const run = useCallback(async (k: string) => {
-    const mine = ++seq.current;
+    const mine = ++seqRef.current;
     try {
       const result = await fnRef.current();
-      if (mine === seq.current) {
+      if (mine === seqRef.current) {
         setData(result);
         setError(null);
       }
     } catch (e) {
-      if (mine === seq.current) setError(errMsg(e));
+      if (mine === seqRef.current) setError(errMsg(e));
     } finally {
-      if (mine === seq.current) setDoneKey(k);
+      if (mine === seqRef.current) setDoneKey(k);
     }
   }, []);
 
@@ -92,3 +92,13 @@ export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
 }
 
 export const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+/** الوقت الحالي (ms) كقيمة حالة تتحدث دورياً — بدل استدعاء Date أثناء الرسم */
+export function useNow(intervalMs = 60_000) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(t);
+  }, [intervalMs]);
+  return now;
+}

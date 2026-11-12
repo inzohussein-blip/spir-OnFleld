@@ -5,17 +5,20 @@ import { useHeaderButtons } from '../../components/AppHeader';
 import type { IconName } from '../../components/ui';
 import { fonts, useColors } from '../../theme';
 
+function TabIcon({ name, color, focused }: { name: IconName; color: ColorValue; focused: boolean }) {
+  const c = useColors();
+  return (
+    <View style={{ paddingHorizontal: 14, paddingVertical: 3, borderRadius: 12, backgroundColor: focused ? c.primarySoft : 'transparent' }}>
+      <Ionicons name={name} color={color as string} size={22} />
+    </View>
+  );
+}
+
+const icon = (name: IconName) => (props: { color: ColorValue; focused: boolean }) => <TabIcon name={name} {...props} />;
+
 export default function TabsLayout() {
   const c = useColors();
   const header = useHeaderButtons();
-  const icon = (name: IconName) =>
-    function TabIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
-      return (
-        <View style={{ paddingHorizontal: 14, paddingVertical: 3, borderRadius: 12, backgroundColor: focused ? c.primarySoft : 'transparent' }}>
-          <Ionicons name={name} color={color as string} size={22} />
-        </View>
-      );
-    };
   return (
     <Tabs
       screenOptions={{

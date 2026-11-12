@@ -4,7 +4,7 @@ import { Pressable, Share, View } from 'react-native';
 import { Badge, Button, Card, ErrorText, Loading, Progress, Row, Screen, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { formatDateTime, formatFormat, formatIQD, POSITION_LABEL, SKILL_LABEL } from '../../lib/format';
-import { errMsg, useAsync, useSession } from '../../lib/session';
+import { errMsg, useAsync, useNow, useSession } from '../../lib/session';
 import { balanceTeams } from '../../lib/teamBalance';
 import type { MatchDetail, RosterEntry, Team } from '../../lib/types';
 import { fonts, themed, useColors } from '../../theme';
@@ -61,6 +61,7 @@ export default function MatchScreen() {
   const c = useColors();
   const st = useStyles();
   const { userId } = useSession();
+  const now = useNow();
   const { data: m, error, loading, reload } = useAsync(() => api.getMatch(id), [id]);
   useFocusEffect(useCallback(() => void reload(), [reload]));
   const [busy, setBusy] = useState(false);
@@ -73,8 +74,8 @@ export default function MatchScreen() {
   const waitlist = m.roster.filter((r) => r.status === 'waitlist');
   const mine = m.roster.find((r) => r.player_id === userId);
   const isOrganizer = m.organizer_id === userId;
-  const started = new Date(m.starts_at) < new Date();
-  const finished = new Date(m.ends_at) < new Date();
+  const started = new Date(m.starts_at).getTime() < now;
+  const finished = new Date(m.ends_at).getTime() < now;
   const left = m.max_players - joined.length;
   const hasTeams = joined.some((r) => r.team);
   const hasResult = m.score_a != null && m.score_b != null;

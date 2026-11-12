@@ -43,19 +43,25 @@ cd apps/mobile
 npm install
 npm run web        # في المتصفح
 npm run android    # على جهاز/محاكي أندرويد
-npm run typecheck && npm run lint && npm test
+npm run typecheck && npm run lint && npm test   # TypeScript 7 + ESLint 10 + الاختبارات
 ```
 
 ## الإصدارات
 
+كل المكتبات بأحدث إصدار متاح:
+
 | المكوّن | الإصدار |
 |--------|---------|
-| Expo SDK | 58 (أحدث إصدار) — كل المكتبات الأصلية بالإصدارات المعتمدة له |
-| React Native / React | 0.88 / 19.3 |
-| TypeScript | 6.0 (الإصدار 7 غير متوافق بعد مع أدوات ESLint الخاصة بـ Expo) |
-| ESLint | 9 (الإصدار 10 غير مدعوم بعد من إعدادات Expo) |
+| Expo SDK | 58 (أحدث إصدار) |
+| React / React DOM | 19.3.1 |
+| React Native | 0.88.1 |
+| AsyncStorage | 3.1.1 |
+| TypeScript (فحص الأنواع) | 7.0.2 |
+| ESLint | 10 — مع typescript-eslint و @eslint-react و import-x و react-hooks |
 | Supabase JS | 2.119 |
 | Node.js في GitHub Actions | 26 LTS |
+
+ملاحظة: حزمة `typescript` 6.0 موجودة أيضاً لأن أداة `typescript-eslint` (أحدث إصدار) تدعم حتى TypeScript 6.0 فقط؛ فحص الأنواع نفسه (`npm run typecheck`) يعمل بـ TypeScript 7.
 
 ## الأرقام
 

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Children, type ComponentProps, type ReactNode } from 'react';
+import { createElement, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -19,15 +19,13 @@ export type IconName = ComponentProps<typeof Ionicons>['name'];
 type Variant = 'body' | 'title' | 'h2' | 'muted' | 'small';
 
 /** كل النصوص تُعرض بالأرقام 1,2,3 حتى لو أدخلها المستخدم بأرقام عربية-هندية */
-const western = (children: ReactNode) => Children.map(children, (ch) => (typeof ch === 'string' ? toWesternDigits(ch) : ch));
+const western = (ch: ReactNode): ReactNode => (typeof ch === 'string' ? toWesternDigits(ch) : ch);
 
 export function Text({ variant = 'body', style, children, ...rest }: TextProps & { variant?: Variant }) {
   const s = useStyles();
-  return (
-    <RNText {...rest} style={[s.base, s[variant], style]}>
-      {western(children)}
-    </RNText>
-  );
+  const parts = Array.isArray(children) ? children.map(western) : [western(children)];
+  // تمرير الأبناء كوسائط منفصلة يحافظ على سلوك JSX (بدون الحاجة لمفاتيح)
+  return createElement(RNText, { ...rest, style: [s.base, s[variant], style] }, ...parts);
 }
 
 export function Icon({ name, size = 20, color }: { name: IconName; size?: number; color?: string }) {

@@ -20,7 +20,7 @@ export default function ChatRoom() {
   const { data, loading, reload } = useAsync(() => api.listMessages(channel), [channel]);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const list = useRef<FlatList<ChatMessage>>(null);
+  const listRef = useRef<FlatList<ChatMessage>>(null);
   const canPost = channel !== 'announcements';
 
   // تحديث دوري بسيط (يُستبدل بـ Realtime عند الربط بـ Supabase)
@@ -37,7 +37,7 @@ export default function ChatRoom() {
     try {
       await api.sendMessage(channel, body);
       await reload();
-      setTimeout(() => list.current?.scrollToEnd({ animated: true }), 50);
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
     } catch (e) {
       setError(errMsg(e));
       setText(body);
@@ -50,11 +50,11 @@ export default function ChatRoom() {
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
       <Stack.Screen options={{ title: TITLES[channel] }} />
       <FlatList
-        ref={list}
+        ref={listRef}
         data={data ?? []}
         keyExtractor={(m) => m.id}
         contentContainerStyle={{ padding: 16, gap: 10 }}
-        onContentSizeChange={() => list.current?.scrollToEnd({ animated: false })}
+        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
         ListEmptyComponent={<Text variant="muted" style={{ textAlign: 'center' }}>ابدأ المحادثة 👋</Text>}
         renderItem={({ item: m }) => {
           const mine = m.sender_id === userId;
