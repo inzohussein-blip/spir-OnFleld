@@ -1,12 +1,12 @@
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, Share, View } from 'react-native';
+import { Pressable, ScrollView, Share, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActionPill } from '../../components/MatchRow';
-import { Badge, Card, ErrorText, Loading, Progress, Row, Screen, Text, type IconName } from '../../components/ui';
+import { ErrorText, Loading, Row, Screen, Text, type IconName } from '../../components/ui';
 import { api } from '../../lib/api';
-import { formatClock, formatDateTime, formatFormat, formatIQD, POSITION_LABEL, SKILL_LABEL } from '../../lib/format';
+import { formatDateTime, formatFormat, formatIQD, formatTimeRange, POSITION_LABEL } from '../../lib/format';
 import { matchAction } from '../../lib/matchAction';
 import { errMsg, useAsync, useNow, useSession } from '../../lib/session';
 import { balanceTeams } from '../../lib/teamBalance';
@@ -18,16 +18,13 @@ function PlayerRow({ r, me, onPress }: { r: RosterEntry; me: boolean; onPress: (
   const c = useColors();
   return (
     <Pressable onPress={onPress} style={st.player}>
-      <View style={st.initial}><Text style={{ fontFamily: fonts.bold, color: c.primary }}>{r.profile.full_name.slice(0, 1)}</Text></View>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.semibold }}>
-          {r.profile.full_name}
-          {me ? ' (أنت)' : ''}
-        </Text>
-        <Text variant="small" style={{ color: c.muted }}>
-          {POSITION_LABEL[r.position ?? r.profile.preferred_position]} · ★ {r.profile.skill_rating.toFixed(1)} · التزام {Math.round(r.profile.reliability_score)}%
-        </Text>
-      </View>
+      <View style={st.initial}><Text style={{ fontFamily: fonts.bold, fontSize: 18, color: '#fff' }}>{r.profile.full_name.slice(0, 1)}</Text></View>
+      <Text style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 15 }} numberOfLines={2}>
+        {r.profile.full_name}
+        {me ? ' (أنت)' : ''}
+      </Text>
+      <Text variant="small" style={{ width: 52, textAlign: 'center' }}>{POSITION_LABEL[r.position ?? r.profile.preferred_position]}</Text>
+      <Text variant="small" style={{ color: c.muted, width: 64, textAlign: 'left' }}>المستوى {Math.round(r.profile.skill_rating)}</Text>
     </Pressable>
   );
 }
@@ -116,110 +113,89 @@ export default function MatchScreen() {
     });
 
   const action = matchAction(m, now);
-  const primaryPress = () => act(() => api.joinMatch(m.id));
   const startsDate = new Date(m.starts_at);
   const dateText = `${startsDate.getFullYear()}-${String(startsDate.getMonth() + 1).padStart(2, '0')}-${String(startsDate.getDate()).padStart(2, '0')}`;
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <Screen style={{ paddingBottom: 140 }}>
-        {/* رأس المباراة */}
-        <View style={st.hero}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
+        {/* صورة الملعب */}
+        <View style={[st.hero, { paddingTop: insets.top }]}>
           <View style={st.heroHalf} />
           <View style={st.heroCircle} />
-          <View style={st.heroBadges}>
-            <Badge label={formatFormat(m.players_per_side)} tone="yellow" />
-            {isOrganizer ? <Badge label="أنت المنظّم" tone="gray" /> : null}
-          </View>
-          <Text style={st.heroTitle}>{m.title || m.venue_name || 'مباراة'}</Text>
+          <View style={st.heroBoxTop} />
+          <View style={st.heroBoxBottom} />
+          <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} style={[st.back, { top: insets.top + 12 }]} accessibilityLabel="رجوع" hitSlop={8}>
+            <Ionicons name="chevron-forward" size={22} color="#101828" />
+          </Pressable>
         </View>
 
-        {hasResult ? (
-          <View style={st.scoreBoard}>
-            {/* عناصر منفصلة: في الاتجاه من اليمين لليسار يظهر الأزرق ونتيجته يميناً */}
-            <View style={st.scoreSide}><Text style={[st.scoreTeam, { color: '#9CC8FF' }]}>الأزرق</Text></View>
-            <Text style={st.scoreBig}>{m.score_a}</Text>
-            <Text style={st.scoreDash}>-</Text>
-            <Text style={st.scoreBig}>{m.score_b}</Text>
-            <View style={st.scoreSide}><Text style={[st.scoreTeam, { color: '#FFC08A' }]}>البرتقالي</Text></View>
+        <View style={st.body}>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 18 }}>تفاصيل المباراة</Text>
+          <InfoPill icon="football-outline" text={`${m.venue_name ?? 'بدون ساحة'}${m.field_name ? ` · ${m.field_name}` : ''}`} />
+          {m.venue_address ? <InfoPill icon="location-outline" text={m.venue_address} /> : null}
+          <Row style={{ flexWrap: 'nowrap', alignItems: 'stretch' }}>
+            <InfoPill icon="calendar-outline" text={dateText} flex />
+            <InfoPill icon="time-outline" text={formatTimeRange(m.starts_at, m.ends_at)} flex />
+          </Row>
+          <View style={{ alignSelf: 'flex-start' }}>
+            <InfoPill icon="people-outline" text={`${joined.length} من ${m.max_players}`} />
           </View>
-        ) : null}
 
-        <Text variant="h2">تفاصيل المباراة</Text>
-        <InfoPill icon="football-outline" text={`${m.venue_name ?? 'بدون ساحة'}${m.field_name ? ` · ${m.field_name}` : ''}`} />
-        {m.venue_address ? <InfoPill icon="location-outline" text={m.venue_address} /> : null}
-        <Row style={{ flexWrap: 'nowrap', alignItems: 'stretch' }}>
-          <InfoPill icon="calendar-outline" text={dateText} flex />
-          <InfoPill icon="time-outline" text={`${formatClock(m.starts_at)} إلى ${formatClock(m.ends_at)}`} flex />
-        </Row>
-        <Row style={{ flexWrap: 'nowrap', alignItems: 'stretch' }}>
-          <InfoPill icon="people-outline" text={`${joined.length} من ${m.max_players}${waitlist.length ? ` · انتظار ${waitlist.length}` : ''}`} flex />
-          <InfoPill icon="speedometer-outline" text={SKILL_LABEL[m.skill_level]} flex />
-        </Row>
-        {!finished && left > 0 ? <Progress value={joined.length} max={m.max_players} /> : null}
-
-        <ErrorText message={actionError} />
-
-        {mine?.status === 'waitlist' ? (
-          <Card style={{ backgroundColor: c.warnSoft, borderColor: c.warnSoft }}>
-            <Text style={{ color: c.warnText }}>أنت في قائمة الانتظار — ستنضم تلقائياً عند انسحاب أحد اللاعبين.</Text>
-          </Card>
-        ) : null}
-
-        {/* إجراءات ثانوية */}
-        <Row style={{ flexWrap: 'wrap' }}>
-          {!finished ? <SmallAction icon="share-social-outline" label="مشاركة" onPress={share} /> : null}
-          {isOrganizer && !finished && joined.length >= 2 ? (
-            <SmallAction icon="git-compare-outline" label={hasTeams ? 'أعد التقسيم' : 'قسّم الفريقين'} onPress={autoBalance} />
+          {hasResult ? (
+            <View style={st.scoreBoard}>
+              {/* عناصر منفصلة: في الاتجاه من اليمين لليسار يظهر الأزرق ونتيجته يميناً */}
+              <View style={st.scoreSide}><Text style={[st.scoreTeam, { color: '#9CC8FF' }]}>الأزرق</Text></View>
+              <Text style={st.scoreBig}>{m.score_a}</Text>
+              <Text style={st.scoreDash}>-</Text>
+              <Text style={st.scoreBig}>{m.score_b}</Text>
+              <View style={st.scoreSide}><Text style={[st.scoreTeam, { color: '#FFC08A' }]}>البرتقالي</Text></View>
+            </View>
           ) : null}
-          {isOrganizer && started && hasTeams ? (
-            <SmallAction icon="create-outline" label={hasResult ? 'تعديل النتيجة' : 'سجّل النتيجة'} onPress={() => router.push({ pathname: '/match/result', params: { id: m.id } })} />
-          ) : null}
-          {finished && mine?.status === 'joined' ? (
-            <SmallAction icon="star-outline" label="قيّم اللاعبين" onPress={() => router.push({ pathname: '/match/rate', params: { id: m.id } })} />
-          ) : null}
-          {!finished && mine ? (
-            <SmallAction icon="exit-outline" label="انسحاب" danger onPress={() => act(() => api.leaveMatch(m.id))} />
-          ) : null}
-        </Row>
 
-        {hasTeams ? (
-          <>
-            <Text variant="h2">الفريقان</Text>
+          <ErrorText message={actionError} />
+
+          {joined.map((r) => <PlayerRow key={r.player_id} r={r} me={r.player_id === userId} onPress={() => openPlayer(r.player_id)} />)}
+          {waitlist.length ? (
+            <>
+              <Text style={{ fontFamily: fonts.bold, marginTop: 6 }}>قائمة الانتظار</Text>
+              {waitlist.map((r) => <PlayerRow key={r.player_id} r={r} me={r.player_id === userId} onPress={() => openPlayer(r.player_id)} />)}
+            </>
+          ) : null}
+
+          {hasTeams ? (
             <Row style={{ alignItems: 'stretch', flexWrap: 'nowrap' }}>
               <TeamColumn team="A" players={joined.filter((r) => r.team === 'A')} me={userId} m={m} />
               <TeamColumn team="B" players={joined.filter((r) => r.team === 'B')} me={userId} m={m} />
             </Row>
-          </>
-        ) : null}
+          ) : null}
 
-        <Text variant="h2">اللاعبون</Text>
-        {joined.length ? (
-          joined.map((r) => <PlayerRow key={r.player_id} r={r} me={r.player_id === userId} onPress={() => openPlayer(r.player_id)} />)
-        ) : (
-          <Text variant="muted">لم ينضم أحد بعد — كن الأول!</Text>
-        )}
-        {waitlist.length ? (
-          <>
-            <Text variant="h2">قائمة الانتظار</Text>
-            {waitlist.map((r) => <PlayerRow key={r.player_id} r={r} me={r.player_id === userId} onPress={() => openPlayer(r.player_id)} />)}
-          </>
-        ) : null}
-      </Screen>
+          {/* روابط صغيرة فقط عند الحاجة */}
+          <Row style={{ flexWrap: 'wrap' }}>
+            {!finished && mine ? <SmallAction icon="exit-outline" label="انسحاب" danger onPress={() => act(() => api.leaveMatch(m.id))} /> : null}
+            {!finished ? <SmallAction icon="share-social-outline" label="مشاركة" onPress={share} /> : null}
+            {finished && mine?.status === 'joined' ? (
+              <SmallAction icon="star-outline" label="قيّم اللاعبين" onPress={() => router.push({ pathname: '/match/rate', params: { id: m.id } })} />
+            ) : null}
+            {isOrganizer && !finished && joined.length >= 2 ? (
+              <SmallAction icon="git-compare-outline" label={hasTeams ? 'أعد التقسيم' : 'قسّم الفريقين'} onPress={autoBalance} />
+            ) : null}
+            {isOrganizer && started && hasTeams ? (
+              <SmallAction icon="create-outline" label={hasResult ? 'تعديل النتيجة' : 'سجّل النتيجة'} onPress={() => router.push({ pathname: '/match/result', params: { id: m.id } })} />
+            ) : null}
+          </Row>
+        </View>
+      </ScrollView>
 
-      {/* الشريط السفلي الثابت: السعر + الإجراء الرئيسي */}
-      <View style={[st.bottomBar, { paddingBottom: Math.max(insets.bottom, 14) }]}>
+      {/* الشريط السفلي الملوّن: الزر + السعر */}
+      <View style={[st.bottomBar, { paddingBottom: Math.max(insets.bottom, 18) }]}>
         <View style={st.handle} />
         <View style={st.barRow}>
           <View style={{ flex: 1 }}>
-            <ActionPill action={action} busy={busy} onPress={primaryPress} big />
+            <ActionPill action={action} busy={busy} onPress={() => act(() => api.joinMatch(m.id))} big onBar />
           </View>
-          {m.cost_per_player ? (
-            <View style={{ alignItems: 'center' }}>
-              <Text style={st.priceLabel}>للاعب</Text>
-              <Text style={st.price}>{formatIQD(m.cost_per_player)}</Text>
-            </View>
-          ) : null}
+          {m.cost_per_player ? <Text style={st.price}>{formatIQD(m.cost_per_player)}</Text> : null}
         </View>
       </View>
     </View>
@@ -250,24 +226,25 @@ function SmallAction({ icon, label, onPress, danger }: { icon: IconName; label: 
 }
 
 const useStyles = themed((c) => ({
-  player: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, backgroundColor: c.card, borderRadius: 18, borderWidth: 1, borderColor: c.border },
-  hero: { minHeight: 170, borderRadius: 24, gap: 24, backgroundColor: '#1C8B4A', overflow: 'hidden', padding: 16, justifyContent: 'space-between' },
-  heroHalf: { position: 'absolute', top: 0, bottom: 0, left: '50%', width: 2, backgroundColor: 'rgba(255,255,255,0.35)' },
-  heroCircle: { position: 'absolute', width: 90, height: 90, borderRadius: 45, borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)', top: 40, left: '50%', marginLeft: -44 },
-  heroBadges: { flexDirection: 'row', gap: 6 },
-  heroTitle: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 34, color: '#fff' },
-  info: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.primarySoft, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 12, borderWidth: 1, borderColor: c.border },
-  small: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.primarySoft, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
-  bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: c.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 8, paddingHorizontal: 16, borderWidth: 1, borderColor: c.border, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: -4 }, elevation: 12 },
-  handle: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: c.border, marginBottom: 10 },
-  barRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  priceLabel: { fontSize: 11, color: c.muted },
-  price: { fontFamily: fonts.bold, fontSize: 18, color: c.primary },
-  initial: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  player: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 14, backgroundColor: c.card, borderRadius: 22, borderWidth: 1, borderColor: c.border },
+  initial: { width: 48, height: 48, borderRadius: 24, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' },
   teamCol: { flex: 1, borderWidth: 2, borderRadius: 14, padding: 10, gap: 2, backgroundColor: c.card },
+  hero: { height: 260, backgroundColor: '#1C8B4A', overflow: 'hidden', borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
+  heroHalf: { position: 'absolute', top: 0, bottom: 0, left: '50%', width: 3, backgroundColor: 'rgba(255,255,255,0.45)' },
+  heroCircle: { position: 'absolute', width: 110, height: 110, borderRadius: 55, borderWidth: 3, borderColor: 'rgba(255,255,255,0.45)', top: 95, left: '50%', marginLeft: -54 },
+  heroBoxTop: { position: 'absolute', left: -3, width: 70, top: 80, height: 120, borderWidth: 3, borderColor: 'rgba(255,255,255,0.45)' },
+  heroBoxBottom: { position: 'absolute', right: -3, width: 70, top: 80, height: 120, borderWidth: 3, borderColor: 'rgba(255,255,255,0.45)' },
+  back: { position: 'absolute', right: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' },
+  body: { padding: 16, gap: 12 },
+  info: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.primarySoft, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 14, borderWidth: 1, borderColor: c.border },
+  small: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.primarySoft, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   scoreBoard: { backgroundColor: '#0E1730', borderRadius: 18, paddingVertical: 18, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },
   scoreSide: { flex: 1, alignItems: 'center' },
   scoreTeam: { fontFamily: fonts.bold, fontSize: 15 },
   scoreBig: { fontFamily: fonts.bold, fontSize: 40, lineHeight: 56, color: '#fff', minWidth: 36, textAlign: 'center' },
   scoreDash: { fontFamily: fonts.bold, fontSize: 32, lineHeight: 56, color: 'rgba(255,255,255,0.6)', marginHorizontal: 6 },
+  bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: c.primary, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingTop: 10, paddingHorizontal: 20 },
+  handle: { alignSelf: 'center', width: 52, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.75)', marginBottom: 14 },
+  barRow: { flexDirection: 'row', alignItems: 'center', gap: 18 },
+  price: { fontFamily: fonts.bold, fontSize: 20, color: '#fff' },
 }));

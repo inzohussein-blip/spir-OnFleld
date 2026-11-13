@@ -22,6 +22,8 @@ export type Palette = {
   teamB: string;
   header: string;
   onPrimary: string;
+  /** خلفية شريط العنوان الملوّن */
+  bandBg: string;
 };
 
 /** لون نص العنوان على شريط الرأس */
@@ -47,6 +49,7 @@ export const light: Palette = {
   teamB: '#E65100',
   header: '#FFFFFF',
   onPrimary: '#FFFFFF',
+  bandBg: '#8FB0FF',
 };
 
 export const dark: Palette = {
@@ -69,6 +72,7 @@ export const dark: Palette = {
   teamB: '#FF9A4D',
   header: '#0E1730',
   onPrimary: '#FFFFFF',
+  bandBg: '#1A2A5E',
 };
 
 export const fonts = {

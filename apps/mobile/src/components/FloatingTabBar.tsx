@@ -11,8 +11,8 @@ type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>
 /** أيقونة كل قسم: [غير نشط، نشط] */
 const ICONS: Record<string, [IconName, IconName]> = {
   index: ['home-outline', 'home'],
-  venues: ['grid-outline', 'grid'],
-  rankings: ['podium-outline', 'podium'],
+  venues: ['football-outline', 'football'],
+  rankings: ['trophy-outline', 'trophy'],
   profile: ['person-outline', 'person'],
 };
 

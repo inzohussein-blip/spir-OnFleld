@@ -36,3 +36,11 @@ test('الوقت والتاريخ بأرقام 1,2,3', async () => {
   assert.equal(formatClock(new Date(2026, 10, 13, 0, 5).toISOString()), '12:05 ص');
   assert.equal(formatFullDate(new Date(2026, 10, 13)), 'الجمعة 2026/11/13');
 });
+
+test('مدة المباراة مختصرة', async () => {
+  const { formatTimeRange } = await import('./format.ts');
+  const t = (h: number, m = 0) => new Date(2026, 10, 13, h, m).toISOString();
+  assert.equal(formatTimeRange(t(18), t(19)), '6:00 إلى 7:00 م');
+  assert.equal(formatTimeRange(t(23), t(24, 30)), '11:00 م إلى 12:30 ص');
+  assert.equal(formatTimeRange(t(9, 15), t(10, 45)), '9:15 إلى 10:45 ص');
+});

@@ -66,6 +66,7 @@ function Gate() {
         <Stack.Screen name="trials" options={{ title: 'اختبارات الأندية' }} />
         <Stack.Screen name="posts" options={{ title: 'المنشورات' }} />
         <Stack.Screen name="info" options={{ title: 'معلومات' }} />
+        <Stack.Screen name="stats" options={{ title: 'الإحصائيات' }} />
         <Stack.Screen name="chats" options={{ title: 'المحادثات' }} />
         <Stack.Screen name="chat/[id]" options={{ title: 'المحادثة' }} />
         <Stack.Screen name="trial/[id]" options={{ title: 'الاختبار' }} />

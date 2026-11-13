@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, View } from 'react-native';
-import { formatClock, formatCountdown, formatFormat, formatIQD } from '../lib/format';
+import { formatClock, formatCountdown, formatIQD } from '../lib/format';
 import { matchAction, type MatchAction } from '../lib/matchAction';
 import type { Match } from '../lib/types';
 import { fonts, themed, useColors } from '../theme';
 import { Text } from './ui';
 
-/** نص وشكل الزر الرئيسي حسب حالة المباراة — يُستخدم في البطاقة وفي الشريط السفلي لصفحة المباراة */
+/** نص وشكل الزر الرئيسي حسب حالة المباراة */
 export function actionLabel(a: MatchAction) {
   switch (a.kind) {
     case 'join':
@@ -25,12 +25,13 @@ export function actionLabel(a: MatchAction) {
   }
 }
 
-export function ActionPill({ action, busy, onPress, big }: { action: MatchAction; busy?: boolean; onPress: () => void; big?: boolean }) {
+export function ActionPill({ action, busy, onPress, big, onBar }: { action: MatchAction; busy?: boolean; onPress: () => void; big?: boolean; onBar?: boolean }) {
   const st = useStyles();
   const c = useColors();
   const { text, tone, enabled } = actionLabel(action);
-  const box = { primary: st.pPrimary, soft: st.pSoft, done: st.pDone, muted: st.pMuted }[tone];
-  const fg = { primary: c.onPrimary, soft: c.primary, done: '#1C8B4A', muted: c.muted }[tone];
+  // على الشريط الملوّن أسفل صفحة المباراة: زر فاتح على خلفية الأزرق
+  const box = onBar ? (enabled ? st.pOnBar : st.pOnBarMuted) : { primary: st.pPrimary, soft: st.pSoft, done: st.pDone, muted: st.pMuted }[tone];
+  const fg = onBar ? (enabled ? c.primary : '#FFFFFF') : { primary: c.onPrimary, soft: c.primary, done: '#1C8B4A', muted: c.muted }[tone];
   return (
     <Pressable
       accessibilityRole="button"
@@ -38,65 +39,73 @@ export function ActionPill({ action, busy, onPress, big }: { action: MatchAction
       onPress={onPress}
       style={({ pressed }) => [st.pill, big && st.pillBig, box, pressed && { opacity: 0.85 }]}
     >
-      {busy ? <ActivityIndicator color={fg} /> : <Text style={[st.pillText, big && { fontSize: 16 }, { color: fg }]}>{text}</Text>}
+      {busy ? <ActivityIndicator color={fg} /> : <Text style={[st.pillText, big && { fontSize: 15 }, { color: fg }]}>{text}</Text>}
     </Pressable>
   );
 }
 
-/** بطاقة مباراة في قائمة اليوم: الساحة، السعر، الوقت، العدد، وزر انضمام مباشر */
-export function MatchRow({ match, now, busy, onAction }: { match: Match; now: number; busy?: boolean; onAction: () => void }) {
+/** بطاقة مباراة بسيطة: رقم المباراة، اسم الساحة والزر، ثم السعر والوقت والعدد */
+export function MatchRow({ match, index, now, busy, onAction }: { match: Match; index: number; now: number; busy?: boolean; onAction: () => void }) {
   const router = useRouter();
   const st = useStyles();
   const c = useColors();
   const action = matchAction(match, now);
   const open = () => router.push({ pathname: '/match/[id]', params: { id: match.id } });
   return (
-    <View style={st.card}>
-      <Pressable onPress={open} style={st.top}>
-        <View style={st.thumb}>
-          <Ionicons name="football" size={26} color={c.primary} />
-          <Text style={st.thumbText}>{formatFormat(match.players_per_side)}</Text>
-        </View>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={st.venue} numberOfLines={2}>{match.venue_name ?? match.title ?? 'مباراة'}</Text>
-          {match.field_name ? (
-            <Text variant="small" style={{ color: c.muted }} numberOfLines={1}>{match.field_name}</Text>
-          ) : null}
-          <View style={st.meta}>
-            <Text variant="small" style={{ color: c.muted }}>
-              يبدأ <Text variant="small" style={{ color: c.text, fontFamily: fonts.semibold }}>{formatClock(match.starts_at)}</Text>
-            </Text>
-            {match.cost_per_player ? (
-              <Text variant="small" style={{ color: c.primary, fontFamily: fonts.bold }}>{formatIQD(match.cost_per_player)}</Text>
-            ) : null}
-            <View style={st.count}>
-              <Ionicons name="people-outline" size={14} color={c.primary} />
-              <Text style={st.countText}>
-                {match.joined_count} من {match.max_players}
-              </Text>
-            </View>
+    <View style={{ gap: 6 }}>
+      <Text variant="small" style={{ color: c.muted }}>
+        المباراة: <Text variant="small" style={{ color: c.text, fontFamily: fonts.bold }}>{index}</Text>
+      </Text>
+      <View style={st.card}>
+        <View style={st.head}>
+          <Pressable onPress={open} style={{ flex: 1 }}>
+            <Text style={st.venue} numberOfLines={2}>{match.venue_name ?? match.title ?? 'مباراة'}</Text>
+          </Pressable>
+          <View style={{ width: 150 }}>
+            <ActionPill action={action} busy={busy} onPress={onAction} />
           </View>
         </View>
-      </Pressable>
-      <ActionPill action={action} busy={busy} onPress={onAction} />
+        <Pressable onPress={open} style={st.body}>
+          <View style={st.thumb}>
+            <Ionicons name="football" size={28} color="#fff" />
+          </View>
+          <View style={{ flex: 1, gap: 2 }}>
+            {match.cost_per_player ? (
+              <Text variant="small" style={{ color: c.muted }}>
+                السعر: <Text style={{ color: c.primary, fontFamily: fonts.bold }}>{formatIQD(match.cost_per_player)}</Text>
+              </Text>
+            ) : null}
+            <Text variant="small" style={{ color: c.muted }}>
+              يبدأ: <Text style={{ color: c.text, fontFamily: fonts.semibold }}>{formatClock(match.starts_at)}</Text>
+            </Text>
+          </View>
+          <View style={st.count}>
+            <Ionicons name="people-outline" size={16} color={c.primary} />
+            <Text style={st.countText}>
+              {match.joined_count} من {match.max_players}
+            </Text>
+          </View>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const useStyles = themed((c) => ({
-  card: { backgroundColor: c.card, borderRadius: 20, padding: 14, gap: 12, borderWidth: 1, borderColor: c.border },
-  top: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  thumb: { width: 64, height: 64, borderRadius: 16, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  thumbText: { fontFamily: fonts.bold, fontSize: 11, color: c.primary },
-  venue: { fontFamily: fonts.bold, fontSize: 16 },
-  meta: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10 },
-  count: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: c.cardAlt, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
-  countText: { fontFamily: fonts.bold, fontSize: 12 },
-  pill: { minHeight: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
+  card: { backgroundColor: c.card, borderRadius: 22, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 10 },
+  venue: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 26 },
+  body: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingBottom: 14 },
+  thumb: { width: 64, height: 64, borderRadius: 14, backgroundColor: '#1C8B4A', alignItems: 'center', justifyContent: 'center' },
+  count: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: c.cardAlt, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  countText: { fontFamily: fonts.bold, fontSize: 13 },
+  pill: { minHeight: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
   pillBig: { minHeight: 52, borderRadius: 18, paddingHorizontal: 22 },
   pPrimary: { backgroundColor: c.primary },
   pSoft: { backgroundColor: c.primarySoft },
   pDone: { backgroundColor: '#E5F6EC' },
   pMuted: { backgroundColor: c.cardAlt },
-  pillText: { fontFamily: fonts.bold, fontSize: 14 },
+  pOnBar: { backgroundColor: '#FFFFFF' },
+  pOnBarMuted: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  pillText: { fontFamily: fonts.bold, fontSize: 13, textAlign: 'center' },
 }));

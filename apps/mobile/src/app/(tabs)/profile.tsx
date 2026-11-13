@@ -1,29 +1,55 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Linking, Pressable, Share, Switch, View } from 'react-native';
+import Constants from 'expo-constants';
+import { useFocusEffect, useRouter, type Href } from 'expo-router';
+import { useCallback, useState, type ReactNode } from 'react';
+import { Pressable, ScrollView, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { PlayerCardView } from '../../components/PlayerCardView';
-import { PlayerStatsBlock } from '../../components/PlayerStatsBlock';
-import { Badge, Button, Card, ErrorText, ListItem, Loading, Row, Screen, SectionTitle, Text, type IconName } from '../../components/ui';
-import { CONTACT } from '../../config';
+import { Button, ErrorText, Row, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { resetDemo } from '../../lib/api/demo';
 import { POSITION_LABEL } from '../../lib/format';
 import { errMsg, useAsync, useSession } from '../../lib/session';
-import Constants from 'expo-constants';
-import { fonts, themed, useTheme } from '../../theme';
+import { fonts, themed, useColors, useTheme } from '../../theme';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '—';
 
-const SOCIAL: { key: keyof typeof CONTACT; label: string; icon: IconName; color: string }[] = [
-  { key: 'whatsapp', label: 'واتساب', icon: 'logo-whatsapp', color: '#25D366' },
-  { key: 'instagram', label: 'انستغرام', icon: 'logo-instagram', color: '#E1306C' },
-  { key: 'facebook', label: 'فيسبوك', icon: 'logo-facebook', color: '#1877F2' },
-];
+/** صندوق بإطار يحتوي صفوفاً مفصولة بخطوط — بسيط وواضح */
+function Box({ children }: { children: ReactNode }) {
+  const st = useStyles();
+  return <View style={st.box}>{children}</View>;
+}
+
+function RowLink({ title, href, onPress, right, last, danger }: { title: string; href?: Href; onPress?: () => void; right?: ReactNode; last?: boolean; danger?: boolean }) {
+  const st = useStyles();
+  const c = useColors();
+  const router = useRouter();
+  const press = onPress ?? (href ? () => router.push(href) : undefined);
+  const content = (
+    <>
+      <Text style={[st.rowText, danger && { color: c.danger }]}>{title}</Text>
+      {right ?? (press ? <Ionicons name="chevron-back" size={20} color={c.muted} /> : null)}
+    </>
+  );
+  // صف بدون رابط (مثل مفتاح الوضع الداكن) يكون حاوية عادية حتى تبقى عناصره قابلة للّمس
+  if (!press) return <View style={[st.row, !last && st.rowLine]}>{content}</View>;
+  return (
+    <Pressable onPress={press} style={({ pressed }) => [st.row, !last && st.rowLine, pressed && { opacity: 0.6 }]} accessibilityRole="button">
+      {content}
+    </Pressable>
+  );
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  const st = useStyles();
+  return (
+    <View style={{ gap: 10 }}>
+      <Text style={st.section}>{title}</Text>
+      {children}
+    </View>
+  );
+}
 
 export default function Profile() {
-  const router = useRouter();
   const { profile, signOut, refresh, userId } = useSession();
   const { colors: c, scheme, setMode } = useTheme();
   const st = useStyles();
@@ -31,13 +57,13 @@ export default function Profile() {
   const { data: card, reload } = useAsync(() => (userId ? api.getPlayerCard(userId) : Promise.resolve(null)), [userId]);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  useFocusEffect(useCallback(() => {
-    void refresh();
-    void reload();
-  }, [refresh, reload]));
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+      void reload();
+    }, [refresh, reload]),
+  );
   if (!profile) return null;
-
-  const social = SOCIAL.filter((s) => CONTACT[s.key]);
 
   async function deleteAccount() {
     try {
@@ -48,82 +74,90 @@ export default function Profile() {
     }
   }
 
+  const s = card?.stats;
+  const stat = (label: string, value: number | undefined) => (
+    <View style={st.statRow}>
+      <Text style={st.statLabel}>{label}</Text>
+      <Text style={st.statValue}>{value ?? 0}</Text>
+    </View>
+  );
+
   return (
-    <Screen style={{ paddingTop: insets.top + 16 }}>
-      <View style={{ backgroundColor: c.primary, borderRadius: 24, paddingVertical: 20, alignItems: 'center', gap: 10 }}>
-        {card ? (
-          <Row style={{ flexWrap: 'nowrap', justifyContent: 'center', gap: 12 }}>
-            <PlayerCardView card={card} width={150} mode="arcade" />
-            <PlayerCardView card={card} width={150} />
-          </Row>
-        ) : (
-          <Loading />
-        )}
-        <Text style={{ fontFamily: fonts.bold, fontSize: 22, lineHeight: 34, color: c.onPrimary }}>{profile.full_name}</Text>
-        <Row style={{ justifyContent: 'center' }}>
-          {card ? <Badge label={`التقييم ${card.overall}`} tone="yellow" /> : null}
-          <Badge label={POSITION_LABEL[profile.preferred_position]} tone="gray" />
-          {profile.city ? <Badge label={profile.city} tone="gray" /> : null}
+    <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={[st.content, { paddingTop: insets.top + 20 }]}>
+      {/* بطاقة اللاعب */}
+      <View style={st.card}>
+        <View style={st.cardStripe} />
+        <View style={st.avatar}>
+          <Text style={st.avatarText}>{profile.full_name.slice(0, 1)}</Text>
+        </View>
+        <Row style={{ justifyContent: 'center', gap: 10 }}>
+          <Text style={st.cardMeta}>{POSITION_LABEL[profile.preferred_position]}</Text>
+          <Text style={st.cardMeta}>{card?.overall ?? '—'}</Text>
         </Row>
+        <Text style={st.cardName}>{profile.full_name}</Text>
+        <View style={st.cardDivider} />
+        <View style={st.statsGrid}>
+          <View style={{ flex: 1, gap: 4 }}>
+            {stat('الأهداف', s?.goals)}
+            {stat('المباريات', s?.matches)}
+            {stat('الصناعة', s?.assists)}
+          </View>
+          <View style={st.statsSep} />
+          <View style={{ flex: 1, gap: 4 }}>
+            {stat('الفوز', s?.wins)}
+            {stat('الخسارة', s?.losses)}
+            {stat('رجل المباراة', s?.mvps)}
+          </View>
+        </View>
       </View>
 
-      <SectionTitle title="سجل مبارياتي" />
-      {card ? <PlayerStatsBlock card={card} /> : null}
+      <Section title="المحفظة">
+        <Box>
+          <RowLink title="معلومات المحفظة" href="/wallet" last />
+        </Box>
+      </Section>
 
-      <SectionTitle title="المحفظة" />
-      <Card style={st.group}>
-        <ListItem icon="wallet-outline" title="معلومات المحفظة" subtitle="رصيدك ومكافآتك وسجل العمليات" onPress={() => router.push('/wallet')} />
-      </Card>
+      <Section title="البيانات الشخصية">
+        <Box>
+          <RowLink title="المعلومات الشخصية" href="/onboarding" />
+          <RowLink title="مبارياتي" href="/my-matches" />
+          <RowLink title="الإحصائيات" href="/stats" last />
+        </Box>
+      </Section>
 
-      <SectionTitle title="البيانات الشخصية" />
-      <Card style={st.group}>
-        <ListItem icon="person-circle-outline" title="المعلومات الشخصية" subtitle="الاسم والمحافظة والمركز" onPress={() => router.push('/onboarding')} />
-        <ListItem icon="calendar-outline" title="مبارياتي" subtitle="القادمة والسابقة" onPress={() => router.push('/my-matches')} />
-        <ListItem icon="people-outline" title="اللاعبين" subtitle="كل اللاعبين وإحصائياتهم" onPress={() => router.push('/players')} />
-      </Card>
+      <Section title="المزيد">
+        <Box>
+          <RowLink title="البطولات" href="/tournaments" />
+          <RowLink title="اختبارات الأندية" href="/trials" />
+          <RowLink title="المنشورات" href="/posts" />
+          <RowLink title="اللاعبين" href="/players" last />
+        </Box>
+      </Section>
 
-      <SectionTitle title="المظهر والأمان" />
-      <Card style={st.group}>
-        <ListItem
-          icon={scheme === 'dark' ? 'moon' : 'sunny'}
-          title="الثيم"
-          subtitle={scheme === 'dark' ? 'الوضع الداكن' : 'الوضع الفاتح'}
+      <Box>
+        <RowLink
+          title="الوضع الداكن"
           right={<Switch value={scheme === 'dark'} onValueChange={(v) => setMode(v ? 'dark' : 'light')} trackColor={{ true: c.primary, false: c.border }} thumbColor="#fff" />}
+          last
         />
-        <ListItem icon="shield-checkmark-outline" title="الدخول الآمن" subtitle="برقم الهاتف ورمز تحقق — بدون كلمة مرور" />
-      </Card>
+      </Box>
 
-      <SectionTitle title="عن التطبيق" />
-      <Card style={st.group}>
-        <ListItem icon="information-circle-outline" title="عن بالملعب" onPress={() => router.push({ pathname: '/info', params: { doc: 'about' } })} />
-        <ListItem icon="headset-outline" title="الدعم الفني" subtitle="محادثة مباشرة مع الإدارة" onPress={() => router.push({ pathname: '/chat/[id]', params: { id: 'support' } })} />
-        <ListItem icon="document-text-outline" title="الشروط والأحكام" onPress={() => router.push({ pathname: '/info', params: { doc: 'terms' } })} />
-        <ListItem icon="lock-closed-outline" title="سياسة الخصوصية" onPress={() => router.push({ pathname: '/info', params: { doc: 'privacy' } })} />
-        <ListItem icon="share-social-outline" title="شارك التطبيق" onPress={() => Share.share({ message: '⚽ جرّب تطبيق بالملعب — احجز ساحتك، كمّل فريقك، والعب!' })} />
-      </Card>
+      <Box>
+        <RowLink title="عن بالملعب" href={{ pathname: '/info', params: { doc: 'about' } }} />
+        <RowLink title="الدعم الفني" href={{ pathname: '/chat/[id]', params: { id: 'support' } }} />
+        <RowLink title="الشروط والأحكام" href={{ pathname: '/info', params: { doc: 'terms' } }} />
+        <RowLink title="سياسة الخصوصية" href={{ pathname: '/info', params: { doc: 'privacy' } }} last />
+      </Box>
 
-      {social.length ? (
-        <>
-          <SectionTitle title="تواصل معنا" />
-          <Row style={{ flexWrap: 'nowrap' }}>
-            {social.map((s) => (
-              <Pressable key={s.key} onPress={() => Linking.openURL(CONTACT[s.key])} style={{ flex: 1, alignItems: 'center', gap: 6, backgroundColor: c.card, borderRadius: 16, paddingVertical: 14, borderWidth: 1, borderColor: c.border }}>
-                <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: s.color, alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name={s.icon} size={24} color="#fff" />
-                </View>
-                <Text variant="small" style={{ fontFamily: fonts.semibold }}>{s.label}</Text>
-              </Pressable>
-            ))}
-          </Row>
-        </>
-      ) : null}
+      <Box>
+        <RowLink title="تسجيل الخروج" onPress={signOut} />
+        {api.isDemo ? <RowLink title="إعادة البيانات التجريبية" onPress={async () => { await resetDemo(); await signOut(); }} /> : null}
+        <RowLink title="حذف الحساب" danger onPress={() => setConfirmDelete(true)} />
+        <RowLink title="رقم الإصدار" right={<Text style={{ color: c.muted }}>{APP_VERSION}</Text>} last />
+      </Box>
 
-      {api.isDemo ? (
-        <Button title="إعادة البيانات التجريبية" icon="refresh" variant="ghost" onPress={async () => { await resetDemo(); await signOut(); }} />
-      ) : null}
-      <Button title="تسجيل الخروج" icon="log-out" variant="outline" onPress={signOut} />
       {confirmDelete ? (
-        <Card style={{ borderColor: c.danger }}>
+        <View style={[st.box, { padding: 16, gap: 10, borderColor: c.danger }]}>
           <Text style={{ fontFamily: fonts.bold, color: c.danger }}>متأكد تريد تحذف حسابك؟</Text>
           <Text variant="muted">يُحذف ملفك وبيانات دخولك نهائياً. نتائج المباريات السابقة تبقى باسم «حساب محذوف».</Text>
           <ErrorText message={error} />
@@ -131,15 +165,29 @@ export default function Profile() {
             <Button title="نعم، احذف" variant="danger" onPress={deleteAccount} style={{ flex: 1 }} />
             <Button title="إلغاء" variant="ghost" onPress={() => setConfirmDelete(false)} style={{ flex: 1 }} />
           </Row>
-        </Card>
-      ) : (
-        <Button title="حذف الحساب" icon="trash" variant="danger" onPress={() => setConfirmDelete(true)} />
-      )}
-      <Text variant="small" style={{ color: c.muted, textAlign: 'center' }}>رقم الإصدار {APP_VERSION}</Text>
-    </Screen>
+        </View>
+      ) : null}
+    </ScrollView>
   );
 }
 
-const useStyles = themed(() => ({
-  group: { gap: 0, paddingVertical: 4 },
+const useStyles = themed((c) => ({
+  content: { paddingHorizontal: 16, gap: 22, paddingBottom: 130 },
+  card: { alignSelf: 'center', width: 300, backgroundColor: c.primary, borderRadius: 30, paddingTop: 22, paddingBottom: 18, paddingHorizontal: 18, alignItems: 'center', gap: 6, overflow: 'hidden' },
+  cardStripe: { position: 'absolute', width: 140, height: 420, backgroundColor: 'rgba(255,255,255,0.08)', top: -60, left: 170, transform: [{ rotate: '25deg' }] },
+  avatar: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: 'rgba(255,255,255,0.5)' },
+  avatarText: { fontFamily: fonts.bold, fontSize: 48, lineHeight: 64, color: c.primary },
+  cardMeta: { color: '#fff', fontFamily: fonts.semibold, fontSize: 15 },
+  cardName: { color: '#fff', fontFamily: fonts.bold, fontSize: 20, lineHeight: 30 },
+  cardDivider: { height: 2, width: '80%', backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, marginVertical: 4 },
+  statsGrid: { flexDirection: 'row', alignSelf: 'stretch', gap: 12 },
+  statsSep: { width: 2, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1 },
+  statRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  statLabel: { color: 'rgba(255,255,255,0.9)', fontSize: 14 },
+  statValue: { color: '#fff', fontFamily: fonts.bold, fontSize: 14 },
+  section: { fontFamily: fonts.bold, fontSize: 18 },
+  box: { backgroundColor: c.card, borderRadius: 22, borderWidth: 1, borderColor: c.border, paddingHorizontal: 20 },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 64 },
+  rowLine: { borderBottomWidth: 1, borderBottomColor: c.border },
+  rowText: { fontSize: 16 },
 }));

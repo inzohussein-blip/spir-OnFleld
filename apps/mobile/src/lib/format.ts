@@ -116,3 +116,12 @@ export function formatCountdown(ms: number) {
   const parts = days ? [d, h] : [h, m];
   return parts.filter(Boolean).join(' و');
 }
+
+/** مدة مختصرة: «6:00 إلى 7:00 م»، أو «11:00 م إلى 12:30 ص» إذا اختلفت الفترة */
+export function formatTimeRange(startIso: string, endIso: string) {
+  const a = formatClock(startIso);
+  const b = formatClock(endIso);
+  const [aTime, aMer] = a.split(' ');
+  const [, bMer] = b.split(' ');
+  return aMer === bMer ? `${aTime} إلى ${b}` : `${a} إلى ${b}`;
+}
