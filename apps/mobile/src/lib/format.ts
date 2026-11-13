@@ -1,7 +1,7 @@
 import type { Position, SkillLevel, TournamentStatus } from './types';
 
 const DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-const MONTHS = ['كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران', 'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'];
+export const MONTHS = ['كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران', 'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'];
 
 /** تحويل الأرقام العربية-الهندية (٠١٢…) والفارسية (۰۱۲…) إلى 0-9 */
 export function toWesternDigits(text: string): string {
@@ -80,3 +80,39 @@ export function timeAgo(iso: string) {
 }
 
 export const APP_LABEL = { pending: 'بانتظار الكشّاف', accepted: 'مقبول 🎉', rejected: 'لم تُقبل هذه المرة' } as const;
+
+/** الساعة والدقيقة بنظام 12 ساعة: «9:15 م» */
+export function formatClock(iso: string) {
+  const d = new Date(iso);
+  const h = d.getHours();
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(d.getMinutes()).padStart(2, '0')} ${h < 12 ? 'ص' : 'م'}`;
+}
+
+/** «الجمعة 2026/11/13» */
+export function formatFullDate(d: Date) {
+  return `${DAYS[d.getDay()]} ${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export const weekdayName = (d: Date) => DAYS[d.getDay()];
+
+/** جمع عربي مبسّط للأعداد: 1 ساعة، 2 ساعتان، 3-10 ساعات، 11+ ساعة */
+function plural(n: number, one: string, two: string, few: string) {
+  if (n === 1) return one;
+  if (n === 2) return two;
+  if (n >= 3 && n <= 10) return `${n} ${few}`;
+  return `${n} ${one}`;
+}
+
+/** مدة متبقية مقروءة: «يومان و3 ساعات» / «4 ساعات و7 دقائق» / «دقيقة» */
+export function formatCountdown(ms: number) {
+  const totalMin = Math.max(1, Math.ceil(ms / 60000));
+  const days = Math.floor(totalMin / 1440);
+  const hours = Math.floor((totalMin % 1440) / 60);
+  const mins = totalMin % 60;
+  const d = days ? plural(days, 'يوم', 'يومان', 'أيام') : '';
+  const h = hours ? plural(hours, 'ساعة', 'ساعتان', 'ساعات') : '';
+  const m = mins ? plural(mins, 'دقيقة', 'دقيقتان', 'دقائق') : '';
+  const parts = days ? [d, h] : [h, m];
+  return parts.filter(Boolean).join(' و');
+}

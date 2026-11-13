@@ -2,12 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { Badge, Button, Empty, Loading, Row, Screen, Segmented, Text } from '../../components/ui';
-import { api } from '../../lib/api';
-import { formatDay } from '../../lib/format';
-import { useAsync } from '../../lib/session';
-import type { PostCategory } from '../../lib/types';
-import { fonts, themed, useColors } from '../../theme';
+import { Badge, Button, Empty, Loading, Row, Screen, Segmented, Text } from '../components/ui';
+import { api } from '../lib/api';
+import { formatDay } from '../lib/format';
+import { useAsync } from '../lib/session';
+import type { PostCategory } from '../lib/types';
+import { fonts, themed, useColors } from '../theme';
 
 export default function Posts() {
   const router = useRouter();

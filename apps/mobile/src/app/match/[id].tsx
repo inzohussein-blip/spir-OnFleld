@@ -1,9 +1,13 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Share, View } from 'react-native';
-import { Badge, Button, Card, ErrorText, Loading, Progress, Row, Screen, Text } from '../../components/ui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActionPill } from '../../components/MatchRow';
+import { Badge, Card, ErrorText, Loading, Progress, Row, Screen, Text, type IconName } from '../../components/ui';
 import { api } from '../../lib/api';
-import { formatDateTime, formatFormat, formatIQD, POSITION_LABEL, SKILL_LABEL } from '../../lib/format';
+import { formatClock, formatDateTime, formatFormat, formatIQD, POSITION_LABEL, SKILL_LABEL } from '../../lib/format';
+import { matchAction } from '../../lib/matchAction';
 import { errMsg, useAsync, useNow, useSession } from '../../lib/session';
 import { balanceTeams } from '../../lib/teamBalance';
 import type { MatchDetail, RosterEntry, Team } from '../../lib/types';
@@ -61,7 +65,8 @@ export default function MatchScreen() {
   const c = useColors();
   const st = useStyles();
   const { userId } = useSession();
-  const now = useNow();
+  const insets = useSafeAreaInsets();
+  const now = useNow(30_000);
   const { data: m, error, loading, reload } = useAsync(() => api.getMatch(id), [id]);
   useFocusEffect(useCallback(() => void reload(), [reload]));
   const [busy, setBusy] = useState(false);
@@ -110,106 +115,154 @@ export default function MatchScreen() {
         `\nbalmalaab://match/${m.id}`,
     });
 
+  const action = matchAction(m, now);
+  const primaryPress = () => act(() => api.joinMatch(m.id));
+  const startsDate = new Date(m.starts_at);
+  const dateText = `${startsDate.getFullYear()}-${String(startsDate.getMonth() + 1).padStart(2, '0')}-${String(startsDate.getDate()).padStart(2, '0')}`;
+
   return (
-    <Screen>
-      <Card>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <Text variant="title">{m.title || `مباراة ${formatFormat(m.players_per_side)}`}</Text>
-          {isOrganizer ? <Badge label="أنت المنظّم" tone="yellow" /> : null}
-        </Row>
-        <Text variant="muted">📍 {m.venue_name ?? 'بدون ساحة'}{m.field_name ? ` · ${m.field_name}` : ''}</Text>
-        <Text variant="muted">🕒 {formatDateTime(m.starts_at)}</Text>
-        <Row>
-          <Badge label={formatFormat(m.players_per_side)} tone="gray" />
-          <Badge label={SKILL_LABEL[m.skill_level]} tone="gray" />
-          <Badge label={m.visibility === 'public' ? 'عامة' : 'خاصة'} tone="gray" />
-          {m.cost_per_player ? <Badge label={`${formatIQD(m.cost_per_player)} للاعب`} /> : null}
-        </Row>
-      </Card>
-
-      {hasResult ? (
-        <View style={st.scoreBoard}>
-          {/* عناصر منفصلة: في الاتجاه من اليمين لليسار يظهر الأزرق ونتيجته يميناً */}
-          <View style={st.scoreSide}><Text style={[st.scoreTeam, { color: '#9CC8FF' }]}>الأزرق</Text></View>
-          <Text style={st.scoreBig}>{m.score_a}</Text>
-          <Text style={st.scoreDash}>-</Text>
-          <Text style={st.scoreBig}>{m.score_b}</Text>
-          <View style={st.scoreSide}><Text style={[st.scoreTeam, { color: '#FFC08A' }]}>البرتقالي</Text></View>
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <Screen style={{ paddingBottom: 140 }}>
+        {/* رأس المباراة */}
+        <View style={st.hero}>
+          <View style={st.heroHalf} />
+          <View style={st.heroCircle} />
+          <View style={st.heroBadges}>
+            <Badge label={formatFormat(m.players_per_side)} tone="yellow" />
+            {isOrganizer ? <Badge label="أنت المنظّم" tone="gray" /> : null}
+          </View>
+          <Text style={st.heroTitle}>{m.title || m.venue_name || 'مباراة'}</Text>
         </View>
-      ) : (
-        <Card>
-          <Row style={{ justifyContent: 'space-between' }}>
-            <Text variant="h2">{joined.length} من {m.max_players} لاعب</Text>
-            <Text style={{ fontFamily: fonts.bold, color: left > 0 ? c.primary : c.accent }}>
-              {finished ? 'انتهت' : left > 0 ? `باقي ${left}` : 'مكتملة'}
-            </Text>
-          </Row>
-          <Progress value={joined.length} max={m.max_players} />
-          {waitlist.length ? <Text variant="small" style={{ color: c.muted }}>قائمة الانتظار: {waitlist.length}</Text> : null}
-        </Card>
-      )}
 
-      <ErrorText message={actionError} />
+        {hasResult ? (
+          <View style={st.scoreBoard}>
+            {/* عناصر منفصلة: في الاتجاه من اليمين لليسار يظهر الأزرق ونتيجته يميناً */}
+            <View style={st.scoreSide}><Text style={[st.scoreTeam, { color: '#9CC8FF' }]}>الأزرق</Text></View>
+            <Text style={st.scoreBig}>{m.score_a}</Text>
+            <Text style={st.scoreDash}>-</Text>
+            <Text style={st.scoreBig}>{m.score_b}</Text>
+            <View style={st.scoreSide}><Text style={[st.scoreTeam, { color: '#FFC08A' }]}>البرتقالي</Text></View>
+          </View>
+        ) : null}
 
-      {!finished ? (
-        mine ? (
-          <>
-            {mine.status === 'waitlist' ? (
-              <Card style={{ backgroundColor: c.warnSoft, borderColor: c.warnSoft }}>
-                <Text style={{ color: c.warnText }}>أنت في قائمة الانتظار — ستنضم تلقائياً عند انسحاب أحد اللاعبين.</Text>
-              </Card>
-            ) : null}
-            <Button title="انسحاب من المباراة" variant="danger" icon="exit" loading={busy} onPress={() => act(() => api.leaveMatch(m.id))} />
-          </>
-        ) : (
-          <Button title={left > 0 ? 'انضم للمباراة' : 'سجّل في قائمة الانتظار'} icon="add-circle" loading={busy} onPress={() => act(() => api.joinMatch(m.id))} />
-        )
-      ) : null}
-
-      {isOrganizer && started && hasTeams ? (
-        <Button
-          title={hasResult ? 'تعديل النتيجة والهدّافين' : 'سجّل النتيجة والهدّافين'}
-          icon="create"
-          variant={hasResult ? 'outline' : 'primary'}
-          onPress={() => router.push({ pathname: '/match/result', params: { id: m.id } })}
-        />
-      ) : null}
-      {finished && mine?.status === 'joined' ? (
-        <Button title="قيّم اللاعبين واختر رجل المباراة" icon="star" variant="outline" onPress={() => router.push({ pathname: '/match/rate', params: { id: m.id } })} />
-      ) : null}
-      {!finished ? <Button title="مشاركة الدعوة (واتساب)" icon="share-social" variant="outline" onPress={share} /> : null}
-
-      <Text variant="h2">الفريقان</Text>
-      {hasTeams ? (
-        <Row style={{ alignItems: 'stretch', flexWrap: 'nowrap' }}>
-          <TeamColumn team="A" players={joined.filter((r) => r.team === 'A')} me={userId} m={m} />
-          <TeamColumn team="B" players={joined.filter((r) => r.team === 'B')} me={userId} m={m} />
+        <Text variant="h2">تفاصيل المباراة</Text>
+        <InfoPill icon="football-outline" text={`${m.venue_name ?? 'بدون ساحة'}${m.field_name ? ` · ${m.field_name}` : ''}`} />
+        {m.venue_address ? <InfoPill icon="location-outline" text={m.venue_address} /> : null}
+        <Row style={{ flexWrap: 'nowrap', alignItems: 'stretch' }}>
+          <InfoPill icon="calendar-outline" text={dateText} flex />
+          <InfoPill icon="time-outline" text={`${formatClock(m.starts_at)} إلى ${formatClock(m.ends_at)}`} flex />
         </Row>
-      ) : (
-        <Text variant="muted">لم يُقسَّم الفريقان بعد.</Text>
-      )}
-      {isOrganizer && !finished && joined.length >= 2 ? (
-        <Button title={hasTeams ? 'أعد التقسيم تلقائياً' : 'قسّم الفريقين حسب المستوى'} icon="git-compare" variant="outline" loading={busy} onPress={autoBalance} />
-      ) : null}
+        <Row style={{ flexWrap: 'nowrap', alignItems: 'stretch' }}>
+          <InfoPill icon="people-outline" text={`${joined.length} من ${m.max_players}${waitlist.length ? ` · انتظار ${waitlist.length}` : ''}`} flex />
+          <InfoPill icon="speedometer-outline" text={SKILL_LABEL[m.skill_level]} flex />
+        </Row>
+        {!finished && left > 0 ? <Progress value={joined.length} max={m.max_players} /> : null}
 
-      <Text variant="h2">اللاعبون</Text>
-      <Card style={{ gap: 0, paddingVertical: 4 }}>
-        {joined.map((r) => <PlayerRow key={r.player_id} r={r} me={r.player_id === userId} onPress={() => openPlayer(r.player_id)} />)}
-      </Card>
-      {waitlist.length ? (
-        <>
-          <Text variant="h2">قائمة الانتظار</Text>
-          <Card style={{ gap: 0, paddingVertical: 4 }}>
-            {waitlist.map((r) => <PlayerRow key={r.player_id} r={r} me={r.player_id === userId} onPress={() => openPlayer(r.player_id)} />)}
+        <ErrorText message={actionError} />
+
+        {mine?.status === 'waitlist' ? (
+          <Card style={{ backgroundColor: c.warnSoft, borderColor: c.warnSoft }}>
+            <Text style={{ color: c.warnText }}>أنت في قائمة الانتظار — ستنضم تلقائياً عند انسحاب أحد اللاعبين.</Text>
           </Card>
-        </>
-      ) : null}
-    </Screen>
+        ) : null}
+
+        {/* إجراءات ثانوية */}
+        <Row style={{ flexWrap: 'wrap' }}>
+          {!finished ? <SmallAction icon="share-social-outline" label="مشاركة" onPress={share} /> : null}
+          {isOrganizer && !finished && joined.length >= 2 ? (
+            <SmallAction icon="git-compare-outline" label={hasTeams ? 'أعد التقسيم' : 'قسّم الفريقين'} onPress={autoBalance} />
+          ) : null}
+          {isOrganizer && started && hasTeams ? (
+            <SmallAction icon="create-outline" label={hasResult ? 'تعديل النتيجة' : 'سجّل النتيجة'} onPress={() => router.push({ pathname: '/match/result', params: { id: m.id } })} />
+          ) : null}
+          {finished && mine?.status === 'joined' ? (
+            <SmallAction icon="star-outline" label="قيّم اللاعبين" onPress={() => router.push({ pathname: '/match/rate', params: { id: m.id } })} />
+          ) : null}
+          {!finished && mine ? (
+            <SmallAction icon="exit-outline" label="انسحاب" danger onPress={() => act(() => api.leaveMatch(m.id))} />
+          ) : null}
+        </Row>
+
+        {hasTeams ? (
+          <>
+            <Text variant="h2">الفريقان</Text>
+            <Row style={{ alignItems: 'stretch', flexWrap: 'nowrap' }}>
+              <TeamColumn team="A" players={joined.filter((r) => r.team === 'A')} me={userId} m={m} />
+              <TeamColumn team="B" players={joined.filter((r) => r.team === 'B')} me={userId} m={m} />
+            </Row>
+          </>
+        ) : null}
+
+        <Text variant="h2">اللاعبون</Text>
+        {joined.length ? (
+          joined.map((r) => <PlayerRow key={r.player_id} r={r} me={r.player_id === userId} onPress={() => openPlayer(r.player_id)} />)
+        ) : (
+          <Text variant="muted">لم ينضم أحد بعد — كن الأول!</Text>
+        )}
+        {waitlist.length ? (
+          <>
+            <Text variant="h2">قائمة الانتظار</Text>
+            {waitlist.map((r) => <PlayerRow key={r.player_id} r={r} me={r.player_id === userId} onPress={() => openPlayer(r.player_id)} />)}
+          </>
+        ) : null}
+      </Screen>
+
+      {/* الشريط السفلي الثابت: السعر + الإجراء الرئيسي */}
+      <View style={[st.bottomBar, { paddingBottom: Math.max(insets.bottom, 14) }]}>
+        <View style={st.handle} />
+        <View style={st.barRow}>
+          <View style={{ flex: 1 }}>
+            <ActionPill action={action} busy={busy} onPress={primaryPress} big />
+          </View>
+          {m.cost_per_player ? (
+            <View style={{ alignItems: 'center' }}>
+              <Text style={st.priceLabel}>للاعب</Text>
+              <Text style={st.price}>{formatIQD(m.cost_per_player)}</Text>
+            </View>
+          ) : null}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function InfoPill({ icon, text, flex }: { icon: IconName; text: string; flex?: boolean }) {
+  const st = useStyles();
+  const c = useColors();
+  return (
+    <View style={[st.info, flex && { flex: 1 }]}>
+      <Ionicons name={icon} size={20} color={c.primary} />
+      <Text style={{ flex: 1, fontFamily: fonts.semibold }} numberOfLines={2}>{text}</Text>
+    </View>
+  );
+}
+
+function SmallAction({ icon, label, onPress, danger }: { icon: IconName; label: string; onPress: () => void; danger?: boolean }) {
+  const st = useStyles();
+  const c = useColors();
+  const color = danger ? c.danger : c.primary;
+  return (
+    <Pressable onPress={onPress} style={[st.small, danger && { backgroundColor: c.dangerSoft }]} accessibilityRole="button">
+      <Ionicons name={icon} size={16} color={color} />
+      <Text variant="small" style={{ color, fontFamily: fonts.semibold }}>{label}</Text>
+    </Pressable>
   );
 }
 
 const useStyles = themed((c) => ({
-  player: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.border },
+  player: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, backgroundColor: c.card, borderRadius: 18, borderWidth: 1, borderColor: c.border },
+  hero: { minHeight: 170, borderRadius: 24, gap: 24, backgroundColor: '#1C8B4A', overflow: 'hidden', padding: 16, justifyContent: 'space-between' },
+  heroHalf: { position: 'absolute', top: 0, bottom: 0, left: '50%', width: 2, backgroundColor: 'rgba(255,255,255,0.35)' },
+  heroCircle: { position: 'absolute', width: 90, height: 90, borderRadius: 45, borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)', top: 40, left: '50%', marginLeft: -44 },
+  heroBadges: { flexDirection: 'row', gap: 6 },
+  heroTitle: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 34, color: '#fff' },
+  info: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.primarySoft, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 12, borderWidth: 1, borderColor: c.border },
+  small: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.primarySoft, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: c.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 8, paddingHorizontal: 16, borderWidth: 1, borderColor: c.border, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: -4 }, elevation: 12 },
+  handle: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: c.border, marginBottom: 10 },
+  barRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  priceLabel: { fontSize: 11, color: c.muted },
+  price: { fontFamily: fonts.bold, fontSize: 18, color: c.primary },
   initial: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
   teamCol: { flex: 1, borderWidth: 2, borderRadius: 14, padding: 10, gap: 2, backgroundColor: c.card },
   scoreBoard: { backgroundColor: '#0E1730', borderRadius: 18, paddingVertical: 18, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },

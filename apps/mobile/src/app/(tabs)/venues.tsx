@@ -1,22 +1,45 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Badge, Card, Chip, Empty, ErrorText, Loading, Row, Screen, Text } from '../components/ui';
-import { api } from '../lib/api';
-import { formatFormat, formatIQD } from '../lib/format';
-import { useAsync } from '../lib/session';
+import { Ionicons } from '@expo/vector-icons';
+import { TextInput, View } from 'react-native';
+import { Badge, Card, Chip, Empty, ErrorText, Loading, Row, Screen, Text } from '../../components/ui';
+import { fonts, useColors } from '../../theme';
+import { api } from '../../lib/api';
+import { formatFormat, formatIQD, toWesternDigits } from '../../lib/format';
+import { useAsync } from '../../lib/session';
 
 export default function Venues() {
   const router = useRouter();
   const { data, error, loading } = useAsync(() => api.listVenues(), []);
   const [city, setCity] = useState<string | null>(null);
   const [size, setSize] = useState<number | null>(null);
+  const [q, setQ] = useState('');
+  const c = useColors();
 
   const cities = useMemo(() => Array.from(new Set((data ?? []).map((v) => v.city))), [data]);
   const sizes = useMemo(() => Array.from(new Set((data ?? []).flatMap((v) => v.fields.map((f) => f.players_per_side)))).sort(), [data]);
-  const list = (data ?? []).filter((v) => (!city || v.city === city) && (!size || v.fields.some((f) => f.players_per_side === size)));
+  const needle = q.trim();
+  const list = (data ?? []).filter(
+    (v) =>
+      (!city || v.city === city) &&
+      (!size || v.fields.some((f) => f.players_per_side === size)) &&
+      (!needle || v.name.includes(needle) || (v.address ?? '').includes(needle) || v.city.includes(needle)),
+  );
 
   return (
     <Screen>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.card, borderRadius: 18, borderWidth: 1, borderColor: c.border, paddingHorizontal: 14 }}>
+        <Ionicons name="search" size={22} color={c.primary} />
+        <TextInput
+          value={q}
+          onChangeText={(v) => setQ(toWesternDigits(v))}
+          placeholder="البحث عن الملاعب"
+          placeholderTextColor={c.muted}
+          style={{ flex: 1, minHeight: 52, fontFamily: fonts.regular, fontSize: 16, color: c.text, outlineWidth: 0 }}
+          returnKeyType="search"
+        />
+        {q ? <Ionicons name="close-circle" size={20} color={c.muted} onPress={() => setQ('')} /> : null}
+      </View>
       <Row>
         <Chip label="كل المدن" active={!city} onPress={() => setCity(null)} />
         {cities.map((c) => (

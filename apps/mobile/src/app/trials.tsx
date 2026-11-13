@@ -2,11 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
-import { Badge, Button, Card, Empty, Loading, Row, Screen, SectionTitle, Text, type IconName } from '../../components/ui';
-import { api } from '../../lib/api';
-import { APP_LABEL, formatDateTime, POSITION_LABEL, TRIAL_STATUS } from '../../lib/format';
-import { useAsync } from '../../lib/session';
-import { fonts, themed, useColors } from '../../theme';
+import { Badge, Button, Card, Empty, Loading, Row, Screen, SectionTitle, Text, type IconName } from '../components/ui';
+import { api } from '../lib/api';
+import { APP_LABEL, formatDateTime, POSITION_LABEL, TRIAL_STATUS } from '../lib/format';
+import { useAsync } from '../lib/session';
+import { fonts, themed, useColors } from '../theme';
 
 const STEPS: { n: string; title: string; body: string; icon: IconName }[] = [
   { n: '01', title: 'كمّل بطاقتك', body: 'صورتك ومركزك وإحصائياتك', icon: 'id-card' },

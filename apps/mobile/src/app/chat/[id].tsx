@@ -100,7 +100,7 @@ const useStyles = themed((c) => ({
   other: { alignSelf: 'flex-end', backgroundColor: c.card, borderWidth: 1, borderColor: c.border, borderBottomLeftRadius: 4 },
   admin: { alignSelf: 'flex-end', backgroundColor: c.warnSoft, borderBottomLeftRadius: 4 },
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 10, borderTopWidth: 1, borderTopColor: c.border, backgroundColor: c.card },
-  input: { flex: 1, minHeight: 44, maxHeight: 120, borderRadius: 22, backgroundColor: c.cardAlt, paddingHorizontal: 14, paddingVertical: 10, fontFamily: fonts.regular, fontSize: 15, color: c.text },
+  input: { flex: 1, minHeight: 44, maxHeight: 120, borderRadius: 22, backgroundColor: c.cardAlt, paddingHorizontal: 14, paddingVertical: 10, fontFamily: fonts.regular, fontSize: 15, color: c.text, outlineWidth: 0 },
   send: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' },
   readonly: { padding: 14, alignItems: 'center', borderTopWidth: 1, borderTopColor: c.border, backgroundColor: c.card },
 }));

@@ -62,8 +62,10 @@ function Gate() {
         <Stack.Screen name="match/result" options={{ title: 'تسجيل النتيجة' }} />
         <Stack.Screen name="player/[id]" options={{ title: 'بطاقة اللاعب' }} />
         <Stack.Screen name="tournament/[id]" options={{ title: 'البطولة' }} />
-        <Stack.Screen name="venues" options={{ title: 'الساحات' }} />
-        <Stack.Screen name="profile" options={{ title: 'حسابي' }} />
+        <Stack.Screen name="tournaments" options={{ title: 'البطولات' }} />
+        <Stack.Screen name="trials" options={{ title: 'اختبارات الأندية' }} />
+        <Stack.Screen name="posts" options={{ title: 'المنشورات' }} />
+        <Stack.Screen name="info" options={{ title: 'معلومات' }} />
         <Stack.Screen name="chats" options={{ title: 'المحادثات' }} />
         <Stack.Screen name="chat/[id]" options={{ title: 'المحادثة' }} />
         <Stack.Screen name="trial/[id]" options={{ title: 'الاختبار' }} />

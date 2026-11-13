@@ -31,6 +31,8 @@ const tags = [
   '<meta name="mobile-web-app-capable" content="yes">',
   '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">',
   '<meta name="apple-mobile-web-app-title" content="بالملعب">',
+  // حقول الإدخال: بدون إطار التركيز الأسود الافتراضي للمتصفح (التصميم يوضح الحقل النشط)
+  '<style>input:focus,textarea:focus{outline:none}</style>',
 ].join('\n');
 
 const indexUrl = new URL('index.html', dist);

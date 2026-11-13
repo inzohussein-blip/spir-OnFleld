@@ -23,6 +23,7 @@ import type {
   ChatMessage,
   ChannelKind,
   Wallet,
+  RankingRow,
 } from '../types';
 
 export interface ProfileInput {
@@ -61,6 +62,8 @@ export interface Api {
   getLeaderboard(kind: LeaderKind, limit?: number): Promise<LeaderRow[]>;
   getTeamOfWeek(): Promise<TeamOfWeekEntry[]>;
   getPlayerOfMonth(): Promise<PlayerCard | null>;
+  /** تصنيف اللاعبين حسب النقاط لشهر معيّن (0 = الحالي) */
+  getRankings(monthOffset: number): Promise<RankingRow[]>;
 
   listTournaments(): Promise<Tournament[]>;
   getTournament(id: string): Promise<TournamentDetail | null>;

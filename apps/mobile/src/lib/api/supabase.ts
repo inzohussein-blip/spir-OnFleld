@@ -3,8 +3,8 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 import type { Api, ProfileInput } from './types';
 import { toWesternDigits } from '../format';
-import { attributesFromRating, overallOf, pickTeamOfWeek } from '../stats';
-import type { ChannelKind, ChatChannel, ChatMessage, Post, Trial, Wallet, Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue } from '../types';
+import { attributesFromRating, monthRange, overallOf, pickTeamOfWeek, pointsOf } from '../stats';
+import type { RankingRow, ChannelKind, ChatChannel, ChatMessage, Post, Trial, Wallet, Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue } from '../types';
 
 const PROFILE_COLS = 'id, full_name, city, preferred_position, skill_rating, reliability_score, matches_played, attributes';
 const EMPTY_STATS: PlayerStats = { matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0 };
@@ -54,6 +54,14 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
     return (ps ?? []).map((p: any) => toCard(p, rows.find((r) => r.player_id === p.id)));
   }
   const monthAgo = () => new Date(Date.now() - 30 * 24 * 3600 * 1000);
+  /** يضيف حالتي (منضم/انتظار) لكل مباراة */
+  async function withMyStatus(rows: any[]): Promise<Match[]> {
+    const me = await uid();
+    if (!me || !rows.length) return rows.map((r) => ({ ...r, my_status: null }));
+    const { data } = await sb.from('match_players').select('match_id, status').eq('player_id', me).in('match_id', rows.map((r) => r.id)).in('status', ['joined', 'waitlist']);
+    const mine = new Map((data ?? []).map((r: any) => [r.match_id, r.status]));
+    return rows.map((r) => ({ ...r, my_status: mine.get(r.id) ?? null }));
+  }
 
   return {
     isDemo: false,
@@ -135,7 +143,7 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
         .gt('ends_at', new Date().toISOString())
         .order('starts_at');
       fail(error);
-      return (data ?? []) as Match[];
+      return withMyStatus(data ?? []);
     },
     async listMyMatches() {
       const id = await uid();
@@ -146,7 +154,7 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
       if (!ids.length) return [];
       const { data, error } = await sb.from('match_cards').select('*').in('id', ids).order('starts_at', { ascending: false });
       fail(error);
-      return (data ?? []) as Match[];
+      return withMyStatus(data ?? []);
     },
     async getMatch(id): Promise<MatchDetail | null> {
       const { data: m, error } = await sb.from('match_cards').select('*').eq('id', id).maybeSingle();
@@ -161,8 +169,9 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
       fail(e2);
       const { data: sc } = await sb.from('matches').select('score_a, score_b').eq('id', id).maybeSingle();
       const { data: ev } = await sb.from('match_events').select('player_id, kind').eq('match_id', id);
+      const [withStatus] = await withMyStatus([m]);
       return {
-        ...(m as Match),
+        ...withStatus,
         score_a: sc?.score_a ?? null,
         score_b: sc?.score_b ?? null,
         events: (ev ?? []) as MatchEvent[],
@@ -227,6 +236,21 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
     },
     async getTeamOfWeek() {
       return pickTeamOfWeek(await cardsSince(monthAgo()));
+    },
+    async getRankings(monthOffset): Promise<RankingRow[]> {
+      const { from, to } = monthRange(monthOffset);
+      const { data: st, error } = await sb.rpc('player_stats_range', { p_from: from.toISOString(), p_to: to.toISOString() });
+      fail(error);
+      const rows = (st ?? []) as (PlayerStats & { player_id: string })[];
+      if (!rows.length) return [];
+      const { data: ps, error: e2 } = await sb.from('profiles').select(PROFILE_COLS).in('id', rows.map((r) => r.player_id));
+      fail(e2);
+      return (ps ?? [])
+        .map((p: any) => {
+          const card = toCard(p, rows.find((r) => r.player_id === p.id));
+          return { profile: card.profile, stats: card.stats, overall: card.overall, points: pointsOf(card.stats) };
+        })
+        .sort((a, b) => b.points - a.points || b.overall - a.overall);
     },
     async getPlayerOfMonth() {
       const cards = await cardsSince(monthAgo());

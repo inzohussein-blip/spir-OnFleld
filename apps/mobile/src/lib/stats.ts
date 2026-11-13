@@ -1,4 +1,14 @@
-import type { Attributes, Fixture, PitchSlot, PlayerCard, Position, TournamentTeam } from './types';
+import type { Attributes, Fixture, PitchSlot, PlayerCard, PlayerStats, Position, TournamentTeam } from './types';
+
+/** نقاط التصنيف: فوز 3، تعادل 1، هدف 2، صناعة 1، رجل المباراة 3 */
+export const pointsOf = (s: PlayerStats) => s.wins * 3 + s.draws + s.goals * 2 + s.assists + s.mvps * 3;
+
+/** بداية ونهاية شهر (0 = الشهر الحالي، 1 = الشهر الماضي…) */
+export function monthRange(offset: number, now = new Date()): { from: Date; to: Date } {
+  const from = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+  const to = new Date(now.getFullYear(), now.getMonth() - offset + 1, 1);
+  return { from, to };
+}
 
 // ---------- جدول ترتيب المجموعات ----------
 export interface StandingRow {

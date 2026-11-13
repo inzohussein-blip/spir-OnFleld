@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { attributesFromRating, computeStandings, overallOf, pickTeamOfWeek, tierOf } from './stats.ts';
+import { attributesFromRating, computeStandings, monthRange, overallOf, pickTeamOfWeek, pointsOf, tierOf } from './stats.ts';
 import type { Fixture, PlayerCard, Position, TournamentTeam } from './types.ts';
 
 const team = (id: string, g = 'أ'): TournamentTeam => ({ id, name: id, group_name: g, captain_id: null });
@@ -48,4 +48,19 @@ test('تشكيلة الأسبوع: حارس واحد و11 لاعباً بدون 
   assert.equal(all.length, 13); // + احتياطيان
   assert.equal(new Set(all.map((x) => x.card.profile.id)).size, 13);
   assert.equal(xi.find((x) => x.slot === 'GK')?.card.profile.preferred_position, 'goalkeeper');
+});
+
+test('نقاط التصنيف', () => {
+  assert.equal(pointsOf({ matches: 4, wins: 2, draws: 1, losses: 1, goals: 3, assists: 2, mvps: 1 }), 2 * 3 + 1 + 3 * 2 + 2 + 3);
+  assert.equal(pointsOf({ matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0 }), 0);
+});
+
+test('حدود الشهر: الحالي والماضي وعبور السنة', () => {
+  const { from, to } = monthRange(0, new Date(2026, 10, 13));
+  assert.equal(from.getMonth(), 10);
+  assert.equal(to.getMonth(), 11);
+  const prev = monthRange(1, new Date(2026, 0, 5));
+  assert.equal(prev.from.getFullYear(), 2025);
+  assert.equal(prev.from.getMonth(), 11);
+  assert.equal(prev.to.getMonth(), 0);
 });

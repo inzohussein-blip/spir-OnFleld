@@ -271,7 +271,7 @@ export const useStyles = themed((c) => ({
   small: { fontSize: 13 },
   mutedText: { color: c.muted },
   screen: { flex: 1, backgroundColor: c.bg },
-  screenPad: { padding: 16, gap: 12, paddingBottom: 40 },
+  screenPad: { padding: 16, gap: 12, paddingBottom: 120 }, // مساحة للشريط السفلي العائم
   card: { backgroundColor: c.card, borderRadius: radius, padding: 14, gap: 8, borderWidth: 1, borderColor: c.border },
   btn: { minHeight: 48, borderRadius: radius, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   btnInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -290,6 +290,7 @@ export const useStyles = themed((c) => ({
     fontFamily: fonts.regular,
     fontSize: 16,
     color: c.text,
+    outlineWidth: 0,
   },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: c.border, backgroundColor: c.card },
   chipActive: { backgroundColor: c.primary, borderColor: c.primary },

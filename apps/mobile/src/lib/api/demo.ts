@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Api, ProfileInput } from './types';
 import type { BusyRange } from '../slots';
 import { toWesternDigits } from '../format';
-import { attributesFromRating, overallOf, pickTeamOfWeek } from '../stats';
+import { attributesFromRating, monthRange, overallOf, pickTeamOfWeek, pointsOf } from '../stats';
 import type {
   Attributes,
   Fixture,
@@ -38,7 +38,7 @@ import type {
  * كاملاً قبل ربطه بـ Supabase. رمز التحقق في هذا الوضع: 1234
  */
 
-const KEY = 'balmalaab-demo-v3';
+const KEY = 'balmalaab-demo-v4';
 const ME = 'me';
 
 interface StoredMatch {
@@ -59,6 +59,7 @@ interface StoredMatch {
   score_b: number | null;
   events: MatchEvent[];
   mvpVotes: { voter_id: string; player_id: string }[];
+  registration_opens_at?: string | null;
 }
 
 interface StoredTournament extends Omit<Tournament, 'registered_teams'> {
@@ -173,6 +174,25 @@ function seed(): DB {
     { ...base, id: 'm3', field_id: 'f3', organizer_id: 'p2', title: 'صالة الليل', players_per_side: 5, skill_level: 'advanced', visibility: 'public', starts_at: at(0, 23), ends_at: at(1, 0), price: 50000, roster: roster([2, 1, 0, 8, 4, 6, 3, 10, 9]) },
     { ...base, id: 'm4', field_id: 'f5', organizer_id: 'p11', title: 'ملعب كامل — السبت', players_per_side: 11, skill_level: 'open', visibility: 'public', starts_at: at(3, 18), ends_at: at(3, 20), price: 300000, roster: roster([11, 12, 13, 14, 15, 0, 2, 5, 7, 9, 10, 3, 6, 8]) },
   ];
+
+  // جدول الأسبوع القادم — حتى يكون لكل يوم في شريط الأيام مباريات
+  const slots: [string, number, number][] = [['f1', 5, 40000], ['f3', 5, 50000], ['f2', 7, 60000], ['f4', 6, 35000]];
+  for (let day = 0; day < 7; day++) {
+    const count = 2 + (day % 2);
+    for (let k = 0; k < count; k++) {
+      const [field_id, perSide, price] = slots[(day + k) % slots.length];
+      const hour = 18 + k * 2;
+      if (day === 0 && hour <= new Date().getHours()) continue;
+      const take = Math.min(perSide * 2, Math.floor(rand() * perSide * 2.2));
+      const ids = Array.from({ length: 16 }, (_, i) => i).sort(() => rand() - 0.5).slice(0, take);
+      matches.push({
+        ...base, id: `w${day}-${k}`, field_id, organizer_id: `p${ids[0] ?? 0}`, title: null, players_per_side: perSide,
+        skill_level: 'open', visibility: 'public', starts_at: at(day, hour), ends_at: at(day, hour + 1), price, roster: roster(ids),
+        // مباراة بعد يومين يُفتح تسجيلها قبل موعدها بيوم — لتجربة العدّاد
+        registration_opens_at: day === 2 && k === 0 ? at(1, hour) : null,
+      });
+    }
+  }
 
   // مباريات منتهية بنتائج — تغذّي الإحصائيات والمتصدرين
   for (let k = 0; k < 6; k++) {
@@ -322,6 +342,7 @@ const fieldOf = (d: DB, fieldId: string) => {
 
 function toMatch(d: DB, m: StoredMatch): Match {
   const loc = fieldOf(d, m.field_id);
+  const mine = m.roster.find((r) => r.player_id === ME && (r.status === 'joined' || r.status === 'waitlist'));
   const joined = m.roster.filter((r) => r.status === 'joined').length;
   const max = m.players_per_side * 2;
   const ended = new Date(m.ends_at) < new Date();
@@ -331,13 +352,15 @@ function toMatch(d: DB, m: StoredMatch): Match {
     status: ended ? 'finished' : joined >= max ? 'full' : 'open',
     starts_at: m.starts_at, ends_at: m.ends_at, cost_per_player: Math.ceil(m.price / max / 250) * 250,
     venue_name: loc?.venue.name ?? null, field_name: loc?.field.name ?? null, joined_count: joined,
+    registration_opens_at: m.registration_opens_at ?? null, venue_address: loc?.venue.address ?? null, my_status: mine?.status ?? null,
   };
 }
 
-function statsOf(d: DB, playerId: string): PlayerStats {
+function statsOf(d: DB, playerId: string, range?: { from: Date; to: Date }): PlayerStats {
   const s: PlayerStats = { matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0 };
   for (const m of d.matches) {
     if (m.score_a == null || m.score_b == null) continue;
+    if (range && (new Date(m.starts_at) < range.from || new Date(m.starts_at) >= range.to)) continue;
     const r = m.roster.find((x) => x.player_id === playerId && x.status === 'joined');
     if (!r) continue;
     s.matches++;
@@ -469,6 +492,7 @@ export const demoApi: Api = {
     if (!d.profiles.some((p) => p.id === ME)) throw new Error('أكمل ملفك الشخصي أولاً');
     const mine = m.roster.find((r) => r.player_id === ME);
     if (mine && (mine.status === 'joined' || mine.status === 'waitlist')) return mine.status;
+    if (m.registration_opens_at && new Date(m.registration_opens_at) > new Date()) throw new Error('التسجيل لم يُفتح بعد لهذه المباراة');
     const joined = m.roster.filter((r) => r.status === 'joined').length;
     const status: RosterStatus = joined < m.players_per_side * 2 ? 'joined' : 'waitlist';
     if (mine) Object.assign(mine, { status, team: null, joined_at: new Date().toISOString() });
@@ -544,6 +568,18 @@ export const demoApi: Api = {
   async getTeamOfWeek() {
     const d = await db();
     return pickTeamOfWeek(d.profiles.filter((p) => p.id !== ME).map((p) => cardOf(d, p)));
+  },
+  async getRankings(monthOffset) {
+    const d = await db();
+    const range = monthRange(monthOffset);
+    return d.profiles
+      .map((p) => {
+        const stats = statsOf(d, p.id, range);
+        const attributes = d.attributes[p.id] ?? attributesFromRating(p.skill_rating, p.preferred_position);
+        return { profile: p, stats, points: pointsOf(stats), overall: overallOf(attributes, p.preferred_position) };
+      })
+      .filter((r) => r.stats.matches > 0)
+      .sort((a, b) => b.points - a.points || b.overall - a.overall);
   },
   async getPlayerOfMonth() {
     const d = await db();

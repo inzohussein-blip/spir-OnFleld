@@ -60,6 +60,11 @@ export interface Match {
   venue_name: string | null;
   field_name: string | null;
   joined_count: number;
+  /** موعد فتح التسجيل (null = مفتوح الآن) */
+  registration_opens_at: string | null;
+  venue_address: string | null;
+  /** حالتي في المباراة (null = لست منضماً) */
+  my_status: RosterStatus | null;
 }
 
 export interface RosterEntry {
@@ -260,4 +265,12 @@ export interface TournamentPlayerStat {
   assists: number;
   yellow: number;
   red: number;
+}
+
+// ---------- التصنيفات الشهرية ----------
+export interface RankingRow {
+  profile: Profile;
+  points: number;
+  overall: number;
+  stats: PlayerStats;
 }
