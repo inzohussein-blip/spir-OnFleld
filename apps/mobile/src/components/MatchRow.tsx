@@ -46,7 +46,7 @@ export function ActionPill({ action, busy, onPress, big, onBar }: { action: Matc
 }
 
 /** ألوان «باقي N»: أخضر كثير، برتقالي قليل، أحمر مكتملة */
-const SPOTS = {
+export const SPOTS = {
   ok: { fg: '#167A43', bg: '#E5F6EC' },
   few: { fg: '#B45309', bg: '#FFF1DC' },
   full: { fg: '#C42B1C', bg: '#FDECEA' },
