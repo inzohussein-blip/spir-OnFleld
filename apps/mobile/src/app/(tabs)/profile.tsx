@@ -10,7 +10,6 @@ import { pickSquareImage } from '../../lib/pickImage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, ErrorText, Row, Text } from '../../components/ui';
 import { api } from '../../lib/api';
-import { resetDemo } from '../../lib/api/demo';
 import { POSITION_LABEL } from '../../lib/format';
 import { errMsg, useAsync, useSession } from '../../lib/session';
 import { fonts, themed, useColors, useTheme } from '../../theme';
@@ -91,9 +90,9 @@ export default function Profile() {
     }
   }
 
-  async function deleteAccount() {
+  async function requestDeletion() {
     try {
-      await api.deleteAccount();
+      await api.requestAccountDeletion();
       await signOut();
     } catch (e) {
       setError(errMsg(e));
@@ -203,30 +202,41 @@ export default function Profile() {
       </Box>
 
       <Box>
-        <RowLink title="عن بالملعب" href={{ pathname: '/info', params: { doc: 'about' } }} />
-        <RowLink title="الدعم الفني" href={{ pathname: '/chat/[id]', params: { id: 'support' } }} />
-        <RowLink title="الشروط والأحكام" href={{ pathname: '/info', params: { doc: 'terms' } }} />
-        <RowLink title="سياسة الخصوصية" href={{ pathname: '/info', params: { doc: 'privacy' } }} last />
+        <RowLink title="الدعم الفني" href={{ pathname: '/chat/[id]', params: { id: 'support' } }} last />
       </Box>
 
       <Box>
         <RowLink title="تسجيل الخروج" onPress={signOut} />
-        {api.isDemo ? <RowLink title="إعادة البيانات التجريبية" onPress={async () => { await resetDemo(); await signOut(); }} /> : null}
-        <RowLink title="حذف الحساب" danger onPress={() => setConfirmDelete(true)} />
-        <RowLink title="رقم الإصدار" right={<Text style={{ color: c.muted }}>{APP_VERSION}</Text>} last />
+        <RowLink title="طلب حذف الحساب" danger onPress={() => setConfirmDelete(true)} last />
       </Box>
 
       {confirmDelete ? (
         <View style={[st.box, { padding: 16, gap: 10, borderColor: c.danger }]}>
           <Text style={{ fontFamily: fonts.bold, color: c.danger }}>متأكد تريد تحذف حسابك؟</Text>
-          <Text variant="muted">يُحذف ملفك وبيانات دخولك نهائياً. نتائج المباريات السابقة تبقى باسم «حساب محذوف».</Text>
+          <Text variant="muted" style={{ lineHeight: 24 }}>
+            يوصل طلبك للإدارة، وينحذف حسابك خلال 30 يوم. راح تطلع من حسابك هسه، وإذا رجعت دخلت قبل الحذف، الطلب ينلغي تلقائياً.
+          </Text>
           <ErrorText message={error} />
           <Row style={{ flexWrap: 'nowrap' }}>
-            <Button title="نعم، احذف" variant="danger" onPress={deleteAccount} style={{ flex: 1 }} />
+            <Button title="دز الطلب" variant="danger" onPress={requestDeletion} style={{ flex: 1 }} />
             <Button title="إلغاء" variant="ghost" onPress={() => setConfirmDelete(false)} style={{ flex: 1 }} />
           </Row>
         </View>
       ) : null}
+
+      <Box>
+        <RowLink
+          title="حول"
+          href="/info"
+          last
+          right={
+            <Row style={{ gap: 6 }}>
+              <Text style={{ color: c.muted }}>الإصدار {APP_VERSION}</Text>
+              <Ionicons name="chevron-back" size={20} color={c.muted} />
+            </Row>
+          }
+        />
+      </Box>
     </ScrollView>
   );
 }

@@ -35,7 +35,9 @@ import type {
   AdminMatchInput,
   PlayerTeam,
   TeamInvite,
+  AccountDeletionRequest,
 } from '../types';
+import { DELETION_GRACE_DAYS } from '../types';
 import { canJoinAnotherTeam, MAX_TEAM_MEMBERS, nextCaptain, normalizePublicId, teamJoinError, teamNameError } from '../teams';
 
 /**
@@ -113,6 +115,7 @@ interface DB {
   suggestions: MatchSuggestion[];
   notifications: AppNotification[];
   teams: StoredTeam[];
+  deletionRequests: AccountDeletionRequest[];
   teamInvites: { id: string; team_id: string; player_id: string; invited_by: string; status: 'pending' | 'accepted' | 'rejected'; created_at: string }[];
   posts: Post[];
   messages: ChatMessage[];
@@ -358,6 +361,8 @@ function seed(): DB {
   return {
     signedIn: false, profiles, attributes, venues, matches, ratings: [], tournaments, trials, applications: [], trialAlert: false, posts, messages, wallet,
     suggestions: [], notifications, teams, teamInvites,
+    // طلب حذف تجريبي حتى تبين صفحة لوحة التحكم
+    deletionRequests: [{ id: 'dr1', player_id: 'p9', player_name: NAMES[9][0], public_id: publicIdOf(9), requested_at: at(-26, 12), due_at: at(-26 + DELETION_GRACE_DAYS, 12), status: 'pending' }],
   };
 }
 
@@ -856,8 +861,42 @@ export const demoApi: Api = {
     const q = query.trim();
     return (await db()).profiles.filter((p) => p.id !== ME && (!q || p.full_name.includes(q))).sort((a, b) => b.skill_rating - a.skill_rating);
   },
-  async deleteAccount() {
-    cache = seed();
+  async requestAccountDeletion() {
+    const d = await db();
+    const me = d.profiles.find((p) => p.id === ME);
+    if (!me) throw new Error('كمّل ملفك الشخصي بالأول');
+    if (!d.deletionRequests.some((r) => r.player_id === ME && r.status === 'pending')) {
+      const now = new Date();
+      const due = new Date(now);
+      due.setDate(due.getDate() + DELETION_GRACE_DAYS);
+      d.deletionRequests.unshift({ id: `dr${Date.now()}`, player_id: ME, player_name: me.full_name, public_id: me.public_id ?? null, requested_at: now.toISOString(), due_at: due.toISOString(), status: 'pending' });
+    }
+    d.signedIn = false;
+    await save();
+  },
+  async cancelMyDeletionRequest() {
+    const d = await db();
+    const r = d.deletionRequests.find((x) => x.player_id === ME && x.status === 'pending');
+    if (!r) return false;
+    r.status = 'cancelled';
+    await save();
+    return true;
+  },
+  async adminListDeletionRequests() {
+    return [...(await db()).deletionRequests].sort((a, b) => a.due_at.localeCompare(b.due_at));
+  },
+  async adminCompleteDeletion(requestId) {
+    const d = await db();
+    const r = d.deletionRequests.find((x) => x.id === requestId && x.status === 'pending');
+    if (!r) throw new Error('الطلب مو موجود أو انلغى');
+    const p = d.profiles.find((x) => x.id === r.player_id);
+    if (p) Object.assign(p, { full_name: 'حساب محذوف', city: null, avatar_url: null });
+    for (const m of d.matches) {
+      if (new Date(m.starts_at) > new Date()) for (const x of m.roster) if (x.player_id === r.player_id && (x.status === 'joined' || x.status === 'waitlist')) x.status = 'left';
+    }
+    for (const t of d.teams) t.members = t.members.filter((mb) => mb.player_id !== r.player_id);
+    d.teams = d.teams.filter((t) => t.members.length > 0);
+    r.status = 'done';
     await save();
   },
 
@@ -968,7 +1007,3 @@ export const demoApi: Api = {
   },
 };
 
-export async function resetDemo() {
-  cache = seed();
-  await save();
-}

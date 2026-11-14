@@ -33,6 +33,7 @@ export default function AdminLayout() {
       <Stack.Screen name="suggestions" options={{ title: 'اقتراحات اللاعبين' }} />
       <Stack.Screen name="venues" options={{ title: 'الملاعب والصور والمواقع' }} />
       <Stack.Screen name="venue-location" options={{ title: 'موقع الملعب على الخريطة' }} />
+      <Stack.Screen name="deletions" options={{ title: 'طلبات حذف الحساب' }} />
     </Stack>
   );
 }

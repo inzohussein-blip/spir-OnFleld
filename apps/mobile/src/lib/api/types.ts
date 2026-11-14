@@ -30,6 +30,7 @@ import type {
   AppNotification,
   AdminMatchInput,
   PlayerTeam,
+  AccountDeletionRequest,
   TeamInvite,
 } from '../types';
 
@@ -126,5 +127,10 @@ export interface Api {
 
   getWallet(): Promise<Wallet>;
   listPlayers(query: string): Promise<Profile[]>;
-  deleteAccount(): Promise<void>;
+  /** طلب حذف الحساب: يوصل للوحة التحكم وينحذف خلال 30 يوم (ويطلّع من الحساب) */
+  requestAccountDeletion(): Promise<void>;
+  /** يُستدعى لما اللاعب يكون داخل لحسابه: يلغي أي طلب حذف معلّق — يرجّع true إذا ألغى طلب */
+  cancelMyDeletionRequest(): Promise<boolean>;
+  adminListDeletionRequests(): Promise<AccountDeletionRequest[]>;
+  adminCompleteDeletion(requestId: string): Promise<void>;
 }

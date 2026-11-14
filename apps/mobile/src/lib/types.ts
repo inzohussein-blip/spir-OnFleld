@@ -356,3 +356,16 @@ export interface AdminMatchInput extends NewMatchInput {
   registration_opens_at: string | null;
   suggestion_id?: string | null;
 }
+
+// ---------- طلبات حذف الحساب ----------
+/** الحذف يصير خلال 30 يوم من الطلب، وإذا اللاعب دخل لحسابه قبلها ينلغي الطلب تلقائياً */
+export const DELETION_GRACE_DAYS = 30;
+export interface AccountDeletionRequest {
+  id: string;
+  player_id: string;
+  player_name: string;
+  public_id: string | null;
+  requested_at: string;
+  due_at: string;
+  status: 'pending' | 'cancelled' | 'done';
+}

@@ -549,10 +549,31 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
       fail(error);
     },
 
-    async deleteAccount() {
-      const { error } = await sb.rpc('delete_my_account');
+    async requestAccountDeletion() {
+      const { error } = await sb.rpc('request_account_deletion');
       fail(error);
       await sb.auth.signOut();
+    },
+    async cancelMyDeletionRequest() {
+      const { data, error } = await sb.rpc('cancel_my_deletion_request');
+      fail(error);
+      return data === true;
+    },
+    async adminListDeletionRequests() {
+      const { data, error } = await sb
+        .from('account_deletion_requests')
+        .select('id, player_id, player_name, public_id, requested_at, due_at, status')
+        .order('due_at')
+        .limit(200);
+      fail(error);
+      return (data ?? []).map((r: any) => ({
+        id: r.id, player_id: r.player_id, player_name: r.player_name ?? '', public_id: r.public_id ?? null,
+        requested_at: r.requested_at, due_at: r.due_at, status: r.status,
+      }));
+    },
+    async adminCompleteDeletion(requestId) {
+      const { error } = await sb.rpc('admin_complete_account_deletion', { p_request: requestId });
+      fail(error);
     },
   };
 }

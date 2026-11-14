@@ -3,8 +3,9 @@ import { Stack, usePathname, useRouter, useSegments, type Href } from 'expo-rout
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
 import { I18nManager, Platform } from 'react-native';
-import { ToastProvider } from '../components/feedback';
+import { ToastProvider, useToast } from '../components/feedback';
 import { Loading } from '../components/ui';
+import { api } from '../lib/api';
 import { registerForPush, setupNotifications } from '../lib/notifications';
 import { SessionProvider, useSession } from '../lib/session';
 import { fonts, headerText, ThemeProvider, useTheme } from '../theme';
@@ -64,6 +65,18 @@ function Gate() {
     if (userId) void registerForPush();
   }, [userId]);
 
+  // دخل لحسابه وعنده طلب حذف معلّق → ينلغي الطلب تلقائياً
+  const toast = useToast();
+  useEffect(() => {
+    if (!userId) return;
+    void api
+      .cancelMyDeletionRequest()
+      .then((cancelled) => {
+        if (cancelled) toast('هلا بيك مرة ثانية 👋 انلغى طلب حذف حسابك');
+      })
+      .catch(() => {});
+  }, [userId, toast]);
+
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') document.body.style.backgroundColor = c.bg;
   }, [c.bg]);
@@ -96,7 +109,7 @@ function Gate() {
         <Stack.Screen name="tournaments" options={{ title: 'البطولات' }} />
         <Stack.Screen name="trials" options={{ title: 'اختبارات الأندية' }} />
         <Stack.Screen name="posts" options={{ title: 'المنشورات' }} />
-        <Stack.Screen name="info" options={{ title: 'معلومات' }} />
+        <Stack.Screen name="info" options={{ title: 'حول' }} />
         <Stack.Screen name="stats" options={{ title: 'الإحصائيات' }} />
         <Stack.Screen name="notifications" options={{ title: 'الإشعارات' }} />
         <Stack.Screen name="suggest" options={{ title: 'اقترح مباراة' }} />

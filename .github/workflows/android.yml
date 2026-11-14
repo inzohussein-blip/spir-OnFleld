@@ -1,10 +1,9 @@
 # بناء تطبيق الأندرويد (APK) على خوادم GitHub — بدون حساب EAS
 name: Android APK
 
+# ما يبني تلقائياً مع كل رفع — البناء بس لما ينطلب (تشغيل يدوي) أو مع وسم إصدار v*
 on:
   push:
-    branches: ['**']
-    paths: ['apps/mobile/**', '.github/workflows/android.yml']
     tags: ['v*']
   workflow_dispatch:
 
