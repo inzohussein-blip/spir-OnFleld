@@ -3,12 +3,12 @@ import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
-import { Platform, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Platform, Pressable, ScrollView, View } from 'react-native';
 import { Avatar } from '../../components/Avatar';
 import { useToast } from '../../components/feedback';
 import { pickSquareImage } from '../../lib/pickImage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, ErrorText, Row, Text } from '../../components/ui';
+import { Button, ErrorText, Row, Segmented, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { POSITION_LABEL } from '../../lib/format';
 import { errMsg, useAsync, useSession } from '../../lib/session';
@@ -54,7 +54,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 export default function Profile() {
   const { profile, signOut, refresh, userId } = useSession();
-  const { colors: c, scheme, setMode } = useTheme();
+  const { colors: c, mode, setMode } = useTheme();
   const st = useStyles();
   const insets = useSafeAreaInsets();
   const { data: card, reload } = useAsync(() => (userId ? api.getPlayerCard(userId) : Promise.resolve(null)), [userId]);
@@ -194,11 +194,18 @@ export default function Profile() {
       </Section>
 
       <Box>
-        <RowLink
-          title="الوضع الداكن"
-          right={<Switch value={scheme === 'dark'} onValueChange={(v) => setMode(v ? 'dark' : 'light')} trackColor={{ true: c.primary, false: c.border }} thumbColor="#fff" />}
-          last
-        />
+        <View style={{ padding: 16, gap: 12 }}>
+          <Text style={st.rowText}>المظهر</Text>
+          <Segmented
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: 'light', label: 'فاتح', icon: 'sunny-outline' },
+              { value: 'dark', label: 'داكن', icon: 'moon-outline' },
+              { value: 'system', label: 'حسب الجهاز', icon: 'phone-portrait-outline' },
+            ]}
+          />
+        </View>
       </Box>
 
       <Box>

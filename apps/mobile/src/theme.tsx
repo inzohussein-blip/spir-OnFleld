@@ -92,11 +92,12 @@ interface ThemeState {
 }
 
 const KEY = 'balmalaab-theme';
-const ThemeContext = createContext<ThemeState>({ mode: 'system', scheme: 'light', colors: light, setMode: () => {} });
+const ThemeContext = createContext<ThemeState>({ mode: 'light', scheme: 'light', colors: light, setMode: () => {} });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const system = useColorScheme();
-  const [mode, setMode] = useState<ThemeMode>('system');
+  // الافتراضي فاتح؛ اللاعب يكدر يختار «حسب الجهاز» أو «داكن» من حسابي
+  const [mode, setMode] = useState<ThemeMode>('light');
 
   useEffect(() => {
     AsyncStorage.getItem(KEY)
