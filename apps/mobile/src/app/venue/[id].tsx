@@ -6,6 +6,7 @@ import { OfflineBanner, SkeletonList } from '../../components/feedback';
 import { MatchRow } from '../../components/MatchRow';
 import { Badge, Button, Empty, ErrorText, Row, Text } from '../../components/ui';
 import { api } from '../../lib/api';
+import { hasCoords } from '../../lib/geo';
 import { formatFormat, formatHour, formatIQD } from '../../lib/format';
 import { useAsync, useNow } from '../../lib/session';
 import { useMatchActions } from '../../lib/useMatchActions';
@@ -79,6 +80,9 @@ export default function VenueScreen() {
         {here.map((m, i) => (
           <MatchRow key={m.id} match={m} index={i + 1} now={now} busy={busyId === m.id} onAction={() => void join(m)} />
         ))}
+        {v && hasCoords(v) ? (
+          <Button title="شوفه على الخريطة" icon="map-outline" variant="outline" onPress={() => router.dismissTo({ pathname: '/map', params: { venue: id } })} />
+        ) : null}
         <Button title="اقترح مباراة بهذا الملعب" icon="bulb-outline" variant="outline" onPress={() => router.push({ pathname: '/suggest', params: { venue: id } })} />
       </View>
     </ScrollView>

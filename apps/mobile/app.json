@@ -67,6 +67,12 @@
           "photosPermission": "نحتاج الوصول للصور حتى تختار صورتك الشخصية.",
           "cameraPermission": false
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "نستخدم موقعك حتى نرتّب الملاعب حسب الأقرب لك على الخريطة."
+        }
       ]
     ],
     "extra": {

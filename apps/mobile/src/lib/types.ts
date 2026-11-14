@@ -26,6 +26,9 @@ export interface Venue {
   fields: Field[];
   /** صورة الملعب الرئيسية (يرفعها المدير من لوحة التحكم) */
   photo_url?: string | null;
+  /** إحداثيات الملعب على الخريطة (يحددها المدير من لوحة التحكم) */
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export interface Field {

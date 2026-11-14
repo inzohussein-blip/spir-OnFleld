@@ -105,6 +105,7 @@ export interface Api {
   adminListSuggestions(): Promise<MatchSuggestion[]>;
   adminSetSuggestionStatus(id: string, status: SuggestionStatus): Promise<void>;
   adminUploadVenuePhoto(venueId: string, localUri: string): Promise<string>;
+  adminSetVenueLocation(venueId: string, lat: number, lng: number): Promise<void>;
 
   getWallet(): Promise<Wallet>;
   listPlayers(query: string): Promise<Profile[]>;

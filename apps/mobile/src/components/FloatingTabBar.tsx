@@ -12,6 +12,7 @@ type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>
 const ICONS: Record<string, [IconName, IconName]> = {
   index: ['home-outline', 'home'],
   venues: ['football-outline', 'football'],
+  map: ['map-outline', 'map'],
   rankings: ['trophy-outline', 'trophy'],
   profile: ['person-outline', 'person'],
 };
@@ -69,7 +70,7 @@ const useStyles = themed((c) => ({
     shadowOffset: { width: 0, height: 6 },
     elevation: 10,
   },
-  item: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minWidth: 48, height: 48, borderRadius: 24, paddingHorizontal: 12 },
-  itemActive: { backgroundColor: c.primarySoft, paddingHorizontal: 18 },
+  item: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minWidth: 46, height: 48, borderRadius: 24, paddingHorizontal: 10 },
+  itemActive: { backgroundColor: c.primarySoft, paddingHorizontal: 14 },
   label: { fontFamily: fonts.bold, fontSize: 14, color: c.primary },
 }));

@@ -31,7 +31,8 @@ export default function AdminLayout() {
       <Stack.Screen name="index" options={{ title: 'لوحة التحكم' }} />
       <Stack.Screen name="new-match" options={{ title: 'مباراة جديدة' }} />
       <Stack.Screen name="suggestions" options={{ title: 'اقتراحات اللاعبين' }} />
-      <Stack.Screen name="venues" options={{ title: 'الملاعب والصور' }} />
+      <Stack.Screen name="venues" options={{ title: 'الملاعب والصور والمواقع' }} />
+      <Stack.Screen name="venue-location" options={{ title: 'موقع الملعب على الخريطة' }} />
     </Stack>
   );
 }

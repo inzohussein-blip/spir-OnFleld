@@ -1,8 +1,10 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import { useToast } from '../../components/feedback';
 import { Button, Loading, Text } from '../../components/ui';
 import { api } from '../../lib/api';
+import { hasCoords } from '../../lib/geo';
 import { pickSquareImage } from '../../lib/pickImage';
 import { errMsg, useAsync } from '../../lib/session';
 import { fonts, useColors } from '../../theme';
@@ -10,6 +12,7 @@ import { fonts, useColors } from '../../theme';
 export default function AdminVenues() {
   const c = useColors();
   const toast = useToast();
+  const router = useRouter();
   const { data, loading, reload } = useAsync(() => api.listVenues(), []);
   const [uploading, setUploading] = useState<string | null>(null);
 
@@ -39,7 +42,18 @@ export default function AdminVenues() {
           <View style={{ flex: 1, gap: 6 }}>
             <Text style={{ fontFamily: fonts.bold, fontSize: 16 }}>{v.name}</Text>
             <Text variant="small" style={{ color: c.muted }}>{v.city}{v.address ? ` · ${v.address}` : ''}</Text>
-            <Button title={v.photo_url ? 'غيّر الصورة' : 'ارفع صورة'} icon="image-outline" variant="outline" loading={uploading === v.id} onPress={() => void upload(v.id)} />
+            <Text variant="small" style={{ color: hasCoords(v) ? c.primary : c.muted }}>
+              {hasCoords(v) ? '📍 موقعه محدد على الخريطة' : 'موقعه مو محدد — ما يطلع على الخريطة'}
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+              <Button title={v.photo_url ? 'غيّر الصورة' : 'ارفع صورة'} icon="image-outline" variant="outline" loading={uploading === v.id} onPress={() => void upload(v.id)} />
+              <Button
+                title={hasCoords(v) ? 'عدّل الموقع' : 'حدّد الموقع'}
+                icon="location-outline"
+                variant="outline"
+                onPress={() => router.push({ pathname: '/admin/venue-location', params: { id: v.id } })}
+              />
+            </View>
           </View>
         </View>
       ))}

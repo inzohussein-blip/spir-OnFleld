@@ -40,7 +40,19 @@ import type {
  * كاملاً قبل ربطه بـ Supabase. رمز التحقق في هذا الوضع: 1234
  */
 
-const KEY = 'balmalaab-demo-v5';
+const KEY = 'balmalaab-demo-v6';
+
+/** المتصفح يعطي رابط blob يموت بعد إعادة تحميل الصفحة — نحفظ الصورة نفسها (data URL) بالوضع التجريبي */
+async function persistable(uri: string): Promise<string> {
+  if (!uri.startsWith('blob:')) return uri;
+  const blob = await (await fetch(uri)).blob();
+  return await new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error('ما كدرنا نقرا الصورة'));
+    r.readAsDataURL(blob);
+  });
+}
 const ME = 'me';
 
 interface StoredMatch {
@@ -148,22 +160,22 @@ function seed(): DB {
 
   const venues: Venue[] = [
     {
-      id: 'v1', name: 'ملاعب النخيل', city: 'بغداد', address: 'المنصور، قرب ساحة الرواد', amenities: ['موقف سيارات', 'مشروبات', 'إنارة ليلية'], is_verified: true,
+      id: 'v1', name: 'ملاعب النخيل', city: 'بغداد', address: 'المنصور، قرب ساحة الرواد', lat: 33.3128, lng: 44.3361, amenities: ['موقف سيارات', 'مشروبات', 'إنارة ليلية'], is_verified: true,
       fields: [
         { id: 'f1', venue_id: 'v1', name: 'ساحة 1', players_per_side: 5, surface: 'عشب صناعي', is_indoor: false, default_price: 40000, open_hour: 16, close_hour: 24 },
         { id: 'f2', venue_id: 'v1', name: 'ساحة 2', players_per_side: 7, surface: 'عشب صناعي', is_indoor: false, default_price: 60000, open_hour: 16, close_hour: 24 },
       ],
     },
     {
-      id: 'v2', name: 'الصالة الذهبية', city: 'بغداد', address: 'الكرادة داخل', amenities: ['مغطاة', 'تبريد', 'غرف تبديل'], is_verified: true,
+      id: 'v2', name: 'الصالة الذهبية', city: 'بغداد', address: 'الكرادة داخل', lat: 33.3036, lng: 44.4212, amenities: ['مغطاة', 'تبريد', 'غرف تبديل'], is_verified: true,
       fields: [{ id: 'f3', venue_id: 'v2', name: 'الصالة', players_per_side: 5, surface: 'باركيه', is_indoor: true, default_price: 50000, open_hour: 14, close_hour: 24 }],
     },
     {
-      id: 'v4', name: 'ملعب الرافدين', city: 'بغداد', address: 'زيونة', amenities: ['ملعب كامل', 'مدرجات', 'إنارة ليلية'], is_verified: true,
+      id: 'v4', name: 'ملعب الرافدين', city: 'بغداد', address: 'زيونة', lat: 33.3268, lng: 44.4497, amenities: ['ملعب كامل', 'مدرجات', 'إنارة ليلية'], is_verified: true,
       fields: [{ id: 'f5', venue_id: 'v4', name: 'الملعب الكبير', players_per_side: 11, surface: 'عشب طبيعي', is_indoor: false, default_price: 150000, open_hour: 15, close_hour: 23 }],
     },
     {
-      id: 'v3', name: 'ملعب الشباب', city: 'البصرة', address: 'العشار', amenities: ['إنارة ليلية'], is_verified: false,
+      id: 'v3', name: 'ملعب الشباب', city: 'البصرة', address: 'العشار', lat: 30.5258, lng: 47.8257, amenities: ['إنارة ليلية'], is_verified: false,
       fields: [{ id: 'f4', venue_id: 'v3', name: 'الملعب الرئيسي', players_per_side: 6, surface: 'عشب صناعي', is_indoor: false, default_price: 35000, open_hour: 17, close_hour: 23 }],
     },
   ];
@@ -693,9 +705,9 @@ export const demoApi: Api = {
     const d = await db();
     const me = d.profiles.find((p) => p.id === ME);
     if (!me) throw new Error('كمّل ملفك الشخصي بالأول');
-    me.avatar_url = localUri;
+    me.avatar_url = await persistable(localUri);
     await save();
-    return localUri;
+    return me.avatar_url;
   },
 
   async suggestMatch(input) {
@@ -771,9 +783,17 @@ export const demoApi: Api = {
     const d = await db();
     const v = d.venues.find((x) => x.id === venueId);
     if (!v) throw new Error('الملعب مو موجود');
-    v.photo_url = localUri;
+    v.photo_url = await persistable(localUri);
     await save();
-    return localUri;
+    return v.photo_url;
+  },
+  async adminSetVenueLocation(venueId, lat, lng) {
+    const d = await db();
+    const v = d.venues.find((x) => x.id === venueId);
+    if (!v) throw new Error('الملعب مو موجود');
+    v.lat = lat;
+    v.lng = lng;
+    await save();
   },
 };
 
