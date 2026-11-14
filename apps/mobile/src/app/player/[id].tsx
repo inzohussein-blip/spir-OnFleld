@@ -13,7 +13,7 @@ export default function PlayerScreen() {
   const c = useColors();
   const { data: card, loading, error } = useAsync(() => api.getPlayerCard(id), [id]);
   if (loading && !card) return <Loading />;
-  if (!card) return <Screen><ErrorText message={error ?? 'اللاعب غير موجود'} /></Screen>;
+  if (!card) return <Screen><ErrorText message={error ?? 'اللاعب مو موجود'} /></Screen>;
   return (
     <Screen>
       <Stack.Screen options={{ title: card.profile.full_name }} />

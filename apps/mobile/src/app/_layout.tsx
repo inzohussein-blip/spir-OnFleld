@@ -1,9 +1,11 @@
 import { Cairo_400Regular, Cairo_600SemiBold, Cairo_700Bold, useFonts } from '@expo-google-fonts/cairo';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, usePathname, useRouter, useSegments, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { I18nManager, Platform } from 'react-native';
+import { ToastProvider } from '../components/feedback';
 import { Loading } from '../components/ui';
+import { registerForPush, setupNotifications } from '../lib/notifications';
 import { SessionProvider, useSession } from '../lib/session';
 import { fonts, headerText, ThemeProvider, useTheme } from '../theme';
 
@@ -22,15 +24,45 @@ function Gate() {
   const { ready, userId, profile } = useSession();
   const { colors: c, scheme } = useTheme();
   const segments = useSegments();
+  const pathname = usePathname();
   const router = useRouter();
+
+  // رابط الدعوة: إذا فتح الرابط وهو مو مسجّل، نرجّعه لنفس الصفحة بعد الدخول
+  const pendingRef = useRef<string | null>(null);
+  const onboardingRef = useRef(false);
 
   useEffect(() => {
     if (!ready) return;
     const first = segments[0] as string | undefined;
-    if (!userId && first !== 'login') router.replace('/login');
-    else if (userId && !profile && first !== 'onboarding') router.replace('/onboarding');
-    else if (userId && profile && first === 'login') router.replace('/');
-  }, [ready, userId, profile, segments, router]);
+    if (!userId) {
+      if (first !== 'login') {
+        if (pathname && pathname !== '/') pendingRef.current = pathname;
+        router.replace('/login');
+      }
+      return;
+    }
+    if (!profile) {
+      if (first !== 'onboarding') {
+        onboardingRef.current = true;
+        router.replace('/onboarding');
+      }
+      return;
+    }
+    if (first === 'login' || (first === 'onboarding' && onboardingRef.current)) {
+      const to = pendingRef.current ?? '/';
+      pendingRef.current = null;
+      onboardingRef.current = false;
+      router.replace(to as Href);
+    }
+  }, [ready, userId, profile, segments, pathname, router]);
+
+  // الإشعارات: إعداد القناة، وتسجيل الجهاز للإشعارات من الخادم بعد الدخول
+  useEffect(() => {
+    void setupNotifications();
+  }, []);
+  useEffect(() => {
+    if (userId) void registerForPush();
+  }, [userId]);
 
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') document.body.style.backgroundColor = c.bg;
@@ -55,7 +87,6 @@ function Gate() {
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ title: 'ملفك كلاعب' }} />
         <Stack.Screen name="venue/[id]" options={{ title: 'الساحة' }} />
-        <Stack.Screen name="matches" options={{ title: 'المباريات' }} />
         <Stack.Screen name="my-matches" options={{ title: 'مبارياتي' }} />
         <Stack.Screen name="match/[id]" options={{ title: 'المباراة' }} />
         <Stack.Screen name="match/rate" options={{ title: 'تقييم اللاعبين' }} />
@@ -67,6 +98,9 @@ function Gate() {
         <Stack.Screen name="posts" options={{ title: 'المنشورات' }} />
         <Stack.Screen name="info" options={{ title: 'معلومات' }} />
         <Stack.Screen name="stats" options={{ title: 'الإحصائيات' }} />
+        <Stack.Screen name="notifications" options={{ title: 'الإشعارات' }} />
+        <Stack.Screen name="suggest" options={{ title: 'اقترح مباراة' }} />
+        <Stack.Screen name="admin" options={{ headerShown: false }} />
         <Stack.Screen name="chats" options={{ title: 'المحادثات' }} />
         <Stack.Screen name="chat/[id]" options={{ title: 'المحادثة' }} />
         <Stack.Screen name="trial/[id]" options={{ title: 'الاختبار' }} />
@@ -84,7 +118,9 @@ export default function RootLayout() {
     <ThemeProvider>
       {loaded ? (
         <SessionProvider>
-          <Gate />
+          <ToastProvider>
+            <Gate />
+          </ToastProvider>
         </SessionProvider>
       ) : (
         <Loading />

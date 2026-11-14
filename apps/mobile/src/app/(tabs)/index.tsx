@@ -1,13 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, View, useWindowDimensions } from 'react-native';
 import { HeaderBand } from '../../components/HeaderBand';
 import { MatchRow } from '../../components/MatchRow';
-import { Empty, ErrorText, Loading, Text } from '../../components/ui';
+import { Avatar } from '../../components/Avatar';
+import { OfflineBanner, SkeletonList } from '../../components/feedback';
+import { Button, Empty, ErrorText, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { formatFullDate, weekdayName } from '../../lib/format';
-import { errMsg, useAsync, useNow, useSession } from '../../lib/session';
+import { dayCounts, firstDayWithMatches } from '../../lib/schedule';
+import { useAsync, useNow, useSession } from '../../lib/session';
+import { useMatchActions } from '../../lib/useMatchActions';
 import { nextDays } from '../../lib/slots';
 import { fonts, themed, useColors } from '../../theme';
 
@@ -25,48 +29,45 @@ export default function Home() {
   const { profile } = useSession();
   const now = useNow(30_000);
   const days = useMemo(() => nextDays(7), []);
-  const [dayIdx, setDayIdx] = useState(0);
+  // null = لم يختر المستخدم يوماً بعد → نفتح على أول يوم بيه مباريات
+  const [chosenDay, setChosenDay] = useState<number | null>(null);
   const [banner, setBanner] = useState(0);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const { data, error, loading, reload } = useAsync(() => api.listOpenMatches(), []);
-  useFocusEffect(useCallback(() => void reload(), [reload]));
+  const { data, error, offline, loading, refreshing, reload } = useAsync(() => api.listOpenMatches(), [], { cacheKey: 'open-matches' });
+  const { data: notes, reload: reloadNotes } = useAsync(() => api.listNotifications(), []);
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+      void reloadNotes();
+    }, [reload, reloadNotes]),
+  );
+  const { join, busyId, error: actionError } = useMatchActions(reload);
 
   const bannerW = Math.min(width, 560) - 32;
+  const counts = useMemo(() => dayCounts(data ?? [], days), [data, days]);
+  const dayIdx = chosenDay ?? firstDayWithMatches(counts);
   const day = days[dayIdx];
   const dayMatches = (data ?? []).filter((m) => new Date(m.starts_at).toDateString() === day.toDateString());
-
-  async function join(matchId: string) {
-    setBusyId(matchId);
-    setActionError(null);
-    try {
-      await api.joinMatch(matchId);
-      await reload();
-    } catch (e) {
-      setActionError(errMsg(e));
-    } finally {
-      setBusyId(null);
-    }
-  }
+  const hasUnread = (notes ?? []).some((n) => !n.read);
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <HeaderBand>
         <View style={st.header}>
-          <Pressable onPress={() => router.push('/profile')} style={st.avatar} accessibilityLabel="حسابي">
-            <Text style={st.avatarText}>{profile?.full_name.slice(0, 1) ?? '؟'}</Text>
+          <Pressable onPress={() => router.push('/profile')} accessibilityLabel="حسابي">
+            <Avatar name={profile?.full_name ?? ''} url={profile?.avatar_url} size={56} ring="#fff" />
           </Pressable>
           <View style={{ flex: 1 }}>
             <Text style={st.hello} numberOfLines={1}>مرحباً بك {profile?.full_name}</Text>
             <Text style={st.sub}>اكتشف المباريات المتاحة اليوم</Text>
           </View>
-          <Pressable onPress={() => router.push('/chats')} accessibilityLabel="الإشعارات والمحادثات" hitSlop={8}>
+          <Pressable onPress={() => router.push('/notifications')} accessibilityLabel={hasUnread ? 'الإشعارات — يوجد جديد' : 'الإشعارات'} hitSlop={8}>
             <Ionicons name="notifications-outline" size={28} color={c.primary} />
+            {hasUnread ? <View style={st.unreadDot} /> : null}
           </Pressable>
         </View>
       </HeaderBand>
 
-      <ScrollView contentContainerStyle={st.content}>
+      <ScrollView contentContainerStyle={st.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={c.primary} colors={[c.primary]} />}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -96,15 +97,18 @@ export default function Home() {
             return (
               <Pressable
                 key={d.toISOString()}
-                onPress={() => setDayIdx(i)}
+                onPress={() => setChosenDay(i)}
                 style={[st.day, active && st.dayActive]}
                 accessibilityRole="button"
-                accessibilityLabel={`${weekdayName(d)} ${d.getDate()}`}
+                accessibilityLabel={`${weekdayName(d)} ${d.getDate()} — ${counts[i]} مباريات`}
                 accessibilityState={{ selected: active }}
                 testID={`day-${i}`}
               >
                 <Text style={[st.dayNum, active && { color: c.primary }]}>{d.getDate()}</Text>
                 <Text style={[st.dayName, active && { color: c.primary }]}>{weekdayName(d)}</Text>
+                <View style={[st.dayCount, counts[i] === 0 && { opacity: 0 }, active && { backgroundColor: c.primary }]}>
+                  <Text style={[st.dayCountText, active && { color: c.onPrimary }]}>{counts[i]}</Text>
+                </View>
               </Pressable>
             );
           })}
@@ -115,11 +119,17 @@ export default function Home() {
           <Text variant="small">{formatFullDate(day)}</Text>
         </View>
 
+        <OfflineBanner show={offline} />
         <ErrorText message={error ?? actionError} />
-        {loading && !data ? <Loading /> : null}
-        {data && dayMatches.length === 0 ? <Empty title="لا توجد مباريات بهذا اليوم" hint="جرّب يوماً آخر" icon="calendar-outline" /> : null}
+        {loading && !data ? <SkeletonList count={3} /> : null}
+        {data && dayMatches.length === 0 ? (
+          <View style={{ alignItems: 'center' }}>
+            <Empty title="ماكو مباريات بهذا اليوم" hint="شوف يوم ثاني، أو اقترح مباراة على الإدارة" icon="calendar-outline" />
+            <Button title="اقترح مباراة" icon="bulb-outline" variant="outline" onPress={() => router.push('/suggest')} style={{ paddingHorizontal: 28 }} />
+          </View>
+        ) : null}
         {dayMatches.map((m, i) => (
-          <MatchRow key={m.id} match={m} index={i + 1} now={now} busy={busyId === m.id} onAction={() => join(m.id)} />
+          <MatchRow key={m.id} match={m} index={i + 1} now={now} busy={busyId === m.id} onAction={() => void join(m)} />
         ))}
       </ScrollView>
     </View>
@@ -144,5 +154,8 @@ const useStyles = themed((c) => ({
   dayActive: { backgroundColor: c.primarySoft },
   dayNum: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 28 },
   dayName: { fontSize: 12, color: c.text },
+  dayCount: { minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 5, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  dayCountText: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 16, color: c.primary },
+  unreadDot: { position: 'absolute', top: 0, right: 0, width: 10, height: 10, borderRadius: 5, backgroundColor: c.danger, borderWidth: 2, borderColor: c.bandBg },
   listHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 }));

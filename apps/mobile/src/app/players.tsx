@@ -13,7 +13,7 @@ export default function Players() {
     <Screen>
       <Input placeholder="ابحث باسم اللاعب…" value={q} onChangeText={setQ} />
       {loading && !data ? <Loading /> : null}
-      {data && data.length === 0 ? <Empty title="لا يوجد لاعب بهذا الاسم" icon="search-outline" /> : null}
+      {data && data.length === 0 ? <Empty title="ماكو لاعب بهذا الاسم" icon="search-outline" /> : null}
       {data?.length ? (
         <Card>
           <LeaderList

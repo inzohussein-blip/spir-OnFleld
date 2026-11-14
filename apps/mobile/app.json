@@ -54,6 +54,19 @@
             "backgroundColor": "#0B1226"
           }
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#1E4FD8"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "نحتاج الوصول للصور حتى تختار صورتك الشخصية.",
+          "cameraPermission": false
+        }
       ]
     ],
     "extra": {

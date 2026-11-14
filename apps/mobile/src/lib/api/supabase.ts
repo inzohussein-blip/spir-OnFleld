@@ -4,9 +4,11 @@ import { Platform } from 'react-native';
 import type { Api, ProfileInput } from './types';
 import { toWesternDigits } from '../format';
 import { attributesFromRating, monthRange, overallOf, pickTeamOfWeek, pointsOf } from '../stats';
-import type { RankingRow, ChannelKind, ChatChannel, ChatMessage, Post, Trial, Wallet, Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue } from '../types';
+import type { MatchSuggestion, RankingRow, ChannelKind, ChatChannel, ChatMessage, Post, Trial, Wallet, Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue } from '../types';
 
-const PROFILE_COLS = 'id, full_name, city, preferred_position, skill_rating, reliability_score, matches_played, attributes';
+const PROFILE_COLS = 'id, full_name, city, preferred_position, skill_rating, reliability_score, matches_played, attributes, avatar_url, role';
+const VENUE_COLS = 'id, name, city, address, amenities, is_verified, photos, fields(id, venue_id, name, players_per_side, surface, is_indoor, default_price, open_hour, close_hour)';
+const mapVenue = (v: any): Venue => ({ ...v, photo_url: v.photos?.[0] ?? null });
 const EMPTY_STATS: PlayerStats = { matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0 };
 
 /** يحوّل الرقم المحلي العراقي (07xxxxxxxxx) إلى الصيغة الدولية */
@@ -90,7 +92,7 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
     },
     async saveProfile(input: ProfileInput) {
       const id = await uid();
-      if (!id) throw new Error('يجب تسجيل الدخول');
+      if (!id) throw new Error('لازم تسجّل دخول');
       const { error } = await sb.from('profiles').upsert({ id, ...input });
       fail(error);
     },
@@ -98,19 +100,19 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
     async listVenues() {
       const { data, error } = await sb
         .from('venues')
-        .select('id, name, city, address, amenities, is_verified, fields(id, venue_id, name, players_per_side, surface, is_indoor, default_price, open_hour, close_hour)')
+        .select(VENUE_COLS)
         .order('is_verified', { ascending: false });
       fail(error);
-      return (data ?? []) as Venue[];
+      return (data ?? []).map(mapVenue);
     },
     async getVenue(id) {
       const { data, error } = await sb
         .from('venues')
-        .select('id, name, city, address, amenities, is_verified, fields(id, venue_id, name, players_per_side, surface, is_indoor, default_price, open_hour, close_hour)')
+        .select(VENUE_COLS)
         .eq('id', id)
         .maybeSingle();
       fail(error);
-      return (data as Venue) ?? null;
+      return data ? mapVenue(data) : null;
     },
     async getBusy(fieldId, day) {
       const from = new Date(day);
@@ -122,18 +124,8 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
       return data ?? [];
     },
 
-    async createMatch(input) {
-      const { data, error } = await sb.rpc('create_match', {
-        p_field_id: input.field_id,
-        p_starts_at: input.starts_at,
-        p_hours: input.hours,
-        p_players_per_side: input.players_per_side,
-        p_skill_level: input.skill_level,
-        p_visibility: input.visibility,
-        p_title: input.title || null,
-      });
-      fail(error);
-      return data as string;
+    async createMatch() {
+      throw new Error('إنشاء المباريات صار من لوحة التحكم فقط — تكدر تقترح مباراة من «حسابي»');
     },
     async listOpenMatches() {
       const { data, error } = await sb
@@ -195,9 +187,9 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
     },
     async submitRatings(matchId, ratings, mvpId) {
       const me = await uid();
-      if (!me) throw new Error('يجب تسجيل الدخول');
+      if (!me) throw new Error('لازم تسجّل دخول');
       const { error } = await sb.from('player_ratings').insert(ratings.map((r) => ({ match_id: matchId, rater_id: me, ...r })));
-      if (error?.code === '23505') throw new Error('لقد قيّمت هذه المباراة مسبقاً');
+      if (error?.code === '23505') throw new Error('قيّمت هاي المباراة قبل');
       fail(error);
       if (mvpId) {
         const { error: e2 } = await sb.from('match_mvp_votes').insert({ match_id: matchId, voter_id: me, player_id: mvpId });
@@ -310,7 +302,7 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
     },
     async setTrialAlert(on) {
       const me = await uid();
-      if (!me) throw new Error('يجب تسجيل الدخول');
+      if (!me) throw new Error('لازم تسجّل دخول');
       const { error } = on ? await sb.from('trial_alerts').upsert({ player_id: me }) : await sb.from('trial_alerts').delete().eq('player_id', me);
       fail(error);
     },
@@ -355,7 +347,7 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
     },
     async sendMessage(channel, body) {
       const me = await uid();
-      if (!me) throw new Error('يجب تسجيل الدخول');
+      if (!me) throw new Error('لازم تسجّل دخول');
       const text = body.trim();
       if (!text) return;
       const { error } = await sb.from('chat_messages').insert({ channel, sender_id: me, body: text.slice(0, 1000), thread_owner: channel === 'support' ? me : null });
@@ -375,6 +367,85 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
       fail(error);
       return (data ?? []).map(mapProfile);
     },
+    async uploadAvatar(localUri) {
+      const me = await uid();
+      if (!me) throw new Error('لازم تسجّل دخول');
+      const url = await uploadImage(sb, 'avatars', `${me}/${Date.now()}.jpg`, localUri);
+      const { error } = await sb.from('profiles').update({ avatar_url: url }).eq('id', me);
+      fail(error);
+      return url;
+    },
+
+    async suggestMatch(input) {
+      const me = await uid();
+      if (!me) throw new Error('لازم تسجّل دخول');
+      if (!input.venue_id && !input.venue_text?.trim()) throw new Error('اختار ملعب أو اكتب اسمه');
+      const { error } = await sb.from('match_suggestions').insert({ ...input, player_id: me });
+      fail(error);
+    },
+    async listMySuggestions() {
+      const me = await uid();
+      if (!me) return [];
+      const { data, error } = await sb.from('match_suggestions').select('*, venue:venues(name), player:profiles(full_name)').eq('player_id', me).order('created_at', { ascending: false });
+      fail(error);
+      return (data ?? []).map(mapSuggestion);
+    },
+
+    async listNotifications() {
+      const { data, error } = await sb.from('notifications').select('id, kind, title, body, match_id, read_at, created_at').order('created_at', { ascending: false }).limit(50);
+      fail(error);
+      return (data ?? []).map((n: any) => ({ id: String(n.id), kind: n.kind, title: n.title, body: n.body, match_id: n.match_id, read: !!n.read_at, created_at: n.created_at }));
+    },
+    async markNotificationsRead() {
+      const me = await uid();
+      if (!me) return;
+      const { error } = await sb.from('notifications').update({ read_at: new Date().toISOString() }).eq('user_id', me).is('read_at', null);
+      fail(error);
+    },
+    async savePushToken(token, platform) {
+      const me = await uid();
+      if (!me) return;
+      const { error } = await sb.from('push_tokens').upsert({ user_id: me, token, platform });
+      fail(error);
+    },
+
+    async isAdmin() {
+      const me = await uid();
+      if (!me) return false;
+      const { data } = await sb.from('profiles').select('role').eq('id', me).maybeSingle();
+      return data?.role === 'admin';
+    },
+    async adminCreateMatch(input) {
+      const { data, error } = await sb.rpc('admin_create_match', {
+        p_field_id: input.field_id,
+        p_starts_at: input.starts_at,
+        p_hours: input.hours,
+        p_players_per_side: input.players_per_side,
+        p_skill_level: input.skill_level,
+        p_visibility: input.visibility,
+        p_title: input.title || null,
+        p_registration_opens_at: input.registration_opens_at,
+        p_suggestion_id: input.suggestion_id ?? null,
+      });
+      fail(error);
+      return data as string;
+    },
+    async adminListSuggestions() {
+      const { data, error } = await sb.from('match_suggestions').select('*, venue:venues(name), player:profiles(full_name)').order('created_at', { ascending: false }).limit(100);
+      fail(error);
+      return (data ?? []).map(mapSuggestion);
+    },
+    async adminSetSuggestionStatus(id, status) {
+      const { error } = await sb.from('match_suggestions').update({ status }).eq('id', id);
+      fail(error);
+    },
+    async adminUploadVenuePhoto(venueId, localUri) {
+      const url = await uploadImage(sb, 'venue-photos', `${venueId}/${Date.now()}.jpg`, localUri);
+      const { error } = await sb.from('venues').update({ photos: [url] }).eq('id', venueId);
+      fail(error);
+      return url;
+    },
+
     async deleteAccount() {
       const { error } = await sb.rpc('delete_my_account');
       fail(error);
@@ -396,5 +467,22 @@ function mapPost(p: any): Post {
   return {
     id: p.id, category: p.category, title: p.title, body: p.body, venue_name: p.venue_name, cover_color: p.cover_color,
     media_count: (p.media_urls ?? []).length, created_at: p.created_at,
+  };
+}
+
+/** يرفع صورة من مسار محلي (أو data URL على الويب) إلى Supabase Storage ويعيد رابطها العام */
+async function uploadImage(sb: SupabaseClient, bucket: string, path: string, localUri: string): Promise<string> {
+  const res = await fetch(localUri);
+  const bytes = await res.arrayBuffer();
+  const { error } = await sb.storage.from(bucket).upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
+  if (error) throw new Error(error.message);
+  return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+}
+
+function mapSuggestion(r: any): MatchSuggestion {
+  return {
+    id: r.id, player_id: r.player_id, player_name: r.player?.full_name ?? '', venue_id: r.venue_id, venue_text: r.venue_text,
+    venue_name: r.venue?.name ?? r.venue_text, day: r.day, hour: r.hour, players_per_side: r.players_per_side, note: r.note,
+    status: r.status, created_at: r.created_at,
   };
 }

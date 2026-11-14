@@ -24,6 +24,11 @@ import type {
   ChannelKind,
   Wallet,
   RankingRow,
+  SuggestionInput,
+  MatchSuggestion,
+  SuggestionStatus,
+  AppNotification,
+  AdminMatchInput,
 } from '../types';
 
 export interface ProfileInput {
@@ -82,6 +87,24 @@ export interface Api {
   listChannels(): Promise<ChatChannel[]>;
   listMessages(channel: ChannelKind): Promise<ChatMessage[]>;
   sendMessage(channel: ChannelKind, body: string): Promise<void>;
+
+  /** رفع صورة اللاعب — يعيد الرابط النهائي */
+  uploadAvatar(localUri: string): Promise<string>;
+
+  /** اقتراح مباراة من اللاعب */
+  suggestMatch(input: SuggestionInput): Promise<void>;
+  listMySuggestions(): Promise<MatchSuggestion[]>;
+
+  listNotifications(): Promise<AppNotification[]>;
+  markNotificationsRead(): Promise<void>;
+  savePushToken(token: string, platform: 'android' | 'ios' | 'web'): Promise<void>;
+
+  // ---------- لوحة التحكم (المدير فقط) ----------
+  isAdmin(): Promise<boolean>;
+  adminCreateMatch(input: AdminMatchInput): Promise<string>;
+  adminListSuggestions(): Promise<MatchSuggestion[]>;
+  adminSetSuggestionStatus(id: string, status: SuggestionStatus): Promise<void>;
+  adminUploadVenuePhoto(venueId: string, localUri: string): Promise<string>;
 
   getWallet(): Promise<Wallet>;
   listPlayers(query: string): Promise<Profile[]>;

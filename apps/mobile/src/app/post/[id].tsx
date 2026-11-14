@@ -11,7 +11,7 @@ export default function PostScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: p, loading } = useAsync(() => api.getPost(id), [id]);
   if (loading && !p) return <Loading />;
-  if (!p) return <Screen><ErrorText message="المنشور غير موجود" /></Screen>;
+  if (!p) return <Screen><ErrorText message="المنشور مو موجود" /></Screen>;
   return (
     <Screen>
       <Stack.Screen options={{ title: 'المنشور' }} />

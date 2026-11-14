@@ -49,7 +49,7 @@ export default function RateScreen() {
     const ratings: RatingInput[] = others
       .filter((r) => AXES.every(([a]) => get(r.player_id, a) > 0))
       .map((r) => ({ ratee_id: r.player_id, skill: get(r.player_id, 'skill'), teamwork: get(r.player_id, 'teamwork'), sportsmanship: get(r.player_id, 'sportsmanship') }));
-    if (!ratings.length) return setError('قيّم لاعباً واحداً على الأقل في المحاور الثلاثة');
+    if (!ratings.length) return setError('قيّم لاعب واحد على الأقل بالمحاور الثلاثة');
     setBusy(true);
     setError(null);
     try {

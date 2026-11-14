@@ -11,7 +11,6 @@ import type {
   Match,
   MatchDetail,
   MatchEvent,
-  NewMatchInput,
   PlayerCard,
   PlayerStats,
   Position,
@@ -31,6 +30,9 @@ import type {
   ChannelKind,
   ChatChannel,
   Wallet,
+  MatchSuggestion,
+  AppNotification,
+  AdminMatchInput,
 } from '../types';
 
 /**
@@ -38,7 +40,7 @@ import type {
  * كاملاً قبل ربطه بـ Supabase. رمز التحقق في هذا الوضع: 1234
  */
 
-const KEY = 'balmalaab-demo-v4';
+const KEY = 'balmalaab-demo-v5';
 const ME = 'me';
 
 interface StoredMatch {
@@ -81,6 +83,8 @@ interface DB {
   trials: StoredTrial[];
   applications: { trial_id: string; status: ApplicationStatus; scout_note: string | null }[];
   trialAlert: boolean;
+  suggestions: MatchSuggestion[];
+  notifications: AppNotification[];
   posts: Post[];
   messages: ChatMessage[];
   wallet: Wallet;
@@ -313,7 +317,13 @@ function seed(): DB {
     ],
   };
 
-  return { signedIn: false, profiles, attributes, venues, matches, ratings: [], tournaments, trials, applications: [], trialAlert: false, posts, messages, wallet };
+  const notifications: AppNotification[] = [
+    { id: 'n1', kind: 'general', title: 'هلا بيك ببالملعب 👋', body: 'اختار يوم من الشريط وانضم لمباراة بضغطة وحدة.', match_id: null, read: false, created_at: new Date().toISOString() },
+  ];
+  return {
+    signedIn: false, profiles, attributes, venues, matches, ratings: [], tournaments, trials, applications: [], trialAlert: false, posts, messages, wallet,
+    suggestions: [], notifications,
+  };
 }
 
 let cache: DB | null = null;
@@ -353,6 +363,7 @@ function toMatch(d: DB, m: StoredMatch): Match {
     starts_at: m.starts_at, ends_at: m.ends_at, cost_per_player: Math.ceil(m.price / max / 250) * 250,
     venue_name: loc?.venue.name ?? null, field_name: loc?.field.name ?? null, joined_count: joined,
     registration_opens_at: m.registration_opens_at ?? null, venue_address: loc?.venue.address ?? null, my_status: mine?.status ?? null,
+    venue_id: loc?.venue.id ?? null, venue_photo: loc?.venue.photo_url ?? null,
   };
 }
 
@@ -396,11 +407,11 @@ export const demoApi: Api = {
   },
   async sendOtp(phone) {
     await delay();
-    if (toWesternDigits(phone).replace(/\D/g, '').length < 10) throw new Error('رقم الهاتف غير صحيح');
+    if (toWesternDigits(phone).replace(/\D/g, '').length < 10) throw new Error('رقم الهاتف مو صحيح');
   },
   async verifyOtp(_phone, code) {
     await delay();
-    if (toWesternDigits(code).trim() !== '1234') throw new Error('رمز التحقق غير صحيح (في الوضع التجريبي الرمز هو 1234)');
+    if (toWesternDigits(code).trim() !== '1234') throw new Error('رمز التحقق مو صحيح (في الوضع التجريبي الرمز هو 1234)');
     (await db()).signedIn = true;
     await save();
   },
@@ -437,25 +448,8 @@ export const demoApi: Api = {
       .filter((m) => m.field_id === fieldId && new Date(m.starts_at) < end && new Date(m.ends_at) > start)
       .map((m) => ({ starts_at: m.starts_at, ends_at: m.ends_at }));
   },
-  async createMatch(input: NewMatchInput) {
-    const d = await db();
-    const loc = fieldOf(d, input.field_id);
-    if (!loc) throw new Error('الملعب غير موجود');
-    const starts = new Date(input.starts_at);
-    const ends = new Date(starts);
-    ends.setHours(ends.getHours() + input.hours);
-    const clash = d.matches.some((m) => m.field_id === input.field_id && new Date(m.starts_at) < ends && new Date(m.ends_at) > starts);
-    if (clash) throw new Error('هذا الوقت محجوز مسبقاً');
-    const id = `m${Date.now()}`;
-    d.matches.push({
-      id, field_id: input.field_id, organizer_id: ME, title: input.title || null, players_per_side: input.players_per_side, reserves: 2,
-      skill_level: input.skill_level, visibility: input.visibility, starts_at: starts.toISOString(), ends_at: ends.toISOString(),
-      price: loc.field.default_price * input.hours,
-      roster: [{ player_id: ME, status: 'joined', team: null, joined_at: new Date().toISOString() }],
-      ratedBy: [], score_a: null, score_b: null, events: [], mvpVotes: [],
-    });
-    await save();
-    return id;
+  async createMatch() {
+    throw new Error('إنشاء المباريات صار من لوحة التحكم فقط — تكدر تقترح مباراة من «حسابي»');
   },
   async listOpenMatches() {
     await delay();
@@ -488,8 +482,8 @@ export const demoApi: Api = {
   async joinMatch(id) {
     const d = await db();
     const m = d.matches.find((x) => x.id === id);
-    if (!m) throw new Error('المباراة غير موجودة');
-    if (!d.profiles.some((p) => p.id === ME)) throw new Error('أكمل ملفك الشخصي أولاً');
+    if (!m) throw new Error('المباراة مو موجودة');
+    if (!d.profiles.some((p) => p.id === ME)) throw new Error('كمّل ملفك الشخصي بالأول');
     const mine = m.roster.find((r) => r.player_id === ME);
     if (mine && (mine.status === 'joined' || mine.status === 'waitlist')) return mine.status;
     if (m.registration_opens_at && new Date(m.registration_opens_at) > new Date()) throw new Error('التسجيل لم يُفتح بعد لهذه المباراة');
@@ -510,7 +504,12 @@ export const demoApi: Api = {
     mine.team = null;
     if (was === 'joined') {
       const next = m.roster.filter((r) => r.status === 'waitlist').sort((a, b) => a.joined_at.localeCompare(b.joined_at))[0];
-      if (next) next.status = 'joined';
+      if (next) {
+        next.status = 'joined';
+        if (next.player_id === ME) {
+          d.notifications.push({ id: `n${Date.now()}`, kind: 'promoted', title: 'دخلت المباراة 🎉', body: 'انسحب لاعب وصار إلك مكان بالمباراة.', match_id: m.id, read: false, created_at: new Date().toISOString() });
+        }
+      }
     }
     await save();
   },
@@ -523,8 +522,8 @@ export const demoApi: Api = {
   async submitRatings(matchId, ratings: RatingInput[], mvpId) {
     const d = await db();
     const m = d.matches.find((x) => x.id === matchId);
-    if (!m) throw new Error('المباراة غير موجودة');
-    if (m.ratedBy.includes(ME)) throw new Error('لقد قيّمت هذه المباراة مسبقاً');
+    if (!m) throw new Error('المباراة مو موجودة');
+    if (m.ratedBy.includes(ME)) throw new Error('قيّمت هاي المباراة قبل');
     for (const r of ratings) {
       const score = (r.skill * 2 + r.teamwork + r.sportsmanship) / 4;
       d.ratings.push({ match_id: matchId, rater_id: ME, ratee_id: r.ratee_id, score });
@@ -541,7 +540,7 @@ export const demoApi: Api = {
   async submitResult(matchId, input) {
     const d = await db();
     const m = d.matches.find((x) => x.id === matchId);
-    if (!m) throw new Error('المباراة غير موجودة');
+    if (!m) throw new Error('المباراة مو موجودة');
     if (m.organizer_id !== ME) throw new Error('فقط منظّم المباراة يسجّل النتيجة');
     const goals = (t: Team) => input.events.filter((e) => e.kind === 'goal' && m.roster.find((r) => r.player_id === e.player_id)?.team === t).length;
     if (goals('A') > input.score_a || goals('B') > input.score_b) throw new Error('عدد الهدّافين أكبر من نتيجة الفريق');
@@ -607,7 +606,7 @@ export const demoApi: Api = {
   async registerTeam(tournamentId, teamName) {
     const d = await db();
     const t = d.tournaments.find((x) => x.id === tournamentId);
-    if (!t) throw new Error('البطولة غير موجودة');
+    if (!t) throw new Error('البطولة مو موجودة');
     if (t.status !== 'registration') throw new Error('التسجيل مغلق لهذه البطولة');
     if (t.teams.length >= t.team_count) throw new Error('اكتمل عدد الفرق');
     if (t.teams.some((x) => x.captain_id === ME)) throw new Error('سجّلت فريقاً في هذه البطولة مسبقاً');
@@ -629,7 +628,7 @@ export const demoApi: Api = {
   async applyToTrial(id) {
     const d = await db();
     const t = d.trials.find((x) => x.id === id);
-    if (!t) throw new Error('الاختبار غير موجود');
+    if (!t) throw new Error('الاختبار مو موجود');
     if (t.status !== 'open') throw new Error('التقديم غير متاح لهذا الاختبار');
     if (d.applications.some((a) => a.trial_id === id)) throw new Error('قدّمت على هذا الاختبار مسبقاً');
     d.applications.push({ trial_id: id, status: 'pending', scout_note: null });
@@ -688,6 +687,93 @@ export const demoApi: Api = {
   async deleteAccount() {
     cache = seed();
     await save();
+  },
+
+  async uploadAvatar(localUri) {
+    const d = await db();
+    const me = d.profiles.find((p) => p.id === ME);
+    if (!me) throw new Error('كمّل ملفك الشخصي بالأول');
+    me.avatar_url = localUri;
+    await save();
+    return localUri;
+  },
+
+  async suggestMatch(input) {
+    const d = await db();
+    const me = d.profiles.find((p) => p.id === ME);
+    if (!input.venue_id && !input.venue_text?.trim()) throw new Error('اختار ملعب أو اكتب اسمه');
+    const venue = d.venues.find((v) => v.id === input.venue_id);
+    d.suggestions.unshift({
+      ...input, id: `s${Date.now()}`, player_id: ME, player_name: me?.full_name ?? 'لاعب', venue_name: venue?.name ?? input.venue_text,
+      status: 'pending', created_at: new Date().toISOString(),
+    });
+    await save();
+  },
+  async listMySuggestions() {
+    return (await db()).suggestions.filter((x) => x.player_id === ME);
+  },
+
+  async listNotifications() {
+    return [...(await db()).notifications].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  },
+  async markNotificationsRead() {
+    const d = await db();
+    for (const n of d.notifications) n.read = true;
+    await save();
+  },
+  async savePushToken() {
+    /* الوضع التجريبي: لا يوجد خادم إشعارات */
+  },
+
+  // ---------- لوحة التحكم (في الوضع التجريبي مفتوحة للتجربة) ----------
+  async isAdmin() {
+    return true;
+  },
+  async adminCreateMatch(input: AdminMatchInput) {
+    const d = await db();
+    const loc = fieldOf(d, input.field_id);
+    if (!loc) throw new Error('الملعب مو موجود');
+    const starts = new Date(input.starts_at);
+    if (starts.getTime() < Date.now()) throw new Error('الموعد لازم يكون بالمستقبل');
+    const ends = new Date(starts);
+    ends.setHours(ends.getHours() + input.hours);
+    const clash = d.matches.some((m) => m.field_id === input.field_id && new Date(m.starts_at) < ends && new Date(m.ends_at) > starts);
+    if (clash) throw new Error('هذا الوقت محجوز بنفس الملعب');
+    const id = `a${Date.now()}`;
+    d.matches.push({
+      id, field_id: input.field_id, organizer_id: ME, title: input.title || null, players_per_side: input.players_per_side, reserves: 2,
+      skill_level: input.skill_level, visibility: input.visibility, starts_at: starts.toISOString(), ends_at: ends.toISOString(),
+      price: loc.field.default_price * input.hours, roster: [], ratedBy: [], score_a: null, score_b: null, events: [], mvpVotes: [],
+      registration_opens_at: input.registration_opens_at,
+    });
+    if (input.suggestion_id) {
+      const sg = d.suggestions.find((x) => x.id === input.suggestion_id);
+      if (sg) {
+        sg.status = 'scheduled';
+        if (sg.player_id === ME) {
+          d.notifications.push({ id: `n${Date.now()}`, kind: 'match_created', title: 'اقتراحك صار مباراة ⚽', body: `الإدارة نزّلت مباراة بـ${loc.venue.name}. انضم قبل ما يكتمل العدد!`, match_id: id, read: false, created_at: new Date().toISOString() });
+        }
+      }
+    }
+    await save();
+    return id;
+  },
+  async adminListSuggestions() {
+    return (await db()).suggestions;
+  },
+  async adminSetSuggestionStatus(id, status) {
+    const d = await db();
+    const sg = d.suggestions.find((x) => x.id === id);
+    if (sg) sg.status = status;
+    await save();
+  },
+  async adminUploadVenuePhoto(venueId, localUri) {
+    const d = await db();
+    const v = d.venues.find((x) => x.id === venueId);
+    if (!v) throw new Error('الملعب مو موجود');
+    v.photo_url = localUri;
+    await save();
+    return localUri;
   },
 };
 

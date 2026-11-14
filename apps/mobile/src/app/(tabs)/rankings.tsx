@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Avatar } from '../../components/Avatar';
+import { OfflineBanner } from '../../components/feedback';
 import { HeaderBand } from '../../components/HeaderBand';
 import { Empty, Loading, Row, Text } from '../../components/ui';
 import { api } from '../../lib/api';
@@ -18,7 +20,7 @@ export default function Rankings() {
   const c = useColors();
   const st = useRankStyles();
   const [offset, setOffset] = useState(0);
-  const { data, loading } = useAsync(() => api.getRankings(offset), [offset]);
+  const { data, loading, refreshing, reload, offline } = useAsync(() => api.getRankings(offset), [offset], { cacheKey: 'rankings' });
   const open = (id: string) => router.push({ pathname: '/player/[id]', params: { id } });
   const { from } = monthRange(offset);
   const rows = data ?? [];
@@ -28,7 +30,11 @@ export default function Rankings() {
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <HeaderBand title="التصنيفات" />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 120 }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 120 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={c.primary} colors={[c.primary]} />}
+      >
+      <OfflineBanner show={offline} />
       <Row style={{ justifyContent: 'center', flexWrap: 'nowrap' }}>
         <Pressable onPress={() => setOffset(offset + 1)} style={st.arrow} accessibilityLabel="الشهر السابق" hitSlop={8}>
           <Ionicons name="chevron-forward" size={20} color={c.primary} />
@@ -43,7 +49,7 @@ export default function Rankings() {
       </Row>
 
       {loading && !data ? <Loading /> : null}
-      {data && rows.length === 0 ? <Empty title="لا توجد نتائج لهذا الشهر" hint="يظهر التصنيف بعد تسجيل نتائج المباريات." icon="podium-outline" /> : null}
+      {data && rows.length === 0 ? <Empty title="ماكو نتائج بهذا الشهر" hint="التصنيف يطلع بعد ما تنسجل نتائج المباريات" icon="podium-outline" /> : null}
 
       {rows.length ? (
         <View style={st.podium}>
@@ -53,8 +59,8 @@ export default function Rankings() {
             return (
               <Pressable key={r.profile.id} onPress={() => open(r.profile.id)} style={[st.podiumItem, rank === 1 && { marginTop: -8 }]}>
                 {rank === 1 ? <Ionicons name="trophy" size={34} color={MEDAL[0]} /> : <View style={{ height: 34 }} />}
-                <View style={[st.ring, { width: size, height: size, borderRadius: size / 2, borderColor: MEDAL[rank - 1] }]}>
-                  <Text style={{ fontFamily: fonts.bold, fontSize: size / 2.6, lineHeight: size / 1.8, color: c.primary }}>{r.profile.full_name.slice(0, 1)}</Text>
+                <View>
+                  <Avatar name={r.profile.full_name} url={r.profile.avatar_url} size={size} ring={MEDAL[rank - 1]} />
                   <View style={[st.rankBadge, { backgroundColor: MEDAL[rank - 1] }]}>
                     <Text style={{ fontFamily: fonts.bold, fontSize: 12, color: '#101828' }}>{rank}</Text>
                   </View>
@@ -70,9 +76,7 @@ export default function Rankings() {
       {rows.map((r, i) => (
         <Pressable key={r.profile.id} onPress={() => open(r.profile.id)} style={[st.row, i < 3 && { backgroundColor: MEDAL[i], borderColor: MEDAL[i] }]}>
           <Text style={[st.pos, i < 3 && { color: '#101828' }]}>{i + 1}</Text>
-          <View style={st.avatar}>
-            <Text style={{ fontFamily: fonts.bold, color: c.primary }}>{r.profile.full_name.slice(0, 1)}</Text>
-          </View>
+          <Avatar name={r.profile.full_name} url={r.profile.avatar_url} size={42} />
           <Text style={[{ flex: 1, fontFamily: fonts.semibold }, i < 3 && { color: '#101828' }]} numberOfLines={1}>{r.profile.full_name}</Text>
           <Text style={[st.points, i < 3 && { color: '#101828' }]}>{r.points}</Text>
           <Text variant="small" style={i < 3 ? { color: '#101828' } : { color: c.muted }}>نقطة</Text>

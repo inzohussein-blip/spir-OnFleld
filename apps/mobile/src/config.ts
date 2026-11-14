@@ -8,3 +8,9 @@ export const CONTACT = {
   instagram: '',
   facebook: '',
 };
+
+/**
+ * رابط نسخة الويب — تُستخدم بروابط دعوة المباريات حتى تنفتح لأي شخص.
+ * غيّره إذا استضفت التطبيق على نطاق خاص.
+ */
+export const WEB_URL = 'https://inzohussein-blip.github.io/spir-OnFleld';

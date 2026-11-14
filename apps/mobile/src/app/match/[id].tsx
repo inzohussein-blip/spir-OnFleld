@@ -1,12 +1,17 @@
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, Share, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActionPill } from '../../components/MatchRow';
+import { Avatar } from '../../components/Avatar';
+import { OfflineBanner, useToast } from '../../components/feedback';
+import { hasRegistrationAlert, notificationsSupported, scheduleRegistrationAlert } from '../../lib/notifications';
+import { shareMatch } from '../../lib/share';
+import { useMatchActions } from '../../lib/useMatchActions';
 import { ErrorText, Loading, Row, Screen, Text, type IconName } from '../../components/ui';
 import { api } from '../../lib/api';
-import { formatDateTime, formatFormat, formatIQD, formatTimeRange, POSITION_LABEL } from '../../lib/format';
+import { formatIQD, formatTimeRange, POSITION_LABEL } from '../../lib/format';
 import { matchAction } from '../../lib/matchAction';
 import { errMsg, useAsync, useNow, useSession } from '../../lib/session';
 import { balanceTeams } from '../../lib/teamBalance';
@@ -18,7 +23,7 @@ function PlayerRow({ r, me, onPress }: { r: RosterEntry; me: boolean; onPress: (
   const c = useColors();
   return (
     <Pressable onPress={onPress} style={st.player}>
-      <View style={st.initial}><Text style={{ fontFamily: fonts.bold, fontSize: 18, color: '#fff' }}>{r.profile.full_name.slice(0, 1)}</Text></View>
+      <Avatar name={r.profile.full_name} url={r.profile.avatar_url} size={48} />
       <Text style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 15 }} numberOfLines={2}>
         {r.profile.full_name}
         {me ? ' (أنت)' : ''}
@@ -64,13 +69,22 @@ export default function MatchScreen() {
   const { userId } = useSession();
   const insets = useSafeAreaInsets();
   const now = useNow(30_000);
-  const { data: m, error, loading, reload } = useAsync(() => api.getMatch(id), [id]);
+  const { data: m, error, loading, reload, offline } = useAsync(() => api.getMatch(id), [id], { cacheKey: 'match' });
   useFocusEffect(useCallback(() => void reload(), [reload]));
-  const [busy, setBusy] = useState(false);
+  const actions = useMatchActions(reload);
+  const toast = useToast();
+  const [alertSet, setAlertSet] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void hasRegistrationAlert(id).then((v) => alive && setAlertSet(v));
+    return () => {
+      alive = false;
+    };
+  }, [id]);
   const [actionError, setActionError] = useState<string | null>(null);
 
   if (loading && !m) return <Loading />;
-  if (!m) return <Screen><ErrorText message={error ?? 'المباراة غير موجودة'} /></Screen>;
+  if (!m) return <Screen><ErrorText message={error ?? 'المباراة مو موجودة'} /></Screen>;
 
   const joined = m.roster.filter((r) => r.status === 'joined');
   const waitlist = m.roster.filter((r) => r.status === 'waitlist');
@@ -78,21 +92,17 @@ export default function MatchScreen() {
   const isOrganizer = m.organizer_id === userId;
   const started = new Date(m.starts_at).getTime() < now;
   const finished = new Date(m.ends_at).getTime() < now;
-  const left = m.max_players - joined.length;
   const hasTeams = joined.some((r) => r.team);
   const hasResult = m.score_a != null && m.score_b != null;
   const openPlayer = (pid: string) => router.push({ pathname: '/player/[id]', params: { id: pid } });
 
   async function act(fn: () => Promise<unknown>) {
-    setBusy(true);
     setActionError(null);
     try {
       await fn();
       await reload();
     } catch (e) {
       setActionError(errMsg(e));
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -102,15 +112,14 @@ export default function MatchScreen() {
       return api.saveTeams(m.id, res.assignments);
     });
 
-  const share = () =>
-    Share.share({
-      message:
-        `⚽ ${m.title || 'مباراة ' + formatFormat(m.players_per_side)}\n` +
-        `📍 ${m.venue_name ?? ''} ${m.field_name ? '· ' + m.field_name : ''}\n` +
-        `🕒 ${formatDateTime(m.starts_at)}\n` +
-        (left > 0 ? `باقي ${left} لاعبين — انضم عبر تطبيق بالملعب!` : 'العدد مكتمل — سجّل بقائمة الانتظار على تطبيق بالملعب') +
-        `\nbalmalaab://match/${m.id}`,
-    });
+  const share = () => shareMatch(m);
+  const remindRegistration = async () => {
+    const ok = await scheduleRegistrationAlert(m);
+    if (ok) {
+      setAlertSet(true);
+      toast('راح نبلّغك أول ما يفتح التسجيل 🔔');
+    } else toast(notificationsSupported ? 'فعّل الإشعارات من إعدادات الهاتف حتى نكدر نبلّغك' : 'التنبيهات تشتغل بتطبيق الهاتف');
+  };
 
   const action = matchAction(m, now);
   const startsDate = new Date(m.starts_at);
@@ -122,6 +131,7 @@ export default function MatchScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
         {/* صورة الملعب */}
         <View style={[st.hero, { paddingTop: insets.top }]}>
+          {m.venue_photo ? <Image source={{ uri: m.venue_photo }} style={StyleSheet.absoluteFill} accessibilityLabel={m.venue_name ?? 'الملعب'} /> : null}
           <View style={st.heroHalf} />
           <View style={st.heroCircle} />
           <View style={st.heroBoxTop} />
@@ -154,7 +164,8 @@ export default function MatchScreen() {
             </View>
           ) : null}
 
-          <ErrorText message={actionError} />
+          <OfflineBanner show={offline} />
+          <ErrorText message={actionError ?? actions.error} />
 
           {joined.map((r) => <PlayerRow key={r.player_id} r={r} me={r.player_id === userId} onPress={() => openPlayer(r.player_id)} />)}
           {waitlist.length ? (
@@ -173,7 +184,10 @@ export default function MatchScreen() {
 
           {/* روابط صغيرة فقط عند الحاجة */}
           <Row style={{ flexWrap: 'wrap' }}>
-            {!finished && mine ? <SmallAction icon="exit-outline" label="انسحاب" danger onPress={() => act(() => api.leaveMatch(m.id))} /> : null}
+            {!finished && mine ? <SmallAction icon="exit-outline" label="انسحاب" danger onPress={() => void actions.leave(m)} /> : null}
+            {action.kind === 'opens_later' ? (
+              <SmallAction icon={alertSet ? 'notifications' : 'notifications-outline'} label={alertSet ? 'راح نبلّغك' : 'ذكّرني عند فتح التسجيل'} onPress={() => void remindRegistration()} />
+            ) : null}
             {!finished ? <SmallAction icon="share-social-outline" label="مشاركة" onPress={share} /> : null}
             {finished && mine?.status === 'joined' ? (
               <SmallAction icon="star-outline" label="قيّم اللاعبين" onPress={() => router.push({ pathname: '/match/rate', params: { id: m.id } })} />
@@ -193,7 +207,7 @@ export default function MatchScreen() {
         <View style={st.handle} />
         <View style={st.barRow}>
           <View style={{ flex: 1 }}>
-            <ActionPill action={action} busy={busy} onPress={() => act(() => api.joinMatch(m.id))} big onBar />
+            <ActionPill action={action} busy={actions.busyId === m.id} onPress={() => void actions.join(m)} big onBar />
           </View>
           {m.cost_per_player ? <Text style={st.price}>{formatIQD(m.cost_per_player)}</Text> : null}
         </View>

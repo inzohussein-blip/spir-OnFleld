@@ -16,7 +16,7 @@ export default function TrialScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   if (loading && !t) return <Loading />;
-  if (!t) return <Screen><ErrorText message="الاختبار غير موجود" /></Screen>;
+  if (!t) return <Screen><ErrorText message="الاختبار مو موجود" /></Screen>;
   const status = TRIAL_STATUS[t.status];
 
   async function apply() {

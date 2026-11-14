@@ -20,7 +20,7 @@ export default function Tournaments() {
       <SectionTitle title="البطولات" hint="شارك بفريقك أو تابع المجموعات والنتائج" />
       <ErrorText message={error} />
       {loading && !data ? <Loading /> : null}
-      {data && data.length === 0 ? <Empty title="لا توجد بطولات حالياً" icon="trophy-outline" /> : null}
+      {data && data.length === 0 ? <Empty title="ماكو بطولات هسه" icon="trophy-outline" /> : null}
       {data?.map((t) => {
         const st = STATUS_LABEL[t.status];
         return (

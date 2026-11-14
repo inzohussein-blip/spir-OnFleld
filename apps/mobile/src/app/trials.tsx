@@ -68,7 +68,7 @@ export default function Trials() {
 
       <SectionTitle title="الاختبارات" />
       {loading && !data ? <Loading /> : null}
-      {data && data.length === 0 ? <Empty title="لا توجد اختبارات حالياً" hint="الأندية دتجهّز أول اختباراتها. فعّل التنبيه حتى تكون أول واحد يقدّم." icon="clipboard-outline" /> : null}
+      {data && data.length === 0 ? <Empty title="ماكو اختبارات هسه" hint="الأندية دتجهّز أول اختباراتها. فعّل التنبيه حتى تكون أول واحد يقدّم." icon="clipboard-outline" /> : null}
       {data?.map((t) => {
         const status = TRIAL_STATUS[t.status];
         return (

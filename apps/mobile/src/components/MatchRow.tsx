@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, View } from 'react-native';
 import { formatClock, formatCountdown, formatIQD } from '../lib/format';
 import { matchAction, type MatchAction } from '../lib/matchAction';
+import { spotsInfo } from '../lib/schedule';
 import type { Match } from '../lib/types';
 import { fonts, themed, useColors } from '../theme';
 import { Text } from './ui';
@@ -44,12 +45,25 @@ export function ActionPill({ action, busy, onPress, big, onBar }: { action: Matc
   );
 }
 
+/** ألوان «باقي N»: أخضر كثير، برتقالي قليل، أحمر مكتملة */
+const SPOTS = {
+  ok: { fg: '#167A43', bg: '#E5F6EC' },
+  few: { fg: '#B45309', bg: '#FFF1DC' },
+  full: { fg: '#C42B1C', bg: '#FDECEA' },
+} as const;
+
 /** بطاقة مباراة بسيطة: رقم المباراة، اسم الساحة والزر، ثم السعر والوقت والعدد */
 export function MatchRow({ match, index, now, busy, onAction }: { match: Match; index: number; now: number; busy?: boolean; onAction: () => void }) {
   const router = useRouter();
   const st = useStyles();
   const c = useColors();
   const action = matchAction(match, now);
+  const finished = action.kind === 'finished';
+  const spots = spotsInfo(match);
+  // المباراة المنتهية: عدد اللاعبين بلون محايد بدل «مكتملة» الحمراء
+  const spotsFg = finished ? c.muted : SPOTS[spots.tone].fg;
+  const spotsBg = finished ? c.cardAlt : SPOTS[spots.tone].bg;
+  const spotsText = finished ? `${match.joined_count} لاعب` : spots.label;
   const open = () => router.push({ pathname: '/match/[id]', params: { id: match.id } });
   return (
     <View style={{ gap: 6 }}>
@@ -67,7 +81,11 @@ export function MatchRow({ match, index, now, busy, onAction }: { match: Match; 
         </View>
         <Pressable onPress={open} style={st.body}>
           <View style={st.thumb}>
-            <Ionicons name="football" size={28} color="#fff" />
+            {match.venue_photo ? (
+              <Image source={{ uri: match.venue_photo }} style={{ width: '100%', height: '100%' }} accessibilityLabel={match.venue_name ?? 'الملعب'} />
+            ) : (
+              <Ionicons name="football" size={28} color="#fff" />
+            )}
           </View>
           <View style={{ flex: 1, gap: 2 }}>
             {match.cost_per_player ? (
@@ -79,11 +97,9 @@ export function MatchRow({ match, index, now, busy, onAction }: { match: Match; 
               يبدأ: <Text style={{ color: c.text, fontFamily: fonts.semibold }}>{formatClock(match.starts_at)}</Text>
             </Text>
           </View>
-          <View style={st.count}>
-            <Ionicons name="people-outline" size={16} color={c.primary} />
-            <Text style={st.countText}>
-              {match.joined_count} من {match.max_players}
-            </Text>
+          <View style={[st.count, { backgroundColor: spotsBg }]}>
+            <Ionicons name="people-outline" size={16} color={spotsFg} />
+            <Text style={[st.countText, { color: spotsFg }]}>{spotsText}</Text>
           </View>
         </Pressable>
       </View>
@@ -94,9 +110,9 @@ export function MatchRow({ match, index, now, busy, onAction }: { match: Match; 
 const useStyles = themed((c) => ({
   card: { backgroundColor: c.card, borderRadius: 22, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },
   head: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 10 },
-  venue: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 26 },
+  venue: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 30 },
   body: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingBottom: 14 },
-  thumb: { width: 64, height: 64, borderRadius: 14, backgroundColor: '#1C8B4A', alignItems: 'center', justifyContent: 'center' },
+  thumb: { width: 64, height: 64, borderRadius: 14, backgroundColor: '#1C8B4A', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   count: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: c.cardAlt, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   countText: { fontFamily: fonts.bold, fontSize: 13 },
   pill: { minHeight: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },

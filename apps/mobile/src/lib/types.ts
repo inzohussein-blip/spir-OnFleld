@@ -11,6 +11,9 @@ export interface Profile {
   skill_rating: number;
   reliability_score: number;
   matches_played: number;
+  /** صورة اللاعب (اختيارية) */
+  avatar_url?: string | null;
+  role?: 'player' | 'owner' | 'staff' | 'admin';
 }
 
 export interface Venue {
@@ -21,6 +24,8 @@ export interface Venue {
   amenities: string[];
   is_verified: boolean;
   fields: Field[];
+  /** صورة الملعب الرئيسية (يرفعها المدير من لوحة التحكم) */
+  photo_url?: string | null;
 }
 
 export interface Field {
@@ -65,6 +70,8 @@ export interface Match {
   venue_address: string | null;
   /** حالتي في المباراة (null = لست منضماً) */
   my_status: RosterStatus | null;
+  venue_id?: string | null;
+  venue_photo?: string | null;
 }
 
 export interface RosterEntry {
@@ -273,4 +280,42 @@ export interface RankingRow {
   points: number;
   overall: number;
   stats: PlayerStats;
+}
+
+// ---------- اقتراح مباراة (من اللاعبين للإدارة) ----------
+export type SuggestionStatus = 'pending' | 'scheduled' | 'rejected';
+export interface SuggestionInput {
+  venue_id: string | null;
+  venue_text: string | null;
+  day: string; // YYYY-MM-DD
+  hour: number; // 0-23
+  players_per_side: number;
+  note: string | null;
+}
+export interface MatchSuggestion extends SuggestionInput {
+  id: string;
+  player_id: string;
+  player_name: string;
+  venue_name: string | null;
+  status: SuggestionStatus;
+  created_at: string;
+}
+
+// ---------- الإشعارات داخل التطبيق ----------
+export type NotificationKind = 'promoted' | 'registration_open' | 'match_created' | 'suggestion' | 'reminder' | 'general';
+export interface AppNotification {
+  id: string;
+  kind: NotificationKind;
+  title: string;
+  body: string;
+  match_id: string | null;
+  read: boolean;
+  created_at: string;
+}
+
+// ---------- إنشاء مباراة من لوحة التحكم ----------
+export interface AdminMatchInput extends NewMatchInput {
+  /** موعد فتح التسجيل (null = فوراً) */
+  registration_opens_at: string | null;
+  suggestion_id?: string | null;
 }

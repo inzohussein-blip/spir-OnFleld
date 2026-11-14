@@ -12,6 +12,7 @@ const POSITIONS: Position[] = ['goalkeeper', 'defender', 'midfielder', 'forward'
 export default function Onboarding() {
   const router = useRouter();
   const { refresh, profile } = useSession();
+  const [editing] = useState(() => profile !== null);
   const [name, setName] = useState(profile?.full_name ?? '');
   const [city, setCity] = useState(profile?.city ?? 'بغداد');
   const [position, setPosition] = useState<Position>(profile?.preferred_position ?? 'any');
@@ -19,14 +20,14 @@ export default function Onboarding() {
   const [error, setError] = useState<string | null>(null);
 
   async function submit() {
-    if (name.trim().length < 3) return setError('اكتب اسمك (3 أحرف على الأقل)');
+    if (name.trim().length < 3) return setError('اكتب اسمك (3 حروف على الأقل)');
     setBusy(true);
     setError(null);
     try {
       await api.saveProfile({ full_name: name.trim(), city, preferred_position: position });
       await refresh();
-      if (router.canGoBack()) router.back();
-      else router.replace('/');
+      // أول مرة: البوابة توجّهه للرئيسية (أو لرابط الدعوة). عند التعديل: نرجع للخلف
+      if (editing && router.canGoBack()) router.back();
     } catch (e) {
       setError(errMsg(e));
     } finally {

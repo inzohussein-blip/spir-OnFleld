@@ -27,7 +27,7 @@ export default function WalletScreen() {
         <Text variant="small" style={{ color: 'rgba(255,255,255,0.85)' }}>يُستخدم لدفع حصتك من الحجوزات واشتراكات البطولات. الشحن الإلكتروني (زين كاش، FastPay، كي كارد) قريباً.</Text>
       </View>
       <SectionTitle title="سجل العمليات" />
-      {data.transactions.length === 0 ? <Empty title="لا توجد عمليات بعد" icon="wallet-outline" /> : null}
+      {data.transactions.length === 0 ? <Empty title="بعد ماكو عمليات" icon="wallet-outline" /> : null}
       <Card style={{ gap: 0, paddingVertical: 4 }}>
         {data.transactions.map((t) => (
           <Row key={t.id} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border, flexWrap: 'nowrap' }}>

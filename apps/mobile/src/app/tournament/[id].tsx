@@ -27,7 +27,7 @@ export default function TournamentScreen() {
   const [regError, setRegError] = useState<string | null>(null);
 
   if (loading && !t) return <Loading />;
-  if (!t) return <Screen><ErrorText message={error ?? 'البطولة غير موجودة'} /></Screen>;
+  if (!t) return <Screen><ErrorText message={error ?? 'البطولة مو موجودة'} /></Screen>;
 
   const teamName_ = (tid: string | null) => t.teams.find((x) => x.id === tid)?.name ?? 'غير محدد';
   const groups = computeStandings(t.teams.filter((x) => x.group_name), t.fixtures);
@@ -115,7 +115,7 @@ export default function TournamentScreen() {
             </Card>
           ))
         ) : (
-          <Empty title="لم تُجرَ القرعة بعد" hint="يظهر الترتيب بعد توزيع الفرق على المجموعات." icon="grid-outline" />
+          <Empty title="القرعة بعدها ما صارت" hint="يظهر الترتيب بعد توزيع الفرق على المجموعات." icon="grid-outline" />
         )
       ) : null}
 
@@ -149,7 +149,7 @@ export default function TournamentScreen() {
             </View>
           ))
         ) : (
-          <Empty title="لا توجد مباريات بعد" icon="calendar-outline" />
+          <Empty title="بعد ماكو مباريات" icon="calendar-outline" />
         )
       ) : null}
 
@@ -226,7 +226,7 @@ function TournamentBoard({ t, onOpen }: { t: TournamentDetail; onOpen: (playerId
           <Button title="عرض البطاقة" variant="ghost" onPress={() => onOpen(best.profile.id)} />
         </Card>
       ) : (
-        <Empty title="لم يُحدد لاعب البطولة بعد" icon="ribbon-outline" />
+        <Empty title="لاعب البطولة بعده ما تحدد" icon="ribbon-outline" />
       )}
     </>
   );

@@ -2,7 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, Switch, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Switch, View } from 'react-native';
+import { Avatar } from '../../components/Avatar';
+import { useToast } from '../../components/feedback';
+import { pickSquareImage } from '../../lib/pickImage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, ErrorText, Row, Text } from '../../components/ui';
 import { api } from '../../lib/api';
@@ -56,6 +59,10 @@ export default function Profile() {
   const insets = useSafeAreaInsets();
   const { data: card, reload } = useAsync(() => (userId ? api.getPlayerCard(userId) : Promise.resolve(null)), [userId]);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const toast = useToast();
+  const admin = useAsync(() => api.isAdmin(), [userId]);
+  const showAdmin = Platform.OS === 'web' && admin.data === true;
   const [error, setError] = useState<string | null>(null);
   useFocusEffect(
     useCallback(() => {
@@ -64,6 +71,21 @@ export default function Profile() {
     }, [refresh, reload]),
   );
   if (!profile) return null;
+
+  async function changePhoto() {
+    try {
+      const uri = await pickSquareImage();
+      if (!uri) return;
+      setUploading(true);
+      await api.uploadAvatar(uri);
+      await refresh();
+      toast('تحدّثت صورتك ✓');
+    } catch (e) {
+      toast(errMsg(e));
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function deleteAccount() {
     try {
@@ -87,9 +109,12 @@ export default function Profile() {
       {/* بطاقة اللاعب */}
       <View style={st.card}>
         <View style={st.cardStripe} />
-        <View style={st.avatar}>
-          <Text style={st.avatarText}>{profile.full_name.slice(0, 1)}</Text>
-        </View>
+        <Pressable onPress={changePhoto} accessibilityRole="button" accessibilityLabel="تغيير الصورة الشخصية">
+          <Avatar name={profile.full_name} url={profile.avatar_url} size={110} ring="rgba(255,255,255,0.6)" />
+          <View style={st.camera}>
+            <Ionicons name={uploading ? 'hourglass-outline' : 'camera'} size={16} color={c.primary} />
+          </View>
+        </Pressable>
         <Row style={{ justifyContent: 'center', gap: 10 }}>
           <Text style={st.cardMeta}>{POSITION_LABEL[profile.preferred_position]}</Text>
           <Text style={st.cardMeta}>{card?.overall ?? '—'}</Text>
@@ -130,7 +155,9 @@ export default function Profile() {
           <RowLink title="البطولات" href="/tournaments" />
           <RowLink title="اختبارات الأندية" href="/trials" />
           <RowLink title="المنشورات" href="/posts" />
-          <RowLink title="اللاعبين" href="/players" last />
+          <RowLink title="اللاعبين" href="/players" />
+          <RowLink title="اقترح مباراة" href="/suggest" last={!showAdmin} />
+          {showAdmin ? <RowLink title="لوحة التحكم (للإدارة)" href="/admin" last /> : null}
         </Box>
       </Section>
 
@@ -175,8 +202,7 @@ const useStyles = themed((c) => ({
   content: { paddingHorizontal: 16, gap: 22, paddingBottom: 130 },
   card: { alignSelf: 'center', width: 300, backgroundColor: c.primary, borderRadius: 30, paddingTop: 22, paddingBottom: 18, paddingHorizontal: 18, alignItems: 'center', gap: 6, overflow: 'hidden' },
   cardStripe: { position: 'absolute', width: 140, height: 420, backgroundColor: 'rgba(255,255,255,0.08)', top: -60, left: 170, transform: [{ rotate: '25deg' }] },
-  avatar: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: 'rgba(255,255,255,0.5)' },
-  avatarText: { fontFamily: fonts.bold, fontSize: 48, lineHeight: 64, color: c.primary },
+  camera: { position: 'absolute', bottom: 2, left: 2, width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.primary },
   cardMeta: { color: '#fff', fontFamily: fonts.semibold, fontSize: 15 },
   cardName: { color: '#fff', fontFamily: fonts.bold, fontSize: 20, lineHeight: 30 },
   cardDivider: { height: 2, width: '80%', backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, marginVertical: 4 },

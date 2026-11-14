@@ -31,7 +31,7 @@ export default function Posts() {
       {loading && !data ? <Loading /> : null}
       {data && data.length === 0 ? (
         <>
-          <Empty title="لا توجد منشورات حالياً" hint="تابعنا، راح تنزل أخبار جديدة قريباً" icon="document-text-outline" />
+          <Empty title="ماكو منشورات هسه" hint="تابعنا، راح تنزل أخبار جديدة قريباً" icon="document-text-outline" />
           <Button title="تحديث" icon="refresh" variant="outline" onPress={reload} style={{ alignSelf: 'center', paddingHorizontal: 28 }} />
         </>
       ) : null}

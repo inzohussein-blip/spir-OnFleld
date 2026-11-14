@@ -68,7 +68,7 @@ function Leaders() {
 function TeamOfWeek() {
   const { data, loading } = useAsync(() => api.getTeamOfWeek(), []);
   if (loading && !data) return <Loading />;
-  if (!data || data.length < 5) return <Empty title="لم تكتمل تشكيلة الشهر" hint="تُختار تلقائياً من أفضل اللاعبين أداءً في مباريات الشهر." icon="people-outline" />;
+  if (!data || data.length < 5) return <Empty title="تشكيلة الشهر بعدها ما اكتملت" hint="تُختار تلقائياً من أفضل اللاعبين أداءً في مباريات الشهر." icon="people-outline" />;
   return (
     <>
       <SectionTitle title="تشكيلة الشهر" hint="4-3-3 + احتياطيان · حسب التقييم والأهداف والصناعة وجوائز رجل المباراة" />
@@ -82,7 +82,7 @@ function PlayerOfMonth() {
   const router = useRouter();
   const { data: card, loading } = useAsync(() => api.getPlayerOfMonth(), []);
   if (loading && !card) return <Loading />;
-  if (!card) return <Empty title="لا يوجد لاعب للشهر بعد" icon="star-outline" />;
+  if (!card) return <Empty title="بعد ماكو لاعب للشهر" icon="star-outline" />;
   return (
     <>
       <View style={{ backgroundColor: c.primary, borderRadius: 20, paddingVertical: 20, gap: 12, alignItems: 'center' }}>

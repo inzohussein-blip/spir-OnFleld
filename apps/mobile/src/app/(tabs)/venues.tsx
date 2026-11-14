@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Image, Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native';
 import { HeaderBand } from '../../components/HeaderBand';
-import { Empty, ErrorText, Loading, Text } from '../../components/ui';
+import { OfflineBanner, SkeletonList } from '../../components/feedback';
+import { Empty, ErrorText, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { toWesternDigits } from '../../lib/format';
 import { useAsync } from '../../lib/session';
@@ -13,7 +14,7 @@ export default function Venues() {
   const router = useRouter();
   const c = useColors();
   const st = useStyles();
-  const { data, error, loading } = useAsync(() => api.listVenues(), []);
+  const { data, error, loading, offline, refreshing, reload } = useAsync(() => api.listVenues(), [], { cacheKey: 'venues' });
   const [q, setQ] = useState('');
 
   const needle = q.trim();
@@ -22,7 +23,11 @@ export default function Venues() {
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <HeaderBand title="الملاعب" />
-      <ScrollView contentContainerStyle={st.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={st.content}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={c.primary} colors={[c.primary]} />}
+      >
         <View style={st.search}>
           <Ionicons name="search" size={24} color={c.primary} />
           <TextInput
@@ -36,17 +41,24 @@ export default function Venues() {
           {q ? <Ionicons name="close-circle" size={20} color={c.muted} onPress={() => setQ('')} /> : null}
         </View>
 
+        <OfflineBanner show={offline} />
         <ErrorText message={error} />
-        {loading && !data ? <Loading /> : null}
-        {data && list.length === 0 ? <Empty title="لا يوجد ملعب بهذا الاسم" icon="search-outline" /> : null}
+        {loading && !data ? <SkeletonList count={3} height={120} /> : null}
+        {data && list.length === 0 ? <Empty title="ماكو ملعب بهذا الاسم" icon="search-outline" /> : null}
 
         {list.map((v) => {
           const capacity = Math.max(...v.fields.map((f) => f.players_per_side * 2));
           return (
             <Pressable key={v.id} onPress={() => router.push({ pathname: '/venue/[id]', params: { id: v.id } })} style={st.card}>
               <View style={st.thumb}>
-                <View style={st.thumbLine} />
-                <View style={st.thumbCircle} />
+                {v.photo_url ? (
+                  <Image source={{ uri: v.photo_url }} style={{ width: '100%', height: '100%' }} accessibilityLabel={v.name} />
+                ) : (
+                  <>
+                    <View style={st.thumbLine} />
+                    <View style={st.thumbCircle} />
+                  </>
+                )}
               </View>
               <View style={{ flex: 1, gap: 8 }}>
                 <Text style={st.name} numberOfLines={2}>{v.name}</Text>
