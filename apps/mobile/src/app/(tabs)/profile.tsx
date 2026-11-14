@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
@@ -62,13 +63,16 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const toast = useToast();
   const admin = useAsync(() => api.isAdmin(), [userId]);
+  const invites = useAsync(() => api.listTeamInvites(), [userId]);
+  const reloadInvites = invites.reload;
   const showAdmin = Platform.OS === 'web' && admin.data === true;
   const [error, setError] = useState<string | null>(null);
   useFocusEffect(
     useCallback(() => {
       void refresh();
       void reload();
-    }, [refresh, reload]),
+      void reloadInvites();
+    }, [refresh, reload, reloadInvites]),
   );
   if (!profile) return null;
 
@@ -120,6 +124,20 @@ export default function Profile() {
           <Text style={st.cardMeta}>{card?.overall ?? '—'}</Text>
         </Row>
         <Text style={st.cardName}>{profile.full_name}</Text>
+        {profile.public_id ? (
+          <Pressable
+            style={st.idPill}
+            onPress={async () => {
+              await Clipboard.setStringAsync(profile.public_id ?? '');
+              toast('انسخ رقمك ✓ دزّه لأصدقائك حتى يضيفوك لفرقهم');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={`رقمك ${profile.public_id} — اضغط للنسخ`}
+          >
+            <Text style={st.idText}>ID: {profile.public_id}</Text>
+            <Ionicons name="copy-outline" size={14} color="#fff" />
+          </Pressable>
+        ) : null}
         <View style={st.cardDivider} />
         <View style={st.statsGrid}>
           <View style={{ flex: 1, gap: 4 }}>
@@ -146,7 +164,22 @@ export default function Profile() {
         <Box>
           <RowLink title="المعلومات الشخصية" href="/onboarding" />
           <RowLink title="مبارياتي" href="/my-matches" />
-          <RowLink title="الإحصائيات" href="/stats" last />
+          <RowLink title="الإحصائيات" href="/stats" />
+          <RowLink
+            title="فريقي"
+            href="/teams"
+            last
+            right={
+              invites.data?.length ? (
+                <Row style={{ gap: 6 }}>
+                  <View style={st.badge}>
+                    <Text style={st.badgeText}>{invites.data.length}</Text>
+                  </View>
+                  <Ionicons name="chevron-back" size={20} color={c.muted} />
+                </Row>
+              ) : undefined
+            }
+          />
         </Box>
       </Section>
 
@@ -205,6 +238,10 @@ const useStyles = themed((c) => ({
   camera: { position: 'absolute', bottom: 2, left: 2, width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.primary },
   cardMeta: { color: '#fff', fontFamily: fonts.semibold, fontSize: 15 },
   cardName: { color: '#fff', fontFamily: fonts.bold, fontSize: 20, lineHeight: 30 },
+  idPill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 3 },
+  idText: { color: '#fff', fontFamily: fonts.semibold, fontSize: 14, lineHeight: 22, letterSpacing: 0.5 },
+  badge: { minWidth: 22, height: 22, borderRadius: 11, backgroundColor: c.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  badgeText: { color: '#fff', fontFamily: fonts.bold, fontSize: 12, lineHeight: 18 },
   cardDivider: { height: 2, width: '80%', backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, marginVertical: 4 },
   statsGrid: { flexDirection: 'row', alignSelf: 'stretch', gap: 12 },
   statsSep: { width: 2, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1 },

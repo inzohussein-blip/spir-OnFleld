@@ -3,10 +3,11 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 import type { Api, ProfileInput } from './types';
 import { toWesternDigits } from '../format';
+import { normalizePublicId } from '../teams';
 import { attributesFromRating, monthRange, overallOf, pickTeamOfWeek, pointsOf } from '../stats';
-import type { MatchSuggestion, RankingRow, ChannelKind, ChatChannel, ChatMessage, Post, Trial, Wallet, Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue } from '../types';
+import type { PlayerTeam, TeamInvite, MatchSuggestion, RankingRow, ChannelKind, ChatChannel, ChatMessage, Post, Trial, Wallet, Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue } from '../types';
 
-const PROFILE_COLS = 'id, full_name, city, preferred_position, skill_rating, reliability_score, matches_played, attributes, avatar_url, role';
+const PROFILE_COLS = 'id, full_name, city, preferred_position, skill_rating, reliability_score, matches_played, attributes, avatar_url, role, public_id';
 const VENUE_COLS = 'id, name, city, address, amenities, is_verified, photos, lat, lng, fields(id, venue_id, name, players_per_side, surface, is_indoor, default_price, open_hour, close_hour)';
 const mapVenue = (v: any): Venue => ({ ...v, photo_url: v.photos?.[0] ?? null });
 const EMPTY_STATS: PlayerStats = { matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0 };
@@ -39,6 +40,33 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
     const { attributes: _a, ...rest } = p;
     return { ...rest, skill_rating: num(rest.skill_rating), reliability_score: num(rest.reliability_score) };
   };
+
+  async function loadTeams(me: string, ids: string[]): Promise<PlayerTeam[]> {
+    if (!ids.length) return [];
+    const { data, error } = await sb
+      .from('teams')
+      .select('id, name, captain_id, created_at, members:team_members(player_id, joined_at, profile:profiles(id, full_name, avatar_url, preferred_position))')
+      .in('id', ids)
+      .order('created_at');
+    fail(error);
+    const captainOf = (data ?? []).filter((t: any) => t.captain_id === me).map((t: any) => t.id);
+    let pending: any[] = [];
+    if (captainOf.length) {
+      const r = await sb.from('team_invites').select('id, team_id, player_id, player:profiles!team_invites_player_id_fkey(full_name)').in('team_id', captainOf).eq('status', 'pending');
+      fail(r.error);
+      pending = r.data ?? [];
+    }
+    return (data ?? []).map((t: any): PlayerTeam => ({
+      id: t.id, name: t.name, captain_id: t.captain_id, created_at: t.created_at, is_captain: t.captain_id === me,
+      members: [...(t.members ?? [])]
+        .sort((a: any, b: any) => (a.player_id === t.captain_id ? -1 : b.player_id === t.captain_id ? 1 : a.joined_at.localeCompare(b.joined_at)))
+        .map((m: any) => ({
+          player_id: m.player_id, full_name: m.profile?.full_name ?? '', avatar_url: m.profile?.avatar_url ?? null,
+          preferred_position: m.profile?.preferred_position ?? 'any', role: m.player_id === t.captain_id ? 'captain' : 'member',
+        })),
+      pending: pending.filter((p) => p.team_id === t.id).map((p) => ({ invite_id: p.id, player_id: p.player_id, full_name: p.player?.full_name ?? '' })),
+    }));
+  }
   const toCard = (p: any, st?: Partial<PlayerStats>): PlayerCard => {
     const profile = mapProfile(p);
     const attributes: Attributes = p.attributes ?? attributesFromRating(profile.skill_rating, profile.preferred_position);
@@ -354,6 +382,77 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
       fail(error);
     },
 
+    // ---------- فريقي ----------
+    async findPlayerByPublicId(code) {
+      const id = normalizePublicId(code);
+      if (!id) return null;
+      const { data, error } = await sb.rpc('find_player_by_public_id', { p_code: id });
+      fail(error);
+      const row = (data as any[] | null)?.[0];
+      return row ? mapProfile(row) : null;
+    },
+    async listMyTeams() {
+      const me = await uid();
+      if (!me) return [];
+      const { data: mine, error } = await sb.from('team_members').select('team_id').eq('player_id', me);
+      fail(error);
+      return loadTeams(me, (mine ?? []).map((r: any) => r.team_id));
+    },
+    async getTeam(id) {
+      const me = await uid();
+      if (!me) return null;
+      return (await loadTeams(me, [id]))[0] ?? null;
+    },
+    async createTeam(name) {
+      const { data, error } = await sb.rpc('create_team', { p_name: name });
+      fail(error);
+      return data as string;
+    },
+    async inviteToTeam(teamId, playerId) {
+      const { error } = await sb.rpc('invite_to_team', { p_team: teamId, p_player: playerId });
+      fail(error);
+    },
+    async listTeamInvites() {
+      const me = await uid();
+      if (!me) return [];
+      const { data, error } = await sb
+        .from('team_invites')
+        .select('id, team_id, created_at, team:teams(name, captain:profiles!teams_captain_id_fkey(full_name), members:team_members(count))')
+        .eq('player_id', me)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      fail(error);
+      return (data ?? []).map((r: any): TeamInvite => ({
+        id: r.id, team_id: r.team_id, team_name: r.team?.name ?? '', captain_name: r.team?.captain?.full_name ?? '',
+        members_count: r.team?.members?.[0]?.count ?? 0, created_at: r.created_at,
+      }));
+    },
+    async respondTeamInvite(inviteId, accept) {
+      const { error } = await sb.rpc('respond_team_invite', { p_invite: inviteId, p_accept: accept });
+      fail(error);
+    },
+    async leaveTeam(teamId) {
+      const { error } = await sb.rpc('leave_team', { p_team: teamId });
+      fail(error);
+    },
+    async removeTeamMember(teamId, playerId) {
+      const { error } = await sb.rpc('remove_team_member', { p_team: teamId, p_player: playerId });
+      fail(error);
+    },
+    async joinMatchWithTeam(matchId, teamId) {
+      const { data, error } = await sb.rpc('join_match_with_team', { p_match: matchId, p_team: teamId });
+      fail(error);
+      return data as number;
+    },
+    async suggestTeamMatch(teamId, input) {
+      if (!input.venue_id && !input.venue_text?.trim()) throw new Error('اختار ملعب أو اكتب اسمه');
+      const { error } = await sb.rpc('suggest_team_match', {
+        p_team: teamId, p_venue_id: input.venue_id, p_venue_text: input.venue_text, p_day: input.day, p_hour: input.hour,
+        p_players_per_side: input.players_per_side, p_note: input.note,
+      });
+      fail(error);
+    },
+
     async getWallet(): Promise<Wallet> {
       const { data, error } = await sb.from('wallet_transactions').select('id, kind, amount, note, created_at').order('created_at', { ascending: false }).limit(100);
       fail(error);
@@ -386,7 +485,7 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
     async listMySuggestions() {
       const me = await uid();
       if (!me) return [];
-      const { data, error } = await sb.from('match_suggestions').select('*, venue:venues(name), player:profiles(full_name)').eq('player_id', me).order('created_at', { ascending: false });
+      const { data, error } = await sb.from('match_suggestions').select('*, venue:venues(name), player:profiles!match_suggestions_player_id_fkey(full_name), team:teams(name, members:team_members(count))').eq('player_id', me).order('created_at', { ascending: false });
       fail(error);
       return (data ?? []).map(mapSuggestion);
     },
@@ -431,7 +530,7 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
       return data as string;
     },
     async adminListSuggestions() {
-      const { data, error } = await sb.from('match_suggestions').select('*, venue:venues(name), player:profiles(full_name)').order('created_at', { ascending: false }).limit(100);
+      const { data, error } = await sb.from('match_suggestions').select('*, venue:venues(name), player:profiles!match_suggestions_player_id_fkey(full_name), team:teams(name, members:team_members(count))').order('created_at', { ascending: false }).limit(100);
       fail(error);
       return (data ?? []).map(mapSuggestion);
     },
@@ -488,5 +587,6 @@ function mapSuggestion(r: any): MatchSuggestion {
     id: r.id, player_id: r.player_id, player_name: r.player?.full_name ?? '', venue_id: r.venue_id, venue_text: r.venue_text,
     venue_name: r.venue?.name ?? r.venue_text, day: r.day, hour: r.hour, players_per_side: r.players_per_side, note: r.note,
     status: r.status, created_at: r.created_at,
+    team_id: r.team_id ?? null, team_name: r.team?.name ?? null, team_size: r.team?.members?.[0]?.count ?? null,
   };
 }

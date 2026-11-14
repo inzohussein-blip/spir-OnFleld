@@ -107,6 +107,10 @@ function Gate() {
         <Stack.Screen name="post/[id]" options={{ title: 'المنشور' }} />
         <Stack.Screen name="wallet" options={{ title: 'المحفظة' }} />
         <Stack.Screen name="players" options={{ title: 'اللاعبين' }} />
+        <Stack.Screen name="teams" options={{ title: 'فريقي' }} />
+        <Stack.Screen name="team/[id]" options={{ title: 'الفريق' }} />
+        <Stack.Screen name="team/suggest" options={{ title: 'مباراة للفريق' }} />
+        <Stack.Screen name="team/join" options={{ title: 'انضم ويّا الفريق' }} />
       </Stack>
     </>
   );

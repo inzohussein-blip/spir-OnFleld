@@ -51,6 +51,11 @@ export default function AdminSuggestions() {
           <Text variant="small" style={{ color: c.muted }}>
             {s.day} · {formatHour(s.hour)} · {formatFormat(s.players_per_side)} · من {s.player_name} · {timeAgo(s.created_at)}
           </Text>
+          {s.team_id ? (
+            <Text style={{ lineHeight: 24, color: c.primary, fontFamily: fonts.semibold }}>
+              👥 طلب فريق «{s.team_name}» ({s.team_size ?? '?'} لاعب) — ينضافون كلهم للمباراة، والقائد يتحمّل مبلغ الغايب
+            </Text>
+          ) : null}
           {s.note ? <Text style={{ lineHeight: 24 }}>{s.note}</Text> : null}
           {s.status === 'pending' ? (
             <Row style={{ flexWrap: 'nowrap' }}>

@@ -14,6 +14,8 @@ export interface Profile {
   /** صورة اللاعب (اختيارية) */
   avatar_url?: string | null;
   role?: 'player' | 'owner' | 'staff' | 'admin';
+  /** رقم اللاعب العام (ID) — يبحث بيه أصدقاءه حتى يضيفوه لفرقهم */
+  public_id?: string | null;
 }
 
 export interface Venue {
@@ -301,6 +303,38 @@ export interface MatchSuggestion extends SuggestionInput {
   player_name: string;
   venue_name: string | null;
   status: SuggestionStatus;
+  created_at: string;
+  /** طلب مباراة لفريق كامل (القائد يتحمّل مبلغ اللي ما يحضر) */
+  team_id?: string | null;
+  team_name?: string | null;
+  team_size?: number | null;
+}
+
+// ---------- الفرق (فريقي) ----------
+export type TeamRole = 'captain' | 'member';
+export interface TeamMember {
+  player_id: string;
+  full_name: string;
+  avatar_url?: string | null;
+  preferred_position: Position;
+  role: TeamRole;
+}
+export interface PlayerTeam {
+  id: string;
+  name: string;
+  captain_id: string;
+  created_at: string;
+  members: TeamMember[];
+  /** دعوات بانتظار موافقة اللاعب (تبين للقائد) */
+  pending: { invite_id: string; player_id: string; full_name: string }[];
+  is_captain: boolean;
+}
+export interface TeamInvite {
+  id: string;
+  team_id: string;
+  team_name: string;
+  captain_name: string;
+  members_count: number;
   created_at: string;
 }
 

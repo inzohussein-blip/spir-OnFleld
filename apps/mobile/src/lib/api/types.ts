@@ -29,6 +29,8 @@ import type {
   SuggestionStatus,
   AppNotification,
   AdminMatchInput,
+  PlayerTeam,
+  TeamInvite,
 } from '../types';
 
 export interface ProfileInput {
@@ -106,6 +108,21 @@ export interface Api {
   adminSetSuggestionStatus(id: string, status: SuggestionStatus): Promise<void>;
   adminUploadVenuePhoto(venueId: string, localUri: string): Promise<string>;
   adminSetVenueLocation(venueId: string, lat: number, lng: number): Promise<void>;
+
+  // ---------- فريقي ----------
+  findPlayerByPublicId(code: string): Promise<Profile | null>;
+  listMyTeams(): Promise<PlayerTeam[]>;
+  getTeam(id: string): Promise<PlayerTeam | null>;
+  createTeam(name: string): Promise<string>;
+  inviteToTeam(teamId: string, playerId: string): Promise<void>;
+  listTeamInvites(): Promise<TeamInvite[]>;
+  respondTeamInvite(inviteId: string, accept: boolean): Promise<void>;
+  leaveTeam(teamId: string): Promise<void>;
+  removeTeamMember(teamId: string, playerId: string): Promise<void>;
+  /** القائد يدخّل كل الفريق لمباراة — يرجّع عدد اللي انضافوا */
+  joinMatchWithTeam(matchId: string, teamId: string): Promise<number>;
+  /** القائد يطلب من الإدارة مباراة للفريق كامل */
+  suggestTeamMatch(teamId: string, input: SuggestionInput): Promise<void>;
 
   getWallet(): Promise<Wallet>;
   listPlayers(query: string): Promise<Profile[]>;

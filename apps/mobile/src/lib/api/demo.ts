@@ -33,14 +33,17 @@ import type {
   MatchSuggestion,
   AppNotification,
   AdminMatchInput,
+  PlayerTeam,
+  TeamInvite,
 } from '../types';
+import { canJoinAnotherTeam, MAX_TEAM_MEMBERS, nextCaptain, normalizePublicId, teamJoinError, teamNameError } from '../teams';
 
 /**
  * وضع تجريبي: بيانات وهمية محفوظة على الجهاز، حتى يمكن تجربة التطبيق
  * كاملاً قبل ربطه بـ Supabase. رمز التحقق في هذا الوضع: 1234
  */
 
-const KEY = 'balmalaab-demo-v6';
+const KEY = 'balmalaab-demo-v7';
 
 /** المتصفح يعطي رابط blob يموت بعد إعادة تحميل الصفحة — نحفظ الصورة نفسها (data URL) بالوضع التجريبي */
 async function persistable(uri: string): Promise<string> {
@@ -67,7 +70,7 @@ interface StoredMatch {
   starts_at: string;
   ends_at: string;
   price: number;
-  roster: { player_id: string; status: RosterStatus; team: Team | null; joined_at: string }[];
+  roster: { player_id: string; status: RosterStatus; team: Team | null; joined_at: string; team_id?: string | null; paid_by?: string | null }[];
   ratedBy: string[];
   score_a: number | null;
   score_b: number | null;
@@ -84,6 +87,18 @@ interface StoredTournament extends Omit<Tournament, 'registered_teams'> {
 
 type StoredTrial = Omit<Trial, 'my_application'>;
 
+interface StoredTeam {
+  id: string;
+  name: string;
+  captain_id: string;
+  created_at: string;
+  members: { player_id: string; joined_at: string }[];
+}
+
+/** رقم اللاعب التجريبي: ثابت لكل لاعب */
+const ME_PUBLIC_ID = '7310524';
+const publicIdOf = (i: number) => String(2400100 + i * 7919);
+
 interface DB {
   signedIn: boolean;
   profiles: Profile[];
@@ -97,6 +112,8 @@ interface DB {
   trialAlert: boolean;
   suggestions: MatchSuggestion[];
   notifications: AppNotification[];
+  teams: StoredTeam[];
+  teamInvites: { id: string; team_id: string; player_id: string; invited_by: string; status: 'pending' | 'accepted' | 'rejected'; created_at: string }[];
   posts: Post[];
   messages: ChatMessage[];
   wallet: Wallet;
@@ -147,6 +164,7 @@ function seed(): DB {
     skill_rating,
     reliability_score: 80 + Math.round(rand() * 20),
     matches_played: 0,
+    public_id: publicIdOf(i),
   }));
   const attributes: Record<string, Attributes> = {};
   for (const p of profiles) {
@@ -332,9 +350,14 @@ function seed(): DB {
   const notifications: AppNotification[] = [
     { id: 'n1', kind: 'general', title: 'هلا بيك ببالملعب 👋', body: 'اختار يوم من الشريط وانضم لمباراة بضغطة وحدة.', match_id: null, read: false, created_at: new Date().toISOString() },
   ];
+  // فريق تجريبي: قائده مصطفى كريم، ودزّ لك طلب انضمام
+  const teams: StoredTeam[] = [
+    { id: 'tm1', name: 'شباب المنصور', captain_id: 'p1', created_at: at(-20, 18), members: [1, 0, 4, 8].map((i, k) => ({ player_id: `p${i}`, joined_at: at(-20 + k, 18) })) },
+  ];
+  const teamInvites: DB['teamInvites'] = [{ id: 'ti1', team_id: 'tm1', player_id: ME, invited_by: 'p1', status: 'pending', created_at: at(-1, 20) }];
   return {
     signedIn: false, profiles, attributes, venues, matches, ratings: [], tournaments, trials, applications: [], trialAlert: false, posts, messages, wallet,
-    suggestions: [], notifications,
+    suggestions: [], notifications, teams, teamInvites,
   };
 }
 
@@ -355,6 +378,22 @@ async function save() {
   } catch {
     /* التخزين غير متاح — نكمل من الذاكرة */
   }
+}
+
+const teamCount = (d: DB, playerId: string) => d.teams.filter((t) => t.members.some((m) => m.player_id === playerId)).length;
+
+function teamView(d: DB, t: StoredTeam): PlayerTeam {
+  const prof = (id: string) => d.profiles.find((p) => p.id === id);
+  const members = [...t.members]
+    .sort((a, b) => (a.player_id === t.captain_id ? -1 : b.player_id === t.captain_id ? 1 : a.joined_at.localeCompare(b.joined_at)))
+    .flatMap((m) => {
+      const p = prof(m.player_id);
+      return p ? [{ player_id: p.id, full_name: p.full_name, avatar_url: p.avatar_url ?? null, preferred_position: p.preferred_position, role: m.player_id === t.captain_id ? ('captain' as const) : ('member' as const) }] : [];
+    });
+  const pending = t.captain_id === ME
+    ? d.teamInvites.filter((i) => i.team_id === t.id && i.status === 'pending').map((i) => ({ invite_id: i.id, player_id: i.player_id, full_name: prof(i.player_id)?.full_name ?? 'لاعب' }))
+    : [];
+  return { id: t.id, name: t.name, captain_id: t.captain_id, created_at: t.created_at, members, pending, is_captain: t.captain_id === ME };
 }
 
 const fieldOf = (d: DB, fieldId: string) => {
@@ -440,7 +479,7 @@ export const demoApi: Api = {
     const d = await db();
     const existing = d.profiles.find((p) => p.id === ME);
     if (existing) Object.assign(existing, input);
-    else d.profiles.push({ id: ME, ...input, skill_rating: 3, reliability_score: 100, matches_played: 0 });
+    else d.profiles.push({ id: ME, ...input, skill_rating: 3, reliability_score: 100, matches_played: 0, public_id: ME_PUBLIC_ID });
     await save();
   },
   async listVenues() {
@@ -689,6 +728,127 @@ export const demoApi: Api = {
     await save();
   },
 
+  // ---------- فريقي ----------
+  async findPlayerByPublicId(code) {
+    const id = normalizePublicId(code);
+    if (!id) return null;
+    await delay();
+    return (await db()).profiles.find((p) => p.public_id === id) ?? null;
+  },
+  async listMyTeams() {
+    const d = await db();
+    return d.teams.filter((t) => t.members.some((m) => m.player_id === ME)).map((t) => teamView(d, t));
+  },
+  async getTeam(id) {
+    const d = await db();
+    const t = d.teams.find((x) => x.id === id && x.members.some((m) => m.player_id === ME));
+    return t ? teamView(d, t) : null;
+  },
+  async createTeam(name) {
+    const d = await db();
+    const err = teamNameError(name);
+    if (err) throw new Error(err);
+    if (!d.profiles.some((p) => p.id === ME)) throw new Error('كمّل ملفك الشخصي بالأول');
+    if (!canJoinAnotherTeam(teamCount(d, ME))) throw new Error('وصلت الحد: تكدر تكون بـ 5 فرق بس');
+    const id = `tm${Date.now()}`;
+    d.teams.push({ id, name: name.trim(), captain_id: ME, created_at: new Date().toISOString(), members: [{ player_id: ME, joined_at: new Date().toISOString() }] });
+    await save();
+    return id;
+  },
+  async inviteToTeam(teamId, playerId) {
+    const d = await db();
+    const t = d.teams.find((x) => x.id === teamId);
+    if (!t) throw new Error('الفريق مو موجود');
+    if (t.captain_id !== ME) throw new Error('بس قائد الفريق يكدر يضيف لاعبين');
+    if (playerId === ME) throw new Error('إنت بالفريق من قبل');
+    if (t.members.some((m) => m.player_id === playerId)) throw new Error('اللاعب بالفريق من قبل');
+    if (d.teamInvites.some((i) => i.team_id === teamId && i.player_id === playerId && i.status === 'pending')) throw new Error('دزّيت له طلب من قبل، بانتظار موافقته');
+    if (t.members.length >= MAX_TEAM_MEMBERS) throw new Error('الفريق مكتمل (22 لاعب)');
+    if (!canJoinAnotherTeam(teamCount(d, playerId))) throw new Error('اللاعب وصل الحد: 5 فرق');
+    d.teamInvites.push({ id: `ti${Date.now()}`, team_id: teamId, player_id: playerId, invited_by: ME, status: 'pending', created_at: new Date().toISOString() });
+    await save();
+  },
+  async listTeamInvites() {
+    const d = await db();
+    return d.teamInvites
+      .filter((i) => i.player_id === ME && i.status === 'pending')
+      .flatMap((i): TeamInvite[] => {
+        const t = d.teams.find((x) => x.id === i.team_id);
+        if (!t) return [];
+        const captain = d.profiles.find((p) => p.id === t.captain_id);
+        return [{ id: i.id, team_id: t.id, team_name: t.name, captain_name: captain?.full_name ?? '', members_count: t.members.length, created_at: i.created_at }];
+      });
+  },
+  async respondTeamInvite(inviteId, accept) {
+    const d = await db();
+    const inv = d.teamInvites.find((i) => i.id === inviteId && i.player_id === ME && i.status === 'pending');
+    if (!inv) throw new Error('الطلب مو موجود');
+    if (accept) {
+      if (!canJoinAnotherTeam(teamCount(d, ME))) throw new Error('وصلت الحد: تكدر تكون بـ 5 فرق بس. اطلع من فريق أول');
+      const t = d.teams.find((x) => x.id === inv.team_id);
+      if (!t) throw new Error('الفريق مو موجود');
+      if (!t.members.some((m) => m.player_id === ME)) t.members.push({ player_id: ME, joined_at: new Date().toISOString() });
+    }
+    inv.status = accept ? 'accepted' : 'rejected';
+    await save();
+  },
+  async leaveTeam(teamId) {
+    const d = await db();
+    const t = d.teams.find((x) => x.id === teamId);
+    if (!t || !t.members.some((m) => m.player_id === ME)) return;
+    const next = nextCaptain(t.members, ME);
+    t.members = t.members.filter((m) => m.player_id !== ME);
+    if (t.captain_id === ME) {
+      if (next) t.captain_id = next;
+      else d.teams = d.teams.filter((x) => x.id !== teamId);
+    }
+    await save();
+  },
+  async removeTeamMember(teamId, playerId) {
+    const d = await db();
+    const t = d.teams.find((x) => x.id === teamId);
+    if (!t || t.captain_id !== ME) throw new Error('بس قائد الفريق يكدر يشيل لاعبين');
+    if (playerId === ME) throw new Error('استعمل «اطلع من الفريق»');
+    t.members = t.members.filter((m) => m.player_id !== playerId);
+    for (const i of d.teamInvites) if (i.team_id === teamId && i.player_id === playerId && i.status === 'pending') i.status = 'rejected';
+    await save();
+  },
+  async joinMatchWithTeam(matchId, teamId) {
+    const d = await db();
+    const t = d.teams.find((x) => x.id === teamId);
+    if (!t || t.captain_id !== ME) throw new Error('بس قائد الفريق يكدر يدخّل الفريق');
+    const m = d.matches.find((x) => x.id === matchId);
+    if (!m) throw new Error('المباراة مو موجودة');
+    if (new Date(m.starts_at) < new Date()) throw new Error('ما تكدر تنضم لهاي المباراة');
+    if (m.registration_opens_at && new Date(m.registration_opens_at) > new Date()) throw new Error('التسجيل لم يُفتح بعد لهذه المباراة');
+    const joined = m.roster.filter((r) => r.status === 'joined');
+    const toAdd = t.members.filter((mb) => !joined.some((r) => r.player_id === mb.player_id));
+    const err = teamJoinError(m.players_per_side * 2 - joined.length, toAdd.length);
+    if (err) throw new Error(err);
+    const now = new Date().toISOString();
+    for (const mb of toAdd) {
+      const r = m.roster.find((x) => x.player_id === mb.player_id);
+      if (r) Object.assign(r, { status: 'joined', team: null, joined_at: now, team_id: teamId, paid_by: ME });
+      else m.roster.push({ player_id: mb.player_id, status: 'joined', team: null, joined_at: now, team_id: teamId, paid_by: ME });
+    }
+    await save();
+    return toAdd.length;
+  },
+  async suggestTeamMatch(teamId, input) {
+    const d = await db();
+    const t = d.teams.find((x) => x.id === teamId);
+    if (!t || t.captain_id !== ME) throw new Error('بس قائد الفريق يكدر يطلب مباراة للفريق');
+    if (!input.venue_id && !input.venue_text?.trim()) throw new Error('اختار ملعب أو اكتب اسمه');
+    if (t.members.length > input.players_per_side * 2) throw new Error(`حجم المباراة أصغر من فريقك (${t.members.length} لاعب)`);
+    const me = d.profiles.find((p) => p.id === ME);
+    const venue = d.venues.find((v) => v.id === input.venue_id);
+    d.suggestions.unshift({
+      ...input, id: `s${Date.now()}`, player_id: ME, player_name: me?.full_name ?? 'لاعب', venue_name: venue?.name ?? input.venue_text,
+      status: 'pending', created_at: new Date().toISOString(), team_id: t.id, team_name: t.name, team_size: t.members.length,
+    });
+    await save();
+  },
+
   async getWallet() {
     return (await db()).wallet;
   },
@@ -762,6 +922,17 @@ export const demoApi: Api = {
       const sg = d.suggestions.find((x) => x.id === input.suggestion_id);
       if (sg) {
         sg.status = 'scheduled';
+        const team = sg.team_id ? d.teams.find((x) => x.id === sg.team_id) : null;
+        const created = d.matches.find((x) => x.id === id);
+        if (team && created) {
+          const now = new Date().toISOString();
+          for (const mb of team.members.slice(0, created.players_per_side * 2)) {
+            created.roster.push({ player_id: mb.player_id, status: 'joined', team: null, joined_at: now, team_id: team.id, paid_by: team.captain_id });
+          }
+          if (team.members.some((mb) => mb.player_id === ME) && sg.player_id !== ME) {
+            d.notifications.push({ id: `n${Date.now()}t`, kind: 'match_created', title: 'مباراة لفريقك ⚽', body: 'الإدارة نزّلت المباراة اللي طلبها قائد فريقك، وانضفت لها.', match_id: id, read: false, created_at: now });
+          }
+        }
         if (sg.player_id === ME) {
           d.notifications.push({ id: `n${Date.now()}`, kind: 'match_created', title: 'اقتراحك صار مباراة ⚽', body: `الإدارة نزّلت مباراة بـ${loc.venue.name}. انضم قبل ما يكتمل العدد!`, match_id: id, read: false, created_at: new Date().toISOString() });
         }
