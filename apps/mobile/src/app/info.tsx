@@ -1,11 +1,9 @@
-import Constants from 'expo-constants';
 import { View } from 'react-native';
 import { Card, Screen, Text } from '../components/ui';
+import { UpdateCard } from '../components/UpdateCard';
 import { fonts, useColors } from '../theme';
 
-const APP_VERSION = Constants.expoConfig?.version ?? '—';
-
-/** «حول»: عن بالملعب + الشروط والأحكام + سياسة الخصوصية + رقم الإصدار، بصفحة وحدة */
+/** «حول»: الإصدار وفحص التحديث + عن بالملعب + الشروط والأحكام + سياسة الخصوصية، بصفحة وحدة */
 const PARTS: { title: string; sections: [string, string][] }[] = [
   {
     title: 'عن بالملعب',
@@ -39,6 +37,7 @@ export default function About() {
   const c = useColors();
   return (
     <Screen>
+      <UpdateCard />
       {PARTS.map((part) => (
         <View key={part.title} style={{ gap: 10 }}>
           <Text style={{ fontFamily: fonts.bold, fontSize: 19, lineHeight: 30, color: c.primary }}>{part.title}</Text>
@@ -50,10 +49,6 @@ export default function About() {
           ))}
         </View>
       ))}
-      <Card>
-        <Text variant="h2">رقم الإصدار</Text>
-        <Text style={{ color: c.muted }}>{APP_VERSION}</Text>
-      </Card>
     </Screen>
   );
 }

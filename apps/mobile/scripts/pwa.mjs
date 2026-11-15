@@ -42,4 +42,7 @@ html = html.replace('<html lang="ar">', '<html lang="ar" dir="rtl">');
 writeFileSync(indexUrl, html);
 // GitHub Pages: أي مسار غير موجود يفتح التطبيق نفسه (توجيه داخلي)
 copyFileSync(indexUrl, new URL('404.html', dist));
-console.log('PWA: manifest + iOS meta added', base || '/');
+// رقم البناء المنشور: التطبيق يقارنه برقمه حتى يعرف إذا أكو نسخة أحدث (صفحة «حول»)
+const app = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8')).expo;
+writeFileSync(new URL('version.json', dist), JSON.stringify({ version: app.version, build: process.env.EXPO_PUBLIC_BUILD_ID || null }));
+console.log('PWA: manifest + iOS meta + version.json added', base || '/');

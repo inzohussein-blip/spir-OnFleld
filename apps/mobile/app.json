@@ -77,7 +77,8 @@
     ],
     "extra": {
       "supportsRTL": true,
-      "forcesRTL": true
+      "forcesRTL": true,
+      "releasesRepo": "inzohussein-blip/spir-OnFleld"
     }
   }
 }
