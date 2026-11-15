@@ -17,3 +17,9 @@ export function shareMatch(m: Match) {
       `\n${matchLink(m.id)}`,
   });
 }
+
+/** رابط دعوة صديق للتطبيق (ويّا رقم اللاعب حتى نعرف منو دعاه) */
+export function shareInvite(publicId?: string | null) {
+  const url = `${WEB_URL.replace(/\/$/, '')}/${publicId ? `?ref=${publicId}` : ''}`;
+  return Share.share({ message: `⚽ تعال العب ويّاي ببالملعب — تلكى مباراة قريبة منك وتنضم بضغطة\n${url}` });
+}

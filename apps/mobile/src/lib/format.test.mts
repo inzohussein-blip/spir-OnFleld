@@ -53,3 +53,16 @@ test('match count wording for the day strip', async () => {
   assert.equal(formatMatchCount(4), '4 مباريات');
   assert.equal(formatMatchCount(12), '12 مباراة');
 });
+
+test('home greeting, headline and relative day', async () => {
+  const { greetingFor, readyHeadline, relativeDay } = await import('./format.ts');
+  assert.equal(greetingFor(9), 'صباح الخير');
+  assert.equal(greetingFor(20), 'مساء الخير');
+  assert.equal(greetingFor(2), 'مساء الخير');
+  assert.equal(readyHeadline(10), 'جاهز تلعب اليوم؟');
+  assert.equal(readyHeadline(19), 'جاهز تلعب الليلة؟');
+  const now = new Date(2026, 10, 15, 23, 0);
+  assert.equal(relativeDay(new Date(2026, 10, 15, 8), now), 'اليوم');
+  assert.equal(relativeDay(new Date(2026, 10, 16, 1), now), 'باجر');
+  assert.equal(relativeDay(new Date(2026, 10, 18, 20), now), 'الأربعاء');
+});

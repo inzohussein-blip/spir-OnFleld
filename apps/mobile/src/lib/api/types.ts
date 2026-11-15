@@ -32,6 +32,8 @@ import type {
   PlayerTeam,
   AccountDeletionRequest,
   TeamInvite,
+  Ad,
+  AdInput,
 } from '../types';
 
 export interface ProfileInput {
@@ -133,4 +135,11 @@ export interface Api {
   cancelMyDeletionRequest(): Promise<boolean>;
   adminListDeletionRequests(): Promise<AccountDeletionRequest[]>;
   adminCompleteDeletion(requestId: string): Promise<void>;
+
+  // الإعلانات: اللاعب يشوف الفعّالة لمدينته، والإدارة تدير كل الإعلانات
+  listAds(): Promise<Ad[]>;
+  adminListAds(): Promise<Ad[]>;
+  adminSaveAd(input: AdInput): Promise<Ad>;
+  adminDeleteAd(id: string): Promise<void>;
+  adminUploadAdImage(localUri: string): Promise<string>;
 }

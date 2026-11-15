@@ -369,3 +369,35 @@ export interface AccountDeletionRequest {
   due_at: string;
   status: 'pending' | 'cancelled' | 'done';
 }
+
+// ---------- الإعلانات ----------
+/** قوالب الإعلانات الستة (التصميم ثابت، والنصوص والأرقام تتعدل من لوحة التحكم) */
+export type AdTemplate = 'services' | 'league' | 'motm' | 'offpeak' | 'invite' | 'partner';
+export interface Ad {
+  id: string;
+  template: AdTemplate;
+  /** الكلمة الصغيرة فوق العنوان */
+  eyebrow: string;
+  title: string;
+  body: string;
+  /** نص الزر (فارغ = بدون زر) */
+  cta: string | null;
+  /** وين يودي: مسار داخل التطبيق مثل /tournaments، أو share:invite */
+  link: string | null;
+  /** رقم بارز حسب القالب: نسبة الخصم، أو رقم بطاقة اللاعب */
+  badge: string | null;
+  /** للبطولات: العد التنازلي لهذا الوقت */
+  countdown_to: string | null;
+  /** للملعب الشريك: التقييم */
+  rating: number | null;
+  /** للملعب الشريك: صورة الملعب */
+  image_url: string | null;
+  /** null = كل المدن */
+  city: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  active: boolean;
+  sort: number;
+  created_at: string;
+}
+export type AdInput = Omit<Ad, 'id' | 'created_at'> & { id?: string };

@@ -133,3 +133,19 @@ export function formatTimeRange(startIso: string, endIso: string) {
   const [, bMer] = b.split(' ');
   return aMer === bMer ? `${aTime} إلى ${b}` : `${a} إلى ${b}`;
 }
+
+/** تحية حسب الوقت: «صباح الخير» من 4 الفجر لـ 12 الظهر، وبعدها «مساء الخير» */
+export const greetingFor = (hour: number) => (hour >= 4 && hour < 12 ? 'صباح الخير' : 'مساء الخير');
+
+/** عنوان الرئيسية: الليلة من العصر وطالع */
+export const readyHeadline = (hour: number) => (hour >= 15 || hour < 4 ? 'جاهز تلعب الليلة؟' : 'جاهز تلعب اليوم؟');
+
+/** «اليوم / باجر / الأحد» نسبة لليوم الحالي */
+export function relativeDay(d: Date, now = new Date()) {
+  const a = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const b = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const diff = Math.round((a - b) / 86400000);
+  if (diff === 0) return 'اليوم';
+  if (diff === 1) return 'باجر';
+  return DAYS[d.getDay()];
+}

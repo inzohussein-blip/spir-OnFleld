@@ -11,6 +11,7 @@ const LINKS: { title: string; hint: string; icon: IconName; href: Href }[] = [
   { title: 'مباراة جديدة', hint: 'اختار الملعب والوقت وموعد فتح التسجيل', icon: 'add-circle-outline', href: '/admin/new-match' },
   { title: 'اقتراحات اللاعبين', hint: 'حوّل الاقتراح لمباراة بضغطة', icon: 'bulb-outline', href: '/admin/suggestions' },
   { title: 'الملاعب والصور والمواقع', hint: 'ارفع صورة لكل ملعب وحدد مكانه على الخريطة', icon: 'images-outline', href: '/admin/venues' },
+  { title: 'الإعلانات وقوالبها', hint: 'الإعلانات بالرئيسية: 6 قوالب جاهزة تعدّل نصوصها وتواريخها', icon: 'megaphone-outline', href: '/admin/ads' },
   { title: 'طلبات حذف الحساب', hint: 'تنحذف خلال 30 يوم، وتنلغي إذا اللاعب رجع دخل', icon: 'trash-outline', href: '/admin/deletions' },
 ];
 

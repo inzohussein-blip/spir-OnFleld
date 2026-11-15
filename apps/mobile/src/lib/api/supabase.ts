@@ -5,7 +5,8 @@ import type { Api, ProfileInput } from './types';
 import { toWesternDigits } from '../format';
 import { normalizePublicId } from '../teams';
 import { attributesFromRating, monthRange, overallOf, pickTeamOfWeek, pointsOf } from '../stats';
-import type { PlayerTeam, TeamInvite, MatchSuggestion, RankingRow, ChannelKind, ChatChannel, ChatMessage, Post, Trial, Wallet, Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue } from '../types';
+import type { PlayerTeam, TeamInvite, MatchSuggestion, RankingRow, ChannelKind, ChatChannel, ChatMessage, Post, Trial, Wallet, Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue, Ad } from '../types';
+import { adError, liveAdsFor } from '../ads';
 
 const PROFILE_COLS = 'id, full_name, city, preferred_position, skill_rating, reliability_score, matches_played, attributes, avatar_url, role, public_id';
 const VENUE_COLS = 'id, name, city, address, amenities, is_verified, photos, lat, lng, fields(id, venue_id, name, players_per_side, surface, is_indoor, default_price, open_hour, close_hour)';
@@ -575,6 +576,38 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
       const { error } = await sb.rpc('admin_complete_account_deletion', { p_request: requestId });
       fail(error);
     },
+
+    async listAds() {
+      const id = await uid();
+      const [{ data, error }, me] = await Promise.all([
+        sb.from('ads').select(AD_COLS).eq('active', true).limit(50),
+        id ? sb.from('profiles').select('city').eq('id', id).maybeSingle() : Promise.resolve({ data: null }),
+      ]);
+      fail(error);
+      return liveAdsFor((data ?? []).map(mapAd), (me.data as { city?: string | null } | null)?.city ?? null);
+    },
+    async adminListAds() {
+      const { data, error } = await sb.from('ads').select(AD_COLS).order('sort').order('created_at').limit(200);
+      fail(error);
+      return (data ?? []).map(mapAd);
+    },
+    async adminSaveAd(input) {
+      const err = adError(input);
+      if (err) throw new Error(err);
+      const { id, ...row } = input;
+      const q = id ? sb.from('ads').update(row).eq('id', id) : sb.from('ads').insert(row);
+      const { data, error } = await q.select(AD_COLS).single();
+      fail(error);
+      return mapAd(data);
+    },
+    async adminDeleteAd(id) {
+      const { error } = await sb.from('ads').delete().eq('id', id);
+      fail(error);
+    },
+    async adminUploadAdImage(localUri) {
+      // نفس مخزن صور الملاعب (الكتابة للإدارة فقط)
+      return uploadImage(sb, 'venue-photos', `ads/${Date.now()}.jpg`, localUri);
+    },
   };
 }
 
@@ -601,6 +634,16 @@ async function uploadImage(sb: SupabaseClient, bucket: string, path: string, loc
   const { error } = await sb.storage.from(bucket).upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
   if (error) throw new Error(error.message);
   return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+}
+
+const AD_COLS = 'id, template, eyebrow, title, body, cta, link, badge, countdown_to, rating, image_url, city, starts_at, ends_at, active, sort, created_at';
+
+function mapAd(r: any): Ad {
+  return {
+    id: r.id, template: r.template, eyebrow: r.eyebrow ?? '', title: r.title, body: r.body ?? '', cta: r.cta, link: r.link, badge: r.badge,
+    countdown_to: r.countdown_to, rating: r.rating === null || r.rating === undefined ? null : Number(r.rating), image_url: r.image_url, city: r.city,
+    starts_at: r.starts_at, ends_at: r.ends_at, active: r.active, sort: r.sort ?? 0, created_at: r.created_at,
+  };
 }
 
 function mapSuggestion(r: any): MatchSuggestion {

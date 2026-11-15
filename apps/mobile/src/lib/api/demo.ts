@@ -36,7 +36,9 @@ import type {
   PlayerTeam,
   TeamInvite,
   AccountDeletionRequest,
+  Ad,
 } from '../types';
+import { AD_TEMPLATE_ORDER, adError, adFromTemplate, liveAdsFor } from '../ads';
 import { DELETION_GRACE_DAYS } from '../types';
 import { canJoinAnotherTeam, MAX_TEAM_MEMBERS, nextCaptain, normalizePublicId, teamJoinError, teamNameError } from '../teams';
 
@@ -116,6 +118,7 @@ interface DB {
   notifications: AppNotification[];
   teams: StoredTeam[];
   deletionRequests: AccountDeletionRequest[];
+  ads: Ad[];
   teamInvites: { id: string; team_id: string; player_id: string; invited_by: string; status: 'pending' | 'accepted' | 'rejected'; created_at: string }[];
   posts: Post[];
   messages: ChatMessage[];
@@ -360,7 +363,7 @@ function seed(): DB {
   const teamInvites: DB['teamInvites'] = [{ id: 'ti1', team_id: 'tm1', player_id: ME, invited_by: 'p1', status: 'pending', created_at: at(-1, 20) }];
   return {
     signedIn: false, profiles, attributes, venues, matches, ratings: [], tournaments, trials, applications: [], trialAlert: false, posts, messages, wallet,
-    suggestions: [], notifications, teams, teamInvites,
+    suggestions: [], notifications, teams, teamInvites, ads: seedAds(),
     // طلب حذف تجريبي حتى تبين صفحة لوحة التحكم
     deletionRequests: [{ id: 'dr1', player_id: 'p9', player_name: NAMES[9][0], public_id: publicIdOf(9), requested_at: at(-26, 12), due_at: at(-26 + DELETION_GRACE_DAYS, 12), status: 'pending' }],
   };
@@ -375,8 +378,16 @@ async function db(): Promise<DB> {
   } catch {
     cache = seed();
   }
+  // بيانات محفوظة من نسخة أقدم بدون إعلانات: نضيف الستة
+  if (!cache.ads) cache.ads = seedAds();
   return cache;
 }
+/** الإعلانات الستة (من القوالب) بالبيانات التجريبية */
+function seedAds(): Ad[] {
+  const created = new Date().toISOString();
+  return AD_TEMPLATE_ORDER.map((t, i) => ({ ...adFromTemplate(t), id: `ad-${i + 1}`, created_at: created }));
+}
+
 async function save() {
   try {
     if (cache) await AsyncStorage.setItem(KEY, JSON.stringify(cache));
@@ -1004,6 +1015,40 @@ export const demoApi: Api = {
     v.lat = lat;
     v.lng = lng;
     await save();
+  },
+
+  async listAds() {
+    const d = await db();
+    const me = d.profiles.find((x) => x.id === ME);
+    return liveAdsFor(d.ads, me?.city ?? null);
+  },
+  async adminListAds() {
+    return [...(await db()).ads].sort((a, b) => a.sort - b.sort || a.created_at.localeCompare(b.created_at));
+  },
+  async adminSaveAd(input) {
+    const err = adError(input);
+    if (err) throw new Error(err);
+    const d = await db();
+    const { id, ...rest } = input;
+    const existing = id ? d.ads.find((a) => a.id === id) : undefined;
+    let saved: Ad;
+    if (existing) {
+      Object.assign(existing, rest);
+      saved = existing;
+    } else {
+      saved = { ...rest, id: `ad-${Date.now()}`, created_at: new Date().toISOString() };
+      d.ads.push(saved);
+    }
+    await save();
+    return { ...saved };
+  },
+  async adminDeleteAd(id) {
+    const d = await db();
+    d.ads = d.ads.filter((a) => a.id !== id);
+    await save();
+  },
+  async adminUploadAdImage(localUri) {
+    return persistable(localUri);
   },
 };
 

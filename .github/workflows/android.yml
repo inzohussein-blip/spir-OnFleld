@@ -71,7 +71,8 @@ jobs:
 
       - name: بناء APK
         working-directory: apps/mobile/android
-        run: ./gradlew assembleRelease --no-daemon
+        # بس معالجات التلفونات (ARM) — بدون نسخ المحاكي x86، حتى الملف يصير تقريباً نص الحجم
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
 
       - name: تسمية الملف
         run: |
