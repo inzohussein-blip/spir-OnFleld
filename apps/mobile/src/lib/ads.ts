@@ -36,7 +36,7 @@ export const AD_TEMPLATES: Record<AdTemplate, {
   invite: {
     label: 'ادعُ أصدقاءك',
     hint: 'يكبّر عدد اللاعبين برابط الدعوة',
-    defaults: { eyebrow: 'ادعُ أصدقاءك', title: '3 أصدقاء = مباراة ببلاش', body: 'لما يلعبون أول مباراة، حصتك علينا', cta: 'دز الرابط', link: 'share:invite', badge: null, rating: null },
+    defaults: { eyebrow: 'ادعُ أصدقاءك', title: '3 أصدقاء = مباراة ببلاش', body: 'لما يلعبون أول مباراة، حصتك علينا', cta: 'ادعُ هسه', link: '/invite', badge: null, rating: null },
   },
   partner: {
     label: 'ملعب شريك',
@@ -59,6 +59,7 @@ export const AD_LINKS: { value: string | null; label: string }[] = [
   { value: '/teams', label: 'فريقي' },
   { value: '/map', label: 'الخريطة' },
   { value: '/chats', label: 'المحادثات والدعم' },
+  { value: '/invite', label: 'صفحة ادعُ أصدقاءك' },
   { value: 'share:invite', label: 'مشاركة رابط الدعوة' },
 ];
 

@@ -1,4 +1,6 @@
 import { useRouter } from 'expo-router';
+import { clearPendingRef, pendingRef } from '../lib/referral';
+import { normalizePublicId } from '../lib/teams';
 import { useState } from 'react';
 import { Button, Chip, ErrorText, Input, Row, Screen, Text } from '../components/ui';
 import { api } from '../lib/api';
@@ -18,6 +20,8 @@ export default function Onboarding() {
   const [position, setPosition] = useState<Position>(profile?.preferred_position ?? 'any');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // رقم صديق دعاك (من رابط الدعوة ?ref= أو يكتبه بنفسه) — أول تسجيل بس
+  const [friend, setFriend] = useState(() => (editing ? '' : pendingRef()));
 
   async function submit() {
     if (name.trim().length < 3) return setError('اكتب اسمك (3 حروف على الأقل)');
@@ -25,6 +29,11 @@ export default function Onboarding() {
     setError(null);
     try {
       await api.saveProfile({ full_name: name.trim(), city, preferred_position: position });
+      if (!editing && friend) {
+        // الدعوة ما توقف التسجيل إذا الرقم غلط
+        await api.claimReferral(friend).catch(() => {});
+        clearPendingRef();
+      }
       await refresh();
       // أول مرة: البوابة توجّهه للرئيسية (أو لرابط الدعوة). عند التعديل: نرجع للخلف
       if (editing && router.canGoBack()) router.back();
@@ -52,6 +61,16 @@ export default function Onboarding() {
           <Chip key={p} label={POSITION_LABEL[p]} active={position === p} onPress={() => setPosition(p)} />
         ))}
       </Row>
+      {!editing ? (
+        <Input
+          label="صديق دعاك؟ اكتب رقمه (اختياري)"
+          placeholder="مثلاً 7310524"
+          value={friend}
+          onChangeText={(v) => setFriend(normalizePublicId(v))}
+          keyboardType="number-pad"
+          maxLength={10}
+        />
+      ) : null}
       <ErrorText message={error} />
       <Button title={profile ? 'حفظ' : 'ابدأ اللعب'} loading={busy} onPress={submit} />
     </Screen>

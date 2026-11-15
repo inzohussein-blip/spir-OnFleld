@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, ScrollView, View } from 'react-native';
+import { Image, ScrollView, TextInput, View } from 'react-native';
+import { normalizePublicId } from '../../lib/teams';
 import { useToast } from '../../components/feedback';
 import { Button, Loading, Text } from '../../components/ui';
 import { api } from '../../lib/api';
@@ -54,9 +55,51 @@ export default function AdminVenues() {
                 onPress={() => router.push({ pathname: '/admin/venue-location', params: { id: v.id } })}
               />
             </View>
+            <OwnerField venueId={v.id} />
           </View>
         </View>
       ))}
     </ScrollView>
+  );
+}
+
+/** صاحب الملعب: يكتب رقمه (ID) فيصير يشوف صفحة «ملاعبي» */
+function OwnerField({ venueId }: { venueId: string }) {
+  const c = useColors();
+  const toast = useToast();
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  return (
+    <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+      <TextInput
+        value={code}
+        onChangeText={(t) => setCode(normalizePublicId(t))}
+        placeholder="ID صاحب الملعب"
+        placeholderTextColor={c.muted}
+        keyboardType="number-pad"
+        maxLength={10}
+        style={{ flex: 1, minHeight: 42, borderRadius: 12, borderWidth: 1, borderColor: c.border, paddingHorizontal: 10, color: c.text, backgroundColor: c.bg, outlineWidth: 0 }}
+        accessibilityLabel="ID صاحب الملعب"
+      />
+      <Button
+        title="حدّد صاحبه"
+        icon="person-outline"
+        variant="ghost"
+        loading={busy}
+        disabled={!code}
+        onPress={async () => {
+          setBusy(true);
+          try {
+            const name = await api.adminSetVenueOwner(venueId, code);
+            toast(`صار ${name} صاحب الملعب ✓`);
+            setCode('');
+          } catch (e) {
+            toast(errMsg(e));
+          } finally {
+            setBusy(false);
+          }
+        }}
+      />
+    </View>
   );
 }

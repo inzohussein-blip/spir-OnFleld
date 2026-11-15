@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
 import { formatClock, formatCountdown, formatIQD, weekdayName } from '../lib/format';
 import { matchAction, type MatchAction } from '../lib/matchAction';
+import { finalPrice } from '../lib/pricing';
 import { spotsInfo } from '../lib/schedule';
 import type { Match } from '../lib/types';
 import { fonts, themed, useColors } from '../theme';
@@ -103,8 +104,13 @@ export function MatchRow({ match, now, busy, onAction, showDay }: { match: Match
             {match.cost_per_player ? (
               <Text variant="small" style={{ color: c.text, fontFamily: fonts.bold, flexShrink: 0 }} numberOfLines={1}>
                 {meta ? '· ' : ''}
-                {formatIQD(match.cost_per_player)}
+                {formatIQD(finalPrice(match) ?? 0)}
               </Text>
+            ) : null}
+            {match.discount_pct ? (
+              <View style={st.off}>
+                <Text style={st.offText}>-{match.discount_pct}%</Text>
+              </View>
             ) : null}
           </View>
           <View style={st.spotsRow}>
@@ -131,6 +137,8 @@ const useStyles = themed((c) => ({
   mer: { color: '#fff', fontFamily: fonts.bold, fontSize: 11, lineHeight: 16 },
   venue: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 24 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  off: { backgroundColor: '#FFF1DC', borderRadius: 999, paddingHorizontal: 6 },
+  offText: { color: '#C2410C', fontFamily: fonts.bold, fontSize: 10.5, lineHeight: 17 },
   spotsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
   track: { flex: 1, height: 6, borderRadius: 3, backgroundColor: c.cardAlt, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 3 },

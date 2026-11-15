@@ -9,6 +9,7 @@ import { errMsg, useAsync } from '../../lib/session';
 import { computeSlots, nextDays, type BusyRange } from '../../lib/slots';
 import type { SkillLevel } from '../../lib/types';
 import { fonts, useColors } from '../../theme';
+import { DISCOUNT_OPTIONS, finalPrice, OFF_PEAK_END_HOUR, suggestedDiscount } from '../../lib/pricing';
 
 const LEVELS: SkillLevel[] = ['open', 'beginner', 'intermediate', 'advanced'];
 const OPENS: { label: string; hoursBefore: number | null }[] = [
@@ -40,6 +41,8 @@ export default function NewMatch() {
   const [level, setLevel] = useState<SkillLevel>('open');
   const [opensIdx, setOpensIdx] = useState(0);
   const [title, setTitle] = useState('');
+  // null = حسب الوقت (25% قبل الساعة 5 العصر)
+  const [discount, setDiscount] = useState<number | null>(null);
   const [busy, setBusy] = useState<BusyRange[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +76,7 @@ export default function NewMatch() {
   }, [fieldId, day]);
 
   const slots = field ? computeSlots(field, day, busy) : [];
+  const pct = discount ?? (hour === null ? 0 : suggestedDiscount(hour));
 
   async function submit() {
     if (!field || hour === null) return setError('اختار الملعب والساعة');
@@ -93,6 +97,7 @@ export default function NewMatch() {
         registration_opens_at: opens === null ? null : new Date(start.getTime() - opens * 3600_000).toISOString(),
         suggestion_id: suggestion?.id ?? null,
       });
+      if (pct > 0) await api.adminSetMatchDiscount(id, pct);
       toast('نزلت المباراة ✓');
       router.replace({ pathname: '/match/[id]', params: { id } });
     } catch (e) {
@@ -164,12 +169,22 @@ export default function NewMatch() {
         ))}
       </Row>
 
+      <Text style={{ fontFamily: fonts.bold }}>خصم الأوقات الهادئة</Text>
+      <Row>
+        {DISCOUNT_OPTIONS.map((d) => (
+          <Chip key={d} label={d ? `${d}%` : 'بدون'} active={pct === d} onPress={() => setDiscount(d)} />
+        ))}
+      </Row>
+      {hour !== null && hour < OFF_PEAK_END_HOUR && discount === null ? (
+        <Text variant="small" style={{ color: c.muted }}>قبل الساعة 5 العصر: اقترحنا خصم 25% حتى تمتلي الساعة.</Text>
+      ) : null}
+
       <Input label="اسم المباراة (اختياري)" placeholder="مثلاً: خماسي الجمعة" value={title} onChangeText={setTitle} />
 
       {field ? (
         <Row>
           <Badge label={`سعر الحجز ${formatIQD(field.default_price * hours)}`} tone="gray" />
-          <Badge label={`على كل لاعب ${formatIQD(Math.ceil((field.default_price * hours) / (perSide * 2) / 250) * 250)}`} />
+          <Badge label={`على كل لاعب ${formatIQD(finalPrice({ cost_per_player: Math.ceil((field.default_price * hours) / (perSide * 2) / 250) * 250, discount_pct: pct }) ?? 0)}${pct ? ` (بعد خصم ${pct}%)` : ''}`} />
         </Row>
       ) : null}
       <ErrorText message={error} />

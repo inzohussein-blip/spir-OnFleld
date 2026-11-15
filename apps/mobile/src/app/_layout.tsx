@@ -1,12 +1,16 @@
 import { Cairo_400Regular, Cairo_600SemiBold, Cairo_700Bold, useFonts } from '@expo-google-fonts/cairo';
-import { Stack, usePathname, useRouter, useSegments, type Href } from 'expo-router';
+import { Stack, usePathname, useRouter, useSegments, type ErrorBoundaryProps, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
-import { I18nManager, Platform } from 'react-native';
+import { AppState, I18nManager, Platform, Pressable, View } from 'react-native';
 import { ToastProvider, useToast } from '../components/feedback';
-import { Loading } from '../components/ui';
+import { Loading, Text } from '../components/ui';
+import { installCrashReporter, reportCrash, setCrashScreen } from '../lib/crash';
+import { captureRefFromUrl } from '../lib/referral';
 import { api } from '../lib/api';
 import { registerForPush, setupNotifications } from '../lib/notifications';
+import { registerBackgroundSync, syncNotifications } from '../lib/notificationSync';
+import * as Notifications from 'expo-notifications';
 import { SessionProvider, useSession } from '../lib/session';
 import { fonts, headerText, ThemeProvider, useTheme } from '../theme';
 
@@ -21,12 +25,34 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
   document.title = 'بالملعب';
 }
 
+installCrashReporter();
+captureRefFromUrl();
+
+/** إذا شاشة طاحت: نبلّغ لوحة التحكم ونعرض زر «جرّب مرة ثانية» بدل شاشة بيضاء */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    reportCrash(error);
+  }, [error]);
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12, backgroundColor: '#F3F6FC' }}>
+      <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: '#0B1226' }}>صار خطأ بهاي الصفحة 😕</Text>
+      <Text style={{ textAlign: 'center', color: '#5B6577' }}>وصل تقرير للإدارة حتى نصلّحه. جرّب مرة ثانية.</Text>
+      <Pressable onPress={() => void retry()} style={{ backgroundColor: '#1E4FD8', borderRadius: 14, paddingHorizontal: 22, paddingVertical: 10 }} accessibilityRole="button">
+        <Text style={{ color: '#fff', fontFamily: fonts.bold }}>جرّب مرة ثانية</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function Gate() {
   const { ready, userId, profile } = useSession();
   const { colors: c, scheme } = useTheme();
   const segments = useSegments();
   const pathname = usePathname();
   const router = useRouter();
+  useEffect(() => {
+    setCrashScreen(pathname);
+  }, [pathname]);
 
   // رابط الدعوة: إذا فتح الرابط وهو مو مسجّل، نرجّعه لنفس الصفحة بعد الدخول
   const pendingRef = useRef<string | null>(null);
@@ -64,6 +90,28 @@ function Gate() {
   useEffect(() => {
     if (userId) void registerForPush();
   }, [userId]);
+  // الإشعارات الجديدة من الخادم تطلع على الشاشة: كل دقيقة والتطبيق مفتوح، وبالخلفية كل ~15 دقيقة
+  useEffect(() => {
+    if (!userId || Platform.OS === 'web') return;
+    void registerBackgroundSync();
+    const tick = () => void syncNotifications().catch(() => {});
+    tick();
+    const t = setInterval(() => AppState.currentState === 'active' && tick(), 60_000);
+    const sub = AppState.addEventListener('change', (s) => s === 'active' && tick());
+    return () => {
+      clearInterval(t);
+      sub.remove();
+    };
+  }, [userId]);
+  // الضغط على الإشعار يفتح المباراة
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const sub = Notifications.addNotificationResponseReceivedListener((r) => {
+      const matchId = (r.notification.request.content.data as { match_id?: string | null } | undefined)?.match_id;
+      if (matchId) router.push({ pathname: '/match/[id]', params: { id: matchId } });
+    });
+    return () => sub.remove();
+  }, [router]);
 
   // دخل لحسابه وعنده طلب حذف معلّق → ينلغي الطلب تلقائياً
   const toast = useToast();
@@ -124,6 +172,10 @@ function Gate() {
         <Stack.Screen name="team/[id]" options={{ title: 'الفريق' }} />
         <Stack.Screen name="team/suggest" options={{ title: 'مباراة للفريق' }} />
         <Stack.Screen name="team/join" options={{ title: 'انضم ويّا الفريق' }} />
+        <Stack.Screen name="invite" options={{ title: 'ادعُ أصدقاءك' }} />
+        <Stack.Screen name="match/close" options={{ title: 'سكّر المباراة' }} />
+        <Stack.Screen name="match/chat" options={{ title: 'محادثة المباراة' }} />
+        <Stack.Screen name="owner" options={{ title: 'ملاعبي' }} />
       </Stack>
     </>
   );

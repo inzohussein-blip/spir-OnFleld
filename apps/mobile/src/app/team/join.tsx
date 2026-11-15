@@ -6,6 +6,7 @@ import { useToast } from '../../components/feedback';
 import { Button, Empty, ErrorText, Loading, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { formatFullDate, formatIQD, formatTimeRange } from '../../lib/format';
+import { finalPrice } from '../../lib/pricing';
 import { spotsInfo } from '../../lib/schedule';
 import { errMsg, useAsync, useNow } from '../../lib/session';
 import { fonts, themed, useColors } from '../../theme';
@@ -68,7 +69,7 @@ export default function TeamJoin() {
             </Text>
             {m.cost_per_player ? (
               <Text variant="small" style={{ color: c.muted }}>
-                {formatIQD(m.cost_per_player)} للاعب · المجموع على الفريق {formatIQD(m.cost_per_player * size)}
+                {formatIQD(finalPrice(m) ?? 0)} للاعب · المجموع على الفريق {formatIQD((finalPrice(m) ?? 0) * size)}
               </Text>
             ) : null}
             <Button title={`انضم بالفريق (${size})`} icon="people" disabled={!pledge} loading={busy === m.id} onPress={() => void join(m.id)} />

@@ -8,6 +8,7 @@ import { Empty, ErrorText, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { toWesternDigits } from '../../lib/format';
 import { useAsync } from '../../lib/session';
+import { toggleFavoriteVenue, useFavoriteVenues } from '../../lib/favorites';
 import { fonts, themed, useColors } from '../../theme';
 
 /** «ملعب واحد / ملعبين / 4 ملاعب / 12 ملعب» مسجّلة */
@@ -23,6 +24,7 @@ export default function Venues() {
   const st = useStyles();
   const { data, error, loading, offline, refreshing, reload } = useAsync(() => api.listVenues(), [], { cacheKey: 'venues' });
   const [q, setQ] = useState('');
+  const favs = useFavoriteVenues();
 
   const needle = q.trim();
   const list = (data ?? []).filter((v) => !needle || v.name.includes(needle) || (v.address ?? '').includes(needle) || v.city.includes(needle));
@@ -80,7 +82,9 @@ export default function Venues() {
                   </View>
                 ) : null}
               </View>
-              <Ionicons name="chevron-back" size={20} color={c.muted} />
+              <Pressable onPress={() => void toggleFavoriteVenue(v.id)} hitSlop={10} accessibilityRole="button" accessibilityLabel={favs.has(v.id) ? `شيل ${v.name} من المفضلة` : `أضف ${v.name} للمفضلة`}>
+                <Ionicons name={favs.has(v.id) ? 'star' : 'star-outline'} size={20} color={favs.has(v.id) ? '#E0A91F' : c.muted} />
+              </Pressable>
             </Pressable>
           );
         })}

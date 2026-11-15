@@ -43,7 +43,7 @@ select * from (values
   ('league', 'التسجيل مفتوح', 'دوري بالملعب', '8 فرق · ملاعب النخيل · كأس وميداليات', 'سجّل فريقك', '/tournaments', null, now() + interval '5 days', null, 1),
   ('motm', 'رجل المباراة', 'العب زين.. واكسب', 'أفضل لاعب ياخذ 10,000 د.ع بمحفظته', 'شوف الشروط', '/wallet', '88', null, null, 2),
   ('offpeak', 'عرض العصرية', 'خصم 25% قبل الساعة 5', 'مباريات الصبح والعصر بسعر أقل', 'شوف المباريات', '/venues', '25%', null, null, 3),
-  ('invite', 'ادعُ أصدقاءك', '3 أصدقاء = مباراة ببلاش', 'لما يلعبون أول مباراة، حصتك علينا', 'دز الرابط', 'share:invite', null, null, null, 4),
+  ('invite', 'ادعُ أصدقاءك', '3 أصدقاء = مباراة ببلاش', 'لما يلعبون أول مباراة، حصتك علينا', 'ادعُ هسه', '/invite', null, null, null, 4),
   ('partner', 'المنصور', 'ملاعب النخيل', 'عشب جديد · إنارة ليلية · موقف سيارات', 'احجز بالنخيل', '/venues', null, null, 4.8, 5)
 ) as v(template, eyebrow, title, body, cta, link, badge, countdown_to, rating, sort)
 where not exists (select 1 from ads);

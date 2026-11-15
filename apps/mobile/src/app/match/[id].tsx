@@ -12,6 +12,7 @@ import { useMatchActions } from '../../lib/useMatchActions';
 import { ErrorText, Loading, Row, Screen, Text, type IconName } from '../../components/ui';
 import { api } from '../../lib/api';
 import { formatFormat, formatIQD, formatTimeRange, MONTHS, POSITION_LABEL, SKILL_LABEL, weekdayName } from '../../lib/format';
+import { finalPrice } from '../../lib/pricing';
 import { spotsInfo } from '../../lib/schedule';
 import { matchAction } from '../../lib/matchAction';
 import { errMsg, useAsync, useNow, useSession } from '../../lib/session';
@@ -83,6 +84,8 @@ export default function MatchScreen() {
     };
   }, [id]);
   const [actionError, setActionError] = useState<string | null>(null);
+  const admin = useAsync(() => api.isAdmin(), []);
+  const watching = useAsync(() => api.isWatching(id), [id]);
 
   if (loading && !m) return <Loading />;
   if (!m) return <Screen><ErrorText message={error ?? 'المباراة مو موجودة'} /></Screen>;
@@ -91,6 +94,8 @@ export default function MatchScreen() {
   const waitlist = m.roster.filter((r) => r.status === 'waitlist');
   const mine = m.roster.find((r) => r.player_id === userId);
   const isOrganizer = m.organizer_id === userId;
+  const isAdmin = admin.data === true;
+  const canManage = isOrganizer || isAdmin;
   const started = new Date(m.starts_at).getTime() < now;
   const finished = new Date(m.ends_at).getTime() < now;
   const hasTeams = joined.some((r) => r.team);
@@ -183,6 +188,23 @@ export default function MatchScreen() {
             </View>
           ) : null}
 
+          {m.motm_name ? (
+            <Pressable onPress={() => m.motm_player_id && openPlayer(m.motm_player_id)} style={st.motm} accessibilityRole="button">
+              <View style={st.motmIcon}>
+                <Ionicons name="medal" size={22} color="#7A5B00" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 12, color: '#7A5B00' }}>رجل المباراة</Text>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: '#3D2E00' }}>{m.motm_name} 🏅</Text>
+              </View>
+            </Pressable>
+          ) : null}
+          {m.closed_at ? (
+            <Text variant="small" style={{ color: c.muted }}>
+              سُكّرت المباراة: حضر {m.attended_count ?? 0}{m.no_show_count ? ` · غاب ${m.no_show_count}` : ''}
+            </Text>
+          ) : null}
+
           <OfflineBanner show={offline} />
           <ErrorText message={actionError ?? actions.error} />
 
@@ -223,6 +245,25 @@ export default function MatchScreen() {
           {/* روابط صغيرة فقط عند الحاجة */}
           <Row style={{ flexWrap: 'wrap' }}>
             {!finished && mine ? <SmallAction icon="exit-outline" label="انسحاب" danger onPress={() => void actions.leave(m)} /> : null}
+            {mine?.status === 'joined' || canManage ? (
+              <SmallAction icon="chatbubbles-outline" label="محادثة المباراة" onPress={() => router.push({ pathname: '/match/chat', params: { id: m.id } })} />
+            ) : null}
+            {!finished && !mine && spots.left === 0 ? (
+              <SmallAction
+                icon={watching.data ? 'notifications' : 'notifications-outline'}
+                label={watching.data ? 'راح ننبّهك إذا انفتح مكان' : 'نبّهني إذا انفتح مكان'}
+                onPress={() =>
+                  void act(async () => {
+                    await api.watchMatch(m.id, !watching.data);
+                    await watching.reload();
+                    toast(watching.data ? 'لغيت التنبيه' : 'أول ما ينفتح مكان نبلّغك ⚡');
+                  })
+                }
+              />
+            ) : null}
+            {canManage && started && !m.closed_at ? (
+              <SmallAction icon="checkmark-done-outline" label="سكّر المباراة: الحضور ورجل المباراة" onPress={() => router.push({ pathname: '/match/close', params: { id: m.id } })} />
+            ) : null}
             {action.kind === 'opens_later' ? (
               <SmallAction icon={alertSet ? 'notifications' : 'notifications-outline'} label={alertSet ? 'راح نبلّغك' : 'ذكّرني عند فتح التسجيل'} onPress={() => void remindRegistration()} />
             ) : null}
@@ -246,7 +287,12 @@ export default function MatchScreen() {
           <View style={{ flex: 1 }}>
             <ActionPill action={action} busy={actions.busyId === m.id} onPress={() => void actions.join(m)} big onBar />
           </View>
-          {m.cost_per_player ? <Text style={st.price}>{formatIQD(m.cost_per_player)}</Text> : null}
+          {m.cost_per_player ? (
+            <View>
+              {m.discount_pct ? <Text style={st.oldPrice}>{formatIQD(m.cost_per_player)} · خصم {m.discount_pct}%</Text> : null}
+              <Text style={st.price}>{formatIQD(finalPrice(m) ?? 0)}</Text>
+            </View>
+          ) : null}
         </View>
       </View>
     </View>
@@ -317,4 +363,7 @@ const useStyles = themed((c) => ({
   handle: { alignSelf: 'center', width: 52, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.75)', marginBottom: 14 },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   price: { fontFamily: fonts.bold, fontSize: 20, color: '#fff' },
+  motm: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 18, padding: 12, backgroundColor: '#F5C431', backgroundImage: 'linear-gradient(135deg, #FFE58A 0%, #F5C431 60%, #E0A91F 100%)' },
+  motmIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.55)', alignItems: 'center', justifyContent: 'center' },
+  oldPrice: { color: 'rgba(255,255,255,0.75)', fontSize: 11, lineHeight: 15, textDecorationLine: 'line-through' },
 }));

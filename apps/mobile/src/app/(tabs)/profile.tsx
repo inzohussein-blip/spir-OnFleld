@@ -82,6 +82,8 @@ export default function Profile() {
   const reloadInvites = invites.reload;
   const reloadWallet = wallet.reload;
   const showAdmin = Platform.OS === 'web' && admin.data === true;
+  // صاحب الملعب (أو المدير) يشوف صفحة ملاعبه — على التلفون والويب
+  const showOwner = profile?.role === 'owner' || admin.data === true;
   const [error, setError] = useState<string | null>(null);
   useFocusEffect(
     useCallback(() => {
@@ -192,7 +194,8 @@ export default function Profile() {
             ) : undefined
           }
         />
-        <Item icon="wallet-outline" title="المحفظة" href="/wallet" right={wallet.data ? muted(formatIQD(wallet.data.balance)) : undefined} last />
+        <Item icon="wallet-outline" title="المحفظة" href="/wallet" right={wallet.data ? muted(formatIQD(wallet.data.balance)) : undefined} />
+        <Item icon="gift-outline" title="ادعُ أصدقاءك" href="/invite" right={muted('مكافأة 🎁')} last />
       </Group>
 
       <Group title="اكتشف">
@@ -200,7 +203,8 @@ export default function Profile() {
         <Item icon="ribbon-outline" title="اختبارات الأندية" href="/trials" />
         <Item icon="newspaper-outline" title="المنشورات" href="/posts" />
         <Item icon="search-outline" title="اللاعبين" href="/players" />
-        <Item icon="bulb-outline" title="اقترح مباراة" href="/suggest" last={!showAdmin} />
+        <Item icon="bulb-outline" title="اقترح مباراة" href="/suggest" last={!showAdmin && !showOwner} />
+        {showOwner ? <Item icon="business-outline" title="ملاعبي (صاحب الملعب)" href="/owner" last={!showAdmin} /> : null}
         {showAdmin ? <Item icon="speedometer-outline" title="لوحة التحكم (للإدارة)" href="/admin" last /> : null}
       </Group>
 

@@ -34,6 +34,14 @@ import type {
   TeamInvite,
   Ad,
   AdInput,
+  AppSettings,
+  ReferralSummary,
+  CloseMatchInput,
+  MotmVote,
+  CrashInput,
+  CrashReport,
+  MatchMessage,
+  FieldBlock,
 } from '../types';
 
 export interface ProfileInput {
@@ -142,4 +150,43 @@ export interface Api {
   adminSaveAd(input: AdInput): Promise<Ad>;
   adminDeleteAd(id: string): Promise<void>;
   adminUploadAdImage(localUri: string): Promise<string>;
+
+  // ---------- المكافآت ----------
+  getSettings(): Promise<AppSettings>;
+  adminSaveSettings(s: AppSettings): Promise<void>;
+  getReferrals(): Promise<ReferralSummary>;
+  /** يرجّع اسم الصديق */
+  claimReferral(code: string): Promise<string>;
+  adminSetMatchDiscount(matchId: string, pct: number): Promise<void>;
+
+  // ---------- بعد المباراة ----------
+  getMotmVotes(matchId: string): Promise<MotmVote[]>;
+  closeMatch(matchId: string, input: CloseMatchInput): Promise<{ charged: number; motm_reward: number }>;
+
+  // ---------- التنبيهات ----------
+  watchMatch(matchId: string, on: boolean): Promise<void>;
+  isWatching(matchId: string): Promise<boolean>;
+  getFavDays(): Promise<number[]>;
+  setFavDays(days: number[]): Promise<void>;
+
+  // ---------- محادثة المباراة ----------
+  listMatchMessages(matchId: string): Promise<MatchMessage[]>;
+  sendMatchMessage(matchId: string, body: string): Promise<void>;
+
+  // ---------- الأعطال ----------
+  reportCrash(input: CrashInput): Promise<void>;
+  adminListCrashes(): Promise<CrashReport[]>;
+  adminClearCrashes(): Promise<void>;
+
+  // ---------- الأرباح وأصحاب الملاعب ----------
+  /** المباريات بين تاريخين (للإدارة: الكل، لصاحب الملعب: ملاعبه) */
+  adminListMatches(fromIso: string, toIso: string): Promise<Match[]>;
+  /** ملاعبي (صاحب الملعب) — أو كل الملاعب للإدارة */
+  listOwnedVenues(): Promise<Venue[]>;
+  ownerListMatches(fromIso: string, toIso: string): Promise<Match[]>;
+  listBlocks(venueIds: string[]): Promise<FieldBlock[]>;
+  addBlock(fieldId: string, startsIso: string, endsIso: string, reason: string | null): Promise<void>;
+  removeBlock(id: string): Promise<void>;
+  /** يرجّع اسم صاحب الملعب */
+  adminSetVenueOwner(venueId: string, publicId: string): Promise<string>;
 }

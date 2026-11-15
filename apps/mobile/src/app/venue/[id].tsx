@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { Image, RefreshControl, ScrollView, View } from 'react-native';
+import { Image, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { toggleFavoriteVenue, useFavoriteVenues } from '../../lib/favorites';
 import { OfflineBanner, SkeletonList } from '../../components/feedback';
 import { MatchRow } from '../../components/MatchRow';
 import { Badge, Button, Empty, ErrorText, Row, Text } from '../../components/ui';
@@ -26,6 +27,8 @@ export default function VenueScreen() {
   const { join, busyId, error: actionError } = useMatchActions(reloadMatches);
 
   const v = venue.data;
+  const favs = useFavoriteVenues();
+  const fav = favs.has(id);
   const here = (matches.data ?? []).filter((m) => m.venue_id === id);
 
   return (
@@ -44,6 +47,10 @@ export default function VenueScreen() {
             <View style={st.heroCircle} />
           </>
         )}
+        <Pressable onPress={() => void toggleFavoriteVenue(id)} style={st.favBtn} accessibilityRole="button" accessibilityLabel={fav ? 'شيل من المفضلة' : 'أضف للمفضلة'} accessibilityState={{ selected: fav }}>
+          <Ionicons name={fav ? 'star' : 'star-outline'} size={18} color={fav ? '#E0A91F' : '#101828'} />
+          <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: '#101828' }}>{fav ? 'مفضّل' : 'أضف للمفضلة'}</Text>
+        </Pressable>
       </View>
 
       <View style={st.body}>
@@ -91,6 +98,7 @@ export default function VenueScreen() {
 
 const useStyles = themed((c) => ({
   hero: { height: 200, backgroundColor: '#1C8B4A', overflow: 'hidden' },
+  favBtn: { position: 'absolute', bottom: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#fff', borderRadius: 999, paddingHorizontal: 12, height: 34 },
   heroHalf: { position: 'absolute', top: 0, bottom: 0, left: '50%', width: 3, backgroundColor: 'rgba(255,255,255,0.45)' },
   heroCircle: { position: 'absolute', width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: 'rgba(255,255,255,0.45)', top: 50, left: '50%', marginLeft: -49 },
   body: { padding: 16, gap: 12 },

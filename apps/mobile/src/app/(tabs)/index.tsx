@@ -5,6 +5,9 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AdCarousel } from '../../components/AdCarousel';
+import { FilterBar } from '../../components/FilterBar';
+import { useFavoriteVenues } from '../../lib/favorites';
+import { applyFilters, EMPTY_FILTERS, filterOptions, type MatchFilters } from '../../lib/filters';
 import { Avatar } from '../../components/Avatar';
 import { MatchRow } from '../../components/MatchRow';
 import { OfflineBanner, SkeletonList } from '../../components/feedback';
@@ -53,12 +56,16 @@ export default function Home() {
     await Promise.all([reload(), reloadMine()]);
   });
 
-  const counts = useMemo(() => dayCounts(data ?? [], days), [data, days]);
+  const [filters, setFilters] = useState<MatchFilters>(EMPTY_FILTERS);
+  const favVenues = useFavoriteVenues();
+  const options = useMemo(() => filterOptions(data ?? []), [data]);
+  const filtered = useMemo(() => applyFilters(data ?? [], filters, favVenues), [data, filters, favVenues]);
+  const counts = useMemo(() => dayCounts(filtered, days), [filtered, days]);
   const dayIdx = chosenDay ?? firstDayWithMatches(counts);
   const day = days[dayIdx];
-  const dayMatches = (data ?? []).filter((m) => new Date(m.starts_at).toDateString() === day.toDateString());
+  const dayMatches = filtered.filter((m) => new Date(m.starts_at).toDateString() === day.toDateString());
   const hasUnread = (notes ?? []).some((n) => !n.read);
-  const weekTotal = counts.reduce((a, b) => a + b, 0);
+  const weekTotal = dayCounts(data ?? [], days).reduce((a, b) => a + b, 0);
   const venueTotal = new Set((data ?? []).map((m) => m.venue_id ?? m.venue_name)).size;
   const next = (mine ?? [])
     .filter((m) => m.my_status === 'joined' && new Date(m.ends_at).getTime() > now)
@@ -173,6 +180,8 @@ export default function Home() {
             })}
           </ScrollView>
 
+          <FilterBar value={filters} onChange={setFilters} formats={options.formats} areas={options.areas} />
+
           <View style={st.listHead}>
             <Text style={st.listTitle}>مباريات {weekdayName(day)}</Text>
             {dayMatches.length ? <Text style={{ color: c.muted, fontSize: 12 }}>{formatMatchCount(dayMatches.length)}</Text> : null}
@@ -183,7 +192,11 @@ export default function Home() {
           {loading && !data ? <SkeletonList count={3} /> : null}
           {data && dayMatches.length === 0 ? (
             <View style={{ alignItems: 'center' }}>
-              <Empty title="ماكو مباريات بهذا اليوم" hint="شوف يوم ثاني، أو اقترح مباراة على الإدارة" icon="calendar-outline" />
+              <Empty
+                title={filtered.length !== (data ?? []).length ? 'ماكو مباريات تطابق الفلترة' : 'ماكو مباريات بهذا اليوم'}
+                hint={filtered.length !== (data ?? []).length ? 'غيّر الفلترة أو امسحها' : 'شوف يوم ثاني، أو اقترح مباراة على الإدارة'}
+                icon="calendar-outline"
+              />
               <Button title="اقترح مباراة" icon="bulb-outline" variant="outline" onPress={() => router.push('/suggest')} style={{ paddingHorizontal: 28 }} />
             </View>
           ) : null}

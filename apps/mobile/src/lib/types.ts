@@ -77,11 +77,23 @@ export interface Match {
   my_status: RosterStatus | null;
   venue_id?: string | null;
   venue_photo?: string | null;
+  venue_city?: string | null;
+  /** خصم الأوقات الهادئة (0–90) */
+  discount_pct?: number;
+  motm_player_id?: string | null;
+  motm_name?: string | null;
+  /** المنظّم سكّر المباراة (سجّل الحضور ورجل المباراة) */
+  closed_at?: string | null;
+  attended_count?: number;
+  no_show_count?: number;
 }
 
 export interface RosterEntry {
   player_id: string;
   status: RosterStatus;
+  attendance?: Attendance | null;
+  /** القائد اللي دخّله ويّا الفريق (يتحمّل دفع غيابه) */
+  paid_by?: string | null;
   team: Team | null;
   position: Position | null;
   joined_at: string;
@@ -339,7 +351,7 @@ export interface TeamInvite {
 }
 
 // ---------- الإشعارات داخل التطبيق ----------
-export type NotificationKind = 'promoted' | 'registration_open' | 'match_created' | 'suggestion' | 'reminder' | 'general';
+export type NotificationKind = 'promoted' | 'registration_open' | 'match_created' | 'suggestion' | 'reminder' | 'general' | 'spot_opened' | 'fav_day' | 'motm' | 'referral' | 'no_show';
 export interface AppNotification {
   id: string;
   kind: NotificationKind;
@@ -401,3 +413,70 @@ export interface Ad {
   created_at: string;
 }
 export type AdInput = Omit<Ad, 'id' | 'created_at'> & { id?: string };
+
+// ---------- المكافآت ----------
+export interface AppSettings {
+  motm_reward: number;
+  referral_reward: number;
+  /** كم صديق لازم يلعب حتى تنحسب مكافأة */
+  referral_needed: number;
+}
+export interface ReferralFriend {
+  name: string;
+  /** joined = سجّل، played = لعب أول مباراة، rewarded = انحسب بمكافأة */
+  status: 'joined' | 'played' | 'rewarded';
+  created_at: string;
+}
+export interface ReferralSummary {
+  code: string | null;
+  friends: ReferralFriend[];
+  /** اسم الصديق اللي دعاني (إذا سجّلت رقمه) */
+  referred_by: string | null;
+  /** أكدر أسجّل رقم صديق؟ (أول 14 يوم ومرة وحدة) */
+  can_claim: boolean;
+}
+
+// ---------- إغلاق المباراة ----------
+export type Attendance = 'attended' | 'no_show';
+export interface CloseMatchInput {
+  attendance: Record<string, Attendance>;
+  motm_player_id: string | null;
+}
+export interface MotmVote {
+  player_id: string;
+  votes: number;
+}
+
+// ---------- تقارير الأعطال ----------
+export interface CrashInput {
+  message: string;
+  stack: string | null;
+  platform: 'android' | 'ios' | 'web';
+  app_version: string | null;
+  screen: string | null;
+}
+export interface CrashReport extends CrashInput {
+  id: string;
+  user_name: string | null;
+  created_at: string;
+}
+
+// ---------- محادثة المباراة ----------
+export interface MatchMessage {
+  id: string;
+  sender_id: string;
+  sender_name: string;
+  body: string;
+  created_at: string;
+}
+
+// ---------- أوقات محجوبة (صاحب الملعب) ----------
+export interface FieldBlock {
+  id: string;
+  field_id: string;
+  field_name: string;
+  venue_name: string;
+  starts_at: string;
+  ends_at: string;
+  reason: string | null;
+}

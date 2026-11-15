@@ -5,7 +5,7 @@ import type { Api, ProfileInput } from './types';
 import { toWesternDigits } from '../format';
 import { normalizePublicId } from '../teams';
 import { attributesFromRating, monthRange, overallOf, pickTeamOfWeek, pointsOf } from '../stats';
-import type { PlayerTeam, TeamInvite, MatchSuggestion, RankingRow, ChannelKind, ChatChannel, ChatMessage, Post, Trial, Wallet, Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue, Ad } from '../types';
+import type { PlayerTeam, TeamInvite, MatchSuggestion, RankingRow, ChannelKind, ChatChannel, ChatMessage, Post, Trial, Wallet, Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue, Ad, FieldBlock } from '../types';
 import { adError, liveAdsFor } from '../ads';
 
 const PROFILE_COLS = 'id, full_name, city, preferred_position, skill_rating, reliability_score, matches_played, attributes, avatar_url, role, public_id';
@@ -604,6 +604,180 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
       const { error } = await sb.from('ads').delete().eq('id', id);
       fail(error);
     },
+    // ---------- المكافآت ----------
+    async getSettings() {
+      const { data, error } = await sb.from('app_settings').select('motm_reward, referral_reward, referral_needed').eq('id', 1).maybeSingle();
+      fail(error);
+      return data ?? { motm_reward: 10000, referral_reward: 5000, referral_needed: 3 };
+    },
+    async adminSaveSettings(st) {
+      const { error } = await sb.from('app_settings').update(st).eq('id', 1);
+      fail(error);
+    },
+    async getReferrals() {
+      const me = await uid();
+      if (!me) return { code: null, friends: [], referred_by: null, can_claim: false };
+      const [{ data: prof }, { data: rows, error }] = await Promise.all([
+        sb.from('profiles').select('public_id, created_at').eq('id', me).maybeSingle(),
+        sb.from('referrals').select('referred_id, referrer_id, created_at, qualified_at, rewarded_at, referred:profiles!referrals_referred_id_fkey(full_name), referrer:profiles!referrals_referrer_id_fkey(full_name)').or(`referrer_id.eq.${me},referred_id.eq.${me}`),
+      ]);
+      fail(error);
+      const list = (rows ?? []) as any[];
+      const by = list.find((r) => r.referred_id === me);
+      const fresh = prof?.created_at ? Date.now() - new Date(prof.created_at).getTime() < 14 * 86400000 : false;
+      return {
+        code: prof?.public_id ?? null,
+        friends: list
+          .filter((r) => r.referrer_id === me)
+          .map((r) => ({ name: r.referred?.full_name ?? 'لاعب', status: r.rewarded_at ? 'rewarded' : r.qualified_at ? 'played' : 'joined', created_at: r.created_at }) as const),
+        referred_by: by ? by.referrer?.full_name ?? 'لاعب' : null,
+        can_claim: !by && fresh,
+      };
+    },
+    async claimReferral(code) {
+      const { data, error } = await sb.rpc('claim_referral', { p_code: normalizePublicId(code) });
+      fail(error);
+      return String(data ?? '');
+    },
+    async adminSetMatchDiscount(matchId, pct) {
+      const { error } = await sb.rpc('admin_set_match_discount', { p_match: matchId, p_pct: pct });
+      fail(error);
+    },
+
+    // ---------- بعد المباراة ----------
+    async getMotmVotes(matchId) {
+      const { data, error } = await sb.from('match_mvp_votes').select('player_id').eq('match_id', matchId);
+      fail(error);
+      const votes = new Map<string, number>();
+      for (const r of (data ?? []) as { player_id: string }[]) votes.set(r.player_id, (votes.get(r.player_id) ?? 0) + 1);
+      return [...votes.entries()].map(([player_id, n]) => ({ player_id, votes: n })).sort((a, b) => b.votes - a.votes);
+    },
+    async closeMatch(matchId, input) {
+      const { data, error } = await sb.rpc('close_match', { p_match: matchId, p_attendance: input.attendance, p_motm: input.motm_player_id });
+      fail(error);
+      const r = (data ?? {}) as { charged?: number; motm_reward?: number };
+      return { charged: r.charged ?? 0, motm_reward: r.motm_reward ?? 0 };
+    },
+
+    // ---------- التنبيهات ----------
+    async watchMatch(matchId, on) {
+      const me = await uid();
+      if (!me) throw new Error('لازم تسجّل دخول');
+      const { error } = on
+        ? await sb.from('match_watchers').upsert({ match_id: matchId, player_id: me })
+        : await sb.from('match_watchers').delete().eq('match_id', matchId).eq('player_id', me);
+      fail(error);
+    },
+    async isWatching(matchId) {
+      const me = await uid();
+      if (!me) return false;
+      const { data } = await sb.from('match_watchers').select('match_id').eq('match_id', matchId).eq('player_id', me).maybeSingle();
+      return !!data;
+    },
+    async getFavDays() {
+      const me = await uid();
+      if (!me) return [];
+      const { data } = await sb.from('profiles').select('fav_days').eq('id', me).maybeSingle();
+      return (data?.fav_days as number[] | null) ?? [];
+    },
+    async setFavDays(days) {
+      const me = await uid();
+      if (!me) throw new Error('لازم تسجّل دخول');
+      const { error } = await sb.from('profiles').update({ fav_days: [...new Set(days)].filter((x) => x >= 0 && x <= 6) }).eq('id', me);
+      fail(error);
+    },
+
+    // ---------- محادثة المباراة ----------
+    async listMatchMessages(matchId) {
+      const { data, error } = await sb.from('match_messages').select('id, sender_id, body, created_at, sender:profiles(full_name, role)').eq('match_id', matchId).order('created_at', { ascending: false }).limit(200);
+      fail(error);
+      return ((data ?? []) as any[]).reverse().map((m) => ({
+        id: String(m.id), sender_id: m.sender_id, body: m.body, created_at: m.created_at,
+        sender_name: m.sender?.role === 'admin' ? 'إدارة بالملعب' : m.sender?.full_name ?? '',
+      }));
+    },
+    async sendMatchMessage(matchId, body) {
+      const me = await uid();
+      if (!me) throw new Error('لازم تسجّل دخول');
+      const text = body.trim().slice(0, 1000);
+      if (!text) return;
+      const { error } = await sb.from('match_messages').insert({ match_id: matchId, sender_id: me, body: text });
+      fail(error);
+    },
+
+    // ---------- الأعطال ----------
+    async reportCrash(input) {
+      // ما نرمي خطأ من مسجّل الأعطال نفسه
+      await sb.from('crash_reports').insert(input).then(() => {}, () => {});
+    },
+    async adminListCrashes() {
+      const { data, error } = await sb.from('crash_reports').select('id, message, stack, platform, app_version, screen, created_at, user:profiles(full_name)').order('created_at', { ascending: false }).limit(200);
+      fail(error);
+      return ((data ?? []) as any[]).map((r) => ({
+        id: String(r.id), message: r.message, stack: r.stack, platform: r.platform, app_version: r.app_version, screen: r.screen,
+        created_at: r.created_at, user_name: r.user?.full_name ?? null,
+      }));
+    },
+    async adminClearCrashes() {
+      const { error } = await sb.from('crash_reports').delete().gte('id', 0);
+      fail(error);
+    },
+
+    // ---------- الأرباح وأصحاب الملاعب ----------
+    async adminListMatches(fromIso, toIso) {
+      const { data, error } = await sb.from('match_cards').select('*').gte('starts_at', fromIso).lt('starts_at', toIso).order('starts_at').limit(2000);
+      fail(error);
+      return (data ?? []) as Match[];
+    },
+    async listOwnedVenues() {
+      const me = await uid();
+      if (!me) return [];
+      const { data: prof } = await sb.from('profiles').select('role').eq('id', me).maybeSingle();
+      let q = sb.from('venues').select(VENUE_COLS).order('name');
+      if (prof?.role !== 'admin') q = q.eq('owner_id', me);
+      const { data, error } = await q;
+      fail(error);
+      return (data ?? []).map(mapVenue);
+    },
+    async ownerListMatches(fromIso, toIso) {
+      const venues = await this.listOwnedVenues();
+      const ids = venues.map((v) => v.id);
+      if (!ids.length) return [];
+      const { data, error } = await sb.from('match_cards').select('*').in('venue_id', ids).gte('starts_at', fromIso).lt('starts_at', toIso).order('starts_at').limit(2000);
+      fail(error);
+      return (data ?? []) as Match[];
+    },
+    async listBlocks(venueIds) {
+      if (!venueIds.length) return [];
+      const { data, error } = await sb
+        .from('field_blackouts')
+        .select('id, field_id, during, reason, field:fields!inner(name, venue_id, venue:venues(name))')
+        .in('field.venue_id', venueIds);
+      fail(error);
+      const now = Date.now();
+      return ((data ?? []) as any[])
+        .map((b): FieldBlock => {
+          const [from, to] = parseRange(b.during);
+          return { id: b.id, field_id: b.field_id, field_name: b.field?.name ?? '', venue_name: b.field?.venue?.name ?? '', starts_at: from, ends_at: to, reason: b.reason };
+        })
+        .filter((b) => new Date(b.ends_at).getTime() > now)
+        .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+    },
+    async addBlock(fieldId, startsIso, endsIso, reason) {
+      if (endsIso <= startsIso) throw new Error('وقت النهاية لازم بعد البداية');
+      const { error } = await sb.from('field_blackouts').insert({ field_id: fieldId, during: `[${startsIso},${endsIso})`, reason: reason?.trim() || null });
+      fail(error);
+    },
+    async removeBlock(id) {
+      const { error } = await sb.from('field_blackouts').delete().eq('id', id);
+      fail(error);
+    },
+    async adminSetVenueOwner(venueId, publicId) {
+      const { data, error } = await sb.rpc('admin_set_venue_owner', { p_venue: venueId, p_public_id: normalizePublicId(publicId) });
+      fail(error);
+      return String(data ?? '');
+    },
+
     async adminUploadAdImage(localUri) {
       // نفس مخزن صور الملاعب (الكتابة للإدارة فقط)
       return uploadImage(sb, 'venue-photos', `ads/${Date.now()}.jpg`, localUri);
@@ -634,6 +808,13 @@ async function uploadImage(sb: SupabaseClient, bucket: string, path: string, loc
   const { error } = await sb.storage.from(bucket).upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
   if (error) throw new Error(error.message);
   return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+}
+
+/** نطاق Postgres مثل ["2026-11-20 18:00:00+00","2026-11-20 20:00:00+00") → [بداية، نهاية] ISO */
+function parseRange(r: string): [string, string] {
+  const m = /^[[(]"?([^",]+)"?,"?([^")]+)"?[\])]$/.exec(String(r ?? ''));
+  const iso = (x: string) => new Date(x.trim().replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00')).toISOString();
+  return m ? [iso(m[1]), iso(m[2])] : [new Date(0).toISOString(), new Date(0).toISOString()];
 }
 
 const AD_COLS = 'id, template, eyebrow, title, body, cta, link, badge, countdown_to, rating, image_url, city, starts_at, ends_at, active, sort, created_at';

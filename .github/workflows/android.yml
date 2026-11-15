@@ -69,6 +69,24 @@ jobs:
       - name: توليد مشروع الأندرويد
         run: npx expo prebuild --platform android --no-install
 
+      - name: مفتاح التوقيع الخاص (من أسرار المستودع)
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > android/app/balmalaab-release.keystore
+            {
+              echo "ORG_GRADLE_PROJECT_BALMALAAB_STORE_FILE=balmalaab-release.keystore"
+              echo "ORG_GRADLE_PROJECT_BALMALAAB_STORE_PASSWORD=$KEYSTORE_PASSWORD"
+              echo "ORG_GRADLE_PROJECT_BALMALAAB_KEY_PASSWORD=$KEYSTORE_PASSWORD"
+              echo "ORG_GRADLE_PROJECT_BALMALAAB_KEY_ALIAS=balmalaab"
+            } >> "$GITHUB_ENV"
+            echo "التوقيع: المفتاح الخاص"
+          else
+            echo "::warning::ماكو مفتاح خاص بالأسرار — النسخة راح تتوقع بالمفتاح التجريبي العام"
+          fi
+
       - name: بناء APK
         working-directory: apps/mobile/android
         # بس معالجات التلفونات (ARM) — بدون نسخ المحاكي x86، حتى الملف يصير تقريباً نص الحجم
