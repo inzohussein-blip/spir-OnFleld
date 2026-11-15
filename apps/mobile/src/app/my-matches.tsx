@@ -38,12 +38,12 @@ export default function MyMatches() {
         </>
       ) : null}
       {upcoming.length ? <Text variant="h2">القادمة</Text> : null}
-      {upcoming.map((m, i) => (
-        <MatchRow key={m.id} match={m} index={i + 1} now={now} busy={busyId === m.id} onAction={() => void join(m)} />
+      {upcoming.map((m) => (
+        <MatchRow key={m.id} match={m} now={now} showDay busy={busyId === m.id} onAction={() => void join(m)} />
       ))}
       {past.length ? <Text variant="h2">السابقة</Text> : null}
-      {past.map((m, i) => (
-        <MatchRow key={m.id} match={m} index={i + 1} now={now} onAction={() => {}} />
+      {past.map((m) => (
+        <MatchRow key={m.id} match={m} now={now} showDay onAction={() => {}} />
       ))}
     </ScrollView>
   );

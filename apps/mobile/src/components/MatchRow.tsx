@@ -1,46 +1,46 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Image, Pressable, View } from 'react-native';
-import { formatClock, formatCountdown, formatIQD } from '../lib/format';
+import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
+import { formatClock, formatCountdown, formatIQD, weekdayName } from '../lib/format';
 import { matchAction, type MatchAction } from '../lib/matchAction';
 import { spotsInfo } from '../lib/schedule';
 import type { Match } from '../lib/types';
 import { fonts, themed, useColors } from '../theme';
 import { Text } from './ui';
 
-/** نص وشكل الزر الرئيسي حسب حالة المباراة */
-export function actionLabel(a: MatchAction) {
+/** نص وشكل الزر الرئيسي حسب حالة المباراة — `short` للزر الصغير ببطاقة المباراة */
+export function actionLabel(a: MatchAction, short = false) {
   switch (a.kind) {
     case 'join':
-      return { text: 'انضم إلى المباراة', tone: 'primary' as const, enabled: true };
+      return { text: short ? 'انضم' : 'انضم إلى المباراة', tone: 'primary' as const, enabled: true };
     case 'waitlist':
-      return { text: 'انضم إلى قائمة الانتظار', tone: 'soft' as const, enabled: true };
+      return { text: short ? 'الانتظار' : 'انضم إلى قائمة الانتظار', tone: 'soft' as const, enabled: true };
     case 'joined':
-      return { text: '✓ أنت منضم', tone: 'done' as const, enabled: false };
+      return { text: short ? '✓ منضم' : '✓ أنت منضم', tone: 'done' as const, enabled: false };
     case 'waiting':
-      return { text: 'أنت في قائمة الانتظار', tone: 'soft' as const, enabled: false };
+      return { text: short ? 'بالانتظار' : 'أنت في قائمة الانتظار', tone: 'soft' as const, enabled: false };
     case 'opens_later':
-      return { text: `التسجيل بعد ${formatCountdown(a.ms)}`, tone: 'muted' as const, enabled: false };
+      return { text: short ? `بعد ${formatCountdown(a.ms).split(' و')[0]}` : `التسجيل بعد ${formatCountdown(a.ms)}`, tone: 'muted' as const, enabled: false };
     case 'finished':
-      return { text: 'انتهت المباراة', tone: 'muted' as const, enabled: false };
+      return { text: short ? 'انتهت' : 'انتهت المباراة', tone: 'muted' as const, enabled: false };
   }
 }
 
-export function ActionPill({ action, busy, onPress, big, onBar }: { action: MatchAction; busy?: boolean; onPress: () => void; big?: boolean; onBar?: boolean }) {
+export function ActionPill({ action, busy, onPress, big, onBar, short }: { action: MatchAction; busy?: boolean; onPress: () => void; big?: boolean; onBar?: boolean; short?: boolean }) {
   const st = useStyles();
   const c = useColors();
-  const { text, tone, enabled } = actionLabel(action);
+  const { text, tone, enabled } = actionLabel(action, short);
   // على الشريط الملوّن أسفل صفحة المباراة: زر فاتح على خلفية الأزرق
-  const box = onBar ? (enabled ? st.pOnBar : st.pOnBarMuted) : { primary: st.pPrimary, soft: st.pSoft, done: st.pDone, muted: st.pMuted }[tone];
-  const fg = onBar ? (enabled ? c.primary : '#FFFFFF') : { primary: c.onPrimary, soft: c.primary, done: '#1C8B4A', muted: c.muted }[tone];
+  const box = onBar ? (enabled ? st.pOnBar : st.pOnBarMuted) : { primary: st.pPrimary, soft: st.pSoft, done: st.pSoft, muted: st.pMuted }[tone];
+  const fg = onBar ? (enabled ? c.primary : '#FFFFFF') : { primary: c.onPrimary, soft: c.primary, done: c.primary, muted: c.muted }[tone];
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={short ? actionLabel(action).text : undefined}
       disabled={!enabled || busy}
       onPress={onPress}
-      style={({ pressed }) => [st.pill, big && st.pillBig, box, pressed && { opacity: 0.85 }]}
+      style={({ pressed }) => [st.pill, big && st.pillBig, short && st.pillShort, box, pressed && { opacity: 0.85 }]}
     >
-      {busy ? <ActivityIndicator color={fg} /> : <Text style={[st.pillText, big && { fontSize: 15 }, { color: fg }]}>{text}</Text>}
+      {busy ? <ActivityIndicator color={fg} /> : <Text style={[st.pillText, big && { fontSize: 15 }, short && { fontSize: 14 }, { color: fg }]} numberOfLines={1}>{text}</Text>}
     </Pressable>
   );
 }
@@ -52,74 +52,94 @@ export const SPOTS = {
   full: { fg: '#C42B1C', bg: '#FDECEA' },
 } as const;
 
-/** بطاقة مباراة بسيطة: رقم المباراة، اسم الساحة والزر، ثم السعر والوقت والعدد */
-export function MatchRow({ match, index, now, busy, onAction }: { match: Match; index: number; now: number; busy?: boolean; onAction: () => void }) {
+/** شريط الامتلاء: أخضر كثير، برتقالي قليل، أحمر مكتملة */
+export const SPOTS_BAR = { ok: '#22A559', few: '#F59E0B', full: '#E5484D' } as const;
+
+/**
+ * بطاقة مباراة: مربع الساحة الخضراء (أو صورة الملعب) وعليه الوقت كبير،
+ * بالنص اسم الملعب والمنطقة والسعر وشريط «باقي N»، والزر الصغير على اليسار.
+ * `showDay` يضيف اليوم (لما القائمة بيها أكثر من يوم).
+ */
+export function MatchRow({ match, now, busy, onAction, showDay }: { match: Match; now: number; busy?: boolean; onAction: () => void; showDay?: boolean }) {
   const router = useRouter();
   const st = useStyles();
   const c = useColors();
   const action = matchAction(match, now);
   const finished = action.kind === 'finished';
   const spots = spotsInfo(match);
-  // المباراة المنتهية: عدد اللاعبين بلون محايد بدل «مكتملة» الحمراء
+  const fill = match.max_players ? Math.min(1, match.joined_count / match.max_players) : 0;
   const spotsFg = finished ? c.muted : SPOTS[spots.tone].fg;
-  const spotsBg = finished ? c.cardAlt : SPOTS[spots.tone].bg;
   const spotsText = finished ? `${match.joined_count} لاعب` : spots.label;
+  const [clock, mer] = formatClock(match.starts_at).split(' ');
+  const start = new Date(match.starts_at);
+  const meta = [showDay ? `${weekdayName(start)} ${start.getDate()}` : null, match.venue_address].filter(Boolean).join(' · ');
+  const venue = match.venue_name ?? match.title ?? 'مباراة';
   const open = () => router.push({ pathname: '/match/[id]', params: { id: match.id } });
   return (
-    <View style={{ gap: 6 }}>
-      <Text variant="small" style={{ color: c.muted }}>
-        المباراة: <Text variant="small" style={{ color: c.text, fontFamily: fonts.bold }}>{index}</Text>
-      </Text>
-      <View style={st.card}>
-        <View style={st.head}>
-          <Pressable onPress={open} style={{ flex: 1 }}>
-            <Text style={st.venue} numberOfLines={2}>{match.venue_name ?? match.title ?? 'مباراة'}</Text>
-          </Pressable>
-          <View style={{ width: 150 }}>
-            <ActionPill action={action} busy={busy} onPress={onAction} />
+    <View style={[st.card, finished && { opacity: 0.75 }]}>
+      <Pressable onPress={open} style={st.main} accessibilityRole="button" accessibilityLabel={`${venue} — ${clock} ${mer === 'م' ? 'مساءً' : 'صباحاً'}`}>
+        <View style={st.thumb}>
+          {match.venue_photo ? (
+            <Image source={{ uri: match.venue_photo }} style={StyleSheet.absoluteFill} accessibilityLabel={venue} />
+          ) : (
+            <>
+              <View style={st.pitchLine} />
+              <View style={st.pitchCircle} />
+            </>
+          )}
+          <View style={st.thumbShade}>
+            <Text style={st.clock}>{clock}</Text>
+            <Text style={st.mer}>{mer === 'م' ? 'مساءً' : 'صباحاً'}</Text>
           </View>
         </View>
-        <Pressable onPress={open} style={st.body}>
-          <View style={st.thumb}>
-            {match.venue_photo ? (
-              <Image source={{ uri: match.venue_photo }} style={{ width: '100%', height: '100%' }} accessibilityLabel={match.venue_name ?? 'الملعب'} />
-            ) : (
-              <Ionicons name="football" size={28} color="#fff" />
-            )}
-          </View>
-          <View style={{ flex: 1, gap: 2 }}>
-            {match.cost_per_player ? (
-              <Text variant="small" style={{ color: c.muted }}>
-                السعر: <Text style={{ color: c.primary, fontFamily: fonts.bold }}>{formatIQD(match.cost_per_player)}</Text>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={st.venue}>{venue}</Text>
+          <View style={st.metaRow}>
+            {meta ? (
+              <Text variant="small" style={{ color: c.muted, flexShrink: 1 }} numberOfLines={showDay ? undefined : 1}>
+                {meta}
               </Text>
             ) : null}
-            <Text variant="small" style={{ color: c.muted }}>
-              يبدأ: <Text style={{ color: c.text, fontFamily: fonts.semibold }}>{formatClock(match.starts_at)}</Text>
-            </Text>
+            {match.cost_per_player ? (
+              <Text variant="small" style={{ color: c.text, fontFamily: fonts.bold, flexShrink: 0 }} numberOfLines={1}>
+                {meta ? '· ' : ''}
+                {formatIQD(match.cost_per_player)}
+              </Text>
+            ) : null}
           </View>
-          <View style={[st.count, { backgroundColor: spotsBg }]}>
-            <Ionicons name="people-outline" size={16} color={spotsFg} />
-            <Text style={[st.countText, { color: spotsFg }]}>{spotsText}</Text>
+          <View style={st.spotsRow}>
+            <View style={st.track}>
+              <View style={[st.fill, { width: `${fill * 100}%`, backgroundColor: finished ? c.muted : SPOTS_BAR[spots.tone] }]} />
+            </View>
+            <Text style={[st.spotsText, { color: spotsFg }]}>{spotsText}</Text>
           </View>
-        </Pressable>
-      </View>
+        </View>
+      </Pressable>
+      <ActionPill action={action} busy={busy} onPress={onAction} short />
     </View>
   );
 }
 
 const useStyles = themed((c) => ({
-  card: { backgroundColor: c.card, borderRadius: 22, borderWidth: 1, borderColor: c.border, overflow: 'hidden' },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 10 },
-  venue: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 30 },
-  body: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingBottom: 14 },
-  thumb: { width: 64, height: 64, borderRadius: 14, backgroundColor: '#1C8B4A', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  count: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: c.cardAlt, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
-  countText: { fontFamily: fonts.bold, fontSize: 13 },
+  card: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.card, borderRadius: 22, borderWidth: 1, borderColor: c.border, padding: 10, paddingEnd: 12 },
+  main: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  thumb: { width: 68, height: 68, borderRadius: 16, backgroundColor: '#1C8B4A', overflow: 'hidden' },
+  pitchLine: { position: 'absolute', top: 0, bottom: 0, left: '50%', width: 1.5, backgroundColor: 'rgba(255,255,255,0.35)' },
+  pitchCircle: { position: 'absolute', width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.35)', top: 20, left: 20 },
+  thumbShade: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.22)', alignItems: 'center', justifyContent: 'center' },
+  clock: { color: '#fff', fontFamily: fonts.bold, fontSize: 19, lineHeight: 24 },
+  mer: { color: '#fff', fontFamily: fonts.bold, fontSize: 11, lineHeight: 16 },
+  venue: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 26 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  spotsRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  track: { flex: 1, height: 6, borderRadius: 3, backgroundColor: c.cardAlt, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 3 },
+  spotsText: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 18 },
   pill: { minHeight: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  pillShort: { minHeight: 38, minWidth: 64, maxWidth: 104, borderRadius: 19, paddingHorizontal: 14 },
   pillBig: { minHeight: 52, borderRadius: 18, paddingHorizontal: 22 },
   pPrimary: { backgroundColor: c.primary },
   pSoft: { backgroundColor: c.primarySoft },
-  pDone: { backgroundColor: '#E5F6EC' },
   pMuted: { backgroundColor: c.cardAlt },
   pOnBar: { backgroundColor: '#FFFFFF' },
   pOnBarMuted: { backgroundColor: 'rgba(255,255,255,0.18)' },

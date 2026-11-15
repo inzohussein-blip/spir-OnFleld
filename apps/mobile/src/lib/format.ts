@@ -96,6 +96,14 @@ export function formatFullDate(d: Date) {
 
 export const weekdayName = (d: Date) => DAYS[d.getDay()];
 
+/** «مباراة / مباراتين / 4 مباريات / 12 مباراة» — وصفر يرجع فارغ */
+export function formatMatchCount(n: number) {
+  if (n <= 0) return '';
+  if (n === 1) return 'مباراة';
+  if (n === 2) return 'مباراتين';
+  return n <= 10 ? `${n} مباريات` : `${n} مباراة`;
+}
+
 /** جمع عربي مبسّط للأعداد: 1 ساعة، 2 ساعتان، 3-10 ساعات، 11+ ساعة */
 function plural(n: number, one: string, two: string, few: string) {
   if (n === 1) return one;

@@ -49,7 +49,7 @@ export const light: Palette = {
   teamB: '#E65100',
   header: '#FFFFFF',
   onPrimary: '#FFFFFF',
-  bandBg: '#8FB0FF',
+  bandBg: '#1E4FD8',
 };
 
 export const dark: Palette = {
@@ -72,7 +72,7 @@ export const dark: Palette = {
   teamB: '#FF9A4D',
   header: '#0E1730',
   onPrimary: '#FFFFFF',
-  bandBg: '#1A2A5E',
+  bandBg: '#1B3C9E',
 };
 
 export const fonts = {

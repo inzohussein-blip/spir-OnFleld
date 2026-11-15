@@ -44,3 +44,12 @@ test('مدة المباراة مختصرة', async () => {
   assert.equal(formatTimeRange(t(23), t(24, 30)), '11:00 م إلى 12:30 ص');
   assert.equal(formatTimeRange(t(9, 15), t(10, 45)), '9:15 إلى 10:45 ص');
 });
+
+test('match count wording for the day strip', async () => {
+  const { formatMatchCount } = await import('./format.ts');
+  assert.equal(formatMatchCount(0), '');
+  assert.equal(formatMatchCount(1), 'مباراة');
+  assert.equal(formatMatchCount(2), 'مباراتين');
+  assert.equal(formatMatchCount(4), '4 مباريات');
+  assert.equal(formatMatchCount(12), '12 مباراة');
+});

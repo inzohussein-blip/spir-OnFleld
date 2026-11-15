@@ -2,13 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View, useWindowDimensions } from 'react-native';
-import { HeaderBand } from '../../components/HeaderBand';
+import { HeaderBand, ON_BAND } from '../../components/HeaderBand';
 import { MatchRow } from '../../components/MatchRow';
 import { Avatar } from '../../components/Avatar';
 import { OfflineBanner, SkeletonList } from '../../components/feedback';
 import { Button, Empty, ErrorText, Text } from '../../components/ui';
 import { api } from '../../lib/api';
-import { formatFullDate, weekdayName } from '../../lib/format';
+import { formatMatchCount, weekdayName } from '../../lib/format';
 import { dayCounts, firstDayWithMatches } from '../../lib/schedule';
 import { useAsync, useNow, useSession } from '../../lib/session';
 import { useMatchActions } from '../../lib/useMatchActions';
@@ -61,7 +61,7 @@ export default function Home() {
             <Text style={st.sub}>اكتشف المباريات المتاحة اليوم</Text>
           </View>
           <Pressable onPress={() => router.push('/notifications')} accessibilityLabel={hasUnread ? 'الإشعارات — يوجد جديد' : 'الإشعارات'} hitSlop={8}>
-            <Ionicons name="notifications-outline" size={28} color={c.primary} />
+            <Ionicons name="notifications-outline" size={28} color={ON_BAND} />
             {hasUnread ? <View style={st.unreadDot} /> : null}
           </Pressable>
         </View>
@@ -100,23 +100,23 @@ export default function Home() {
                 onPress={() => setChosenDay(i)}
                 style={[st.day, active && st.dayActive]}
                 accessibilityRole="button"
-                accessibilityLabel={`${weekdayName(d)} ${d.getDate()} — ${counts[i]} مباريات`}
+                accessibilityLabel={`${weekdayName(d)} ${d.getDate()} — ${formatMatchCount(counts[i]) || 'ماكو مباريات'}`}
                 accessibilityState={{ selected: active }}
                 testID={`day-${i}`}
               >
                 <Text style={[st.dayNum, active && { color: c.primary }]}>{d.getDate()}</Text>
                 <Text style={[st.dayName, active && { color: c.primary }]}>{weekdayName(d)}</Text>
-                <View style={[st.dayCount, counts[i] === 0 && { opacity: 0 }, active && { backgroundColor: c.primary }]}>
-                  <Text style={[st.dayCountText, active && { color: c.onPrimary }]}>{counts[i]}</Text>
-                </View>
+                <Text style={[st.dayCountText, counts[i] === 0 && { color: c.muted }]} numberOfLines={1}>
+                  {formatMatchCount(counts[i]) || 'ماكو'}
+                </Text>
               </Pressable>
             );
           })}
         </ScrollView>
 
         <View style={st.listHead}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 18 }}>المباريات القادمة</Text>
-          <Text variant="small">{formatFullDate(day)}</Text>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 18, lineHeight: 30 }}>مباريات {weekdayName(day)}</Text>
+          {dayMatches.length ? <Text variant="small" style={{ color: c.muted }}>{formatMatchCount(dayMatches.length)}</Text> : null}
         </View>
 
         <OfflineBanner show={offline} />
@@ -128,8 +128,8 @@ export default function Home() {
             <Button title="اقترح مباراة" icon="bulb-outline" variant="outline" onPress={() => router.push('/suggest')} style={{ paddingHorizontal: 28 }} />
           </View>
         ) : null}
-        {dayMatches.map((m, i) => (
-          <MatchRow key={m.id} match={m} index={i + 1} now={now} busy={busyId === m.id} onAction={() => void join(m)} />
+        {dayMatches.map((m) => (
+          <MatchRow key={m.id} match={m} now={now} busy={busyId === m.id} onAction={() => void join(m)} />
         ))}
       </ScrollView>
     </View>
@@ -141,8 +141,8 @@ const useStyles = themed((c) => ({
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'stretch' },
   avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#fff' },
   avatarText: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 30, color: '#fff' },
-  hello: { fontFamily: fonts.bold, fontSize: 15, color: c.primary },
-  sub: { fontSize: 14, color: c.text },
+  hello: { fontFamily: fonts.bold, fontSize: 16, color: ON_BAND },
+  sub: { fontSize: 14, color: 'rgba(255,255,255,0.85)' },
   banner: { height: 160, borderRadius: 22, padding: 20, justifyContent: 'center', gap: 6, overflow: 'hidden' },
   bannerCircle: { position: 'absolute', width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(255,255,255,0.08)', top: -80, left: -60 },
   bannerTitle: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 36, color: '#fff' },
@@ -150,12 +150,11 @@ const useStyles = themed((c) => ({
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: -6 },
   dotBar: { width: 26, height: 7, borderRadius: 4, backgroundColor: c.border },
   dotBarActive: { width: 40, backgroundColor: c.primary },
-  day: { width: 62, paddingVertical: 14, borderRadius: 24, alignItems: 'center', gap: 4 },
+  day: { width: 66, paddingVertical: 14, borderRadius: 24, alignItems: 'center', gap: 4 },
   dayActive: { backgroundColor: c.primarySoft },
   dayNum: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 28 },
   dayName: { fontSize: 12, color: c.text },
-  dayCount: { minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 5, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
-  dayCountText: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 16, color: c.primary },
+  dayCountText: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 18, color: c.primary },
   unreadDot: { position: 'absolute', top: 0, right: 0, width: 10, height: 10, borderRadius: 5, backgroundColor: c.danger, borderWidth: 2, borderColor: c.bandBg },
   listHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 }));

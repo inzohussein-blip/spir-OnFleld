@@ -77,8 +77,8 @@ export default function VenueScreen() {
         <ErrorText message={actionError} />
         {matches.loading && !matches.data ? <SkeletonList count={2} /> : null}
         {matches.data && here.length === 0 ? <Empty title="ماكو مباريات قادمة هنا" hint="تكدر تقترح مباراة على الإدارة" icon="calendar-outline" /> : null}
-        {here.map((m, i) => (
-          <MatchRow key={m.id} match={m} index={i + 1} now={now} busy={busyId === m.id} onAction={() => void join(m)} />
+        {here.map((m) => (
+          <MatchRow key={m.id} match={m} now={now} showDay busy={busyId === m.id} onAction={() => void join(m)} />
         ))}
         {v && hasCoords(v) ? (
           <Button title="شوفه على الخريطة" icon="map-outline" variant="outline" onPress={() => router.dismissTo({ pathname: '/map', params: { venue: id } })} />

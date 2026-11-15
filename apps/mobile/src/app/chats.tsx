@@ -12,7 +12,7 @@ import { fonts, themed, useColors } from '../theme';
 const ICON: Record<ChannelKind, { icon: IconName; bg: string }> = {
   general: { icon: 'chatbubbles', bg: '#1E4FD8' },
   announcements: { icon: 'megaphone', bg: '#F08C00' },
-  support: { icon: 'headset', bg: '#1C8B4A' },
+  support: { icon: 'headset', bg: '#1E4FD8' },
 };
 
 export default function Chats() {
