@@ -149,3 +149,6 @@ export function relativeDay(d: Date, now = new Date()) {
   if (diff === 1) return 'باجر';
   return DAYS[d.getDay()];
 }
+
+/** اسم اليوم مختصر بدون «ال»: «الثلاثاء» ← «ثلاثاء» */
+export const shortWeekday = (d: Date) => DAYS[d.getDay()].replace(/^ال/, '');

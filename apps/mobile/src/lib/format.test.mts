@@ -66,3 +66,10 @@ test('home greeting, headline and relative day', async () => {
   assert.equal(relativeDay(new Date(2026, 10, 16, 1), now), 'باجر');
   assert.equal(relativeDay(new Date(2026, 10, 18, 20), now), 'الأربعاء');
 });
+
+test('short weekday', async () => {
+  const { shortWeekday } = await import('./format.ts');
+  assert.equal(shortWeekday(new Date(2026, 10, 17)), 'ثلاثاء');
+  assert.equal(shortWeekday(new Date(2026, 10, 21)), 'سبت');
+  assert.equal(shortWeekday(new Date(2026, 10, 23)), 'اثنين');
+});
