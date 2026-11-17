@@ -10,9 +10,9 @@ import type { ChannelKind } from '../lib/types';
 import { fonts, themed, useColors } from '../theme';
 
 const ICON: Record<ChannelKind, { icon: IconName; bg: string }> = {
-  general: { icon: 'chatbubbles', bg: '#1E4FD8' },
+  general: { icon: 'chatbubbles', bg: '#0B1F5C' },
   announcements: { icon: 'megaphone', bg: '#F08C00' },
-  support: { icon: 'headset', bg: '#1E4FD8' },
+  support: { icon: 'headset', bg: '#EA580C' },
 };
 
 export default function Chats() {

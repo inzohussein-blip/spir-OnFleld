@@ -20,7 +20,8 @@ const LOOK: Record<Ad['template'], { bg: string; base: string; accent: string; i
   partner: { bg: 'linear-gradient(90deg, #0E5A30 0%, #1C8B4A 70%)', base: '#1C8B4A', accent: '#1C8B4A', icon: 'location' },
 };
 
-export const AD_HEIGHT = 150;
+/** أطول شوية من تحت حتى العنوان والتفاصيل والزر ياخذون راحتهم */
+export const AD_HEIGHT = 178;
 
 /** إعلان واحد بأحد القوالب الستة. `now` للعد التنازلي */
 export function AdBanner({ ad, now, onPress, onPressIn, onPressOut, style }: { ad: Ad; now: number; onPress?: (e: GestureResponderEvent) => void; onPressIn?: (e: GestureResponderEvent) => void; onPressOut?: () => void; style?: ViewStyle }) {
@@ -77,11 +78,11 @@ export function AdBanner({ ad, now, onPress, onPressIn, onPressOut, style }: { a
             ))}
           </View>
         ) : ad.cta ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 7 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
             <View style={cta}>
-              {ad.link === 'share:invite' ? <Ionicons name="share-social" size={13} color={look.accent} /> : null}
+              {ad.link === 'share:invite' ? <Ionicons name="share-social" size={15} color={look.accent} /> : null}
               <Text style={[ctaText, { color: look.accent }]}>{ad.cta}</Text>
-              {ad.link && ad.link !== 'share:invite' ? <Ionicons name="chevron-back" size={13} color={look.accent} /> : null}
+              {ad.link && ad.link !== 'share:invite' ? <Ionicons name="chevron-back" size={15} color={look.accent} /> : null}
             </View>
             {ad.template === 'partner' && ad.rating !== null ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
@@ -183,7 +184,7 @@ function PitchLines({ faint, wide }: { faint?: boolean; wide?: boolean }) {
       <View pointerEvents="none" style={fill}>
         <View style={{ position: 'absolute', top: 0, bottom: 0, left: '33%', width: 2, backgroundColor: c }} />
         <View style={{ position: 'absolute', left: '33%', top: AD_HEIGHT / 2 - 34, width: 68, height: 68, marginLeft: -33, borderRadius: 34, borderWidth: 2, borderColor: c }} />
-        <View style={{ position: 'absolute', left: -2, top: 35, width: 40, height: 80, borderWidth: 2, borderColor: c }} />
+        <View style={{ position: 'absolute', left: -2, top: AD_HEIGHT / 2 - 40, width: 40, height: 80, borderWidth: 2, borderColor: c }} />
       </View>
     );
   }
@@ -192,8 +193,8 @@ function PitchLines({ faint, wide }: { faint?: boolean; wide?: boolean }) {
       <View style={{ position: 'absolute', top: 12, bottom: 12, left: -20, right: -20, borderWidth: 2, borderColor: c, borderRadius: 4 }} />
       <View style={{ position: 'absolute', top: 12, bottom: 12, left: '50%', width: 2, backgroundColor: c }} />
       <View style={{ position: 'absolute', left: '50%', top: AD_HEIGHT / 2 - 30, width: 60, height: 60, marginLeft: -29, borderRadius: 30, borderWidth: 2, borderColor: c }} />
-      <View style={{ position: 'absolute', left: -20, top: 40, width: 70, height: 70, borderWidth: 2, borderColor: c }} />
-      <View style={{ position: 'absolute', right: -20, top: 40, width: 70, height: 70, borderWidth: 2, borderColor: c }} />
+      <View style={{ position: 'absolute', left: -20, top: AD_HEIGHT / 2 - 35, width: 70, height: 70, borderWidth: 2, borderColor: c }} />
+      <View style={{ position: 'absolute', right: -20, top: AD_HEIGHT / 2 - 35, width: 70, height: 70, borderWidth: 2, borderColor: c }} />
     </View>
   );
 }
@@ -209,16 +210,16 @@ function Stripes() {
 }
 
 const fill: ViewStyle = { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 };
-const box: ViewStyle = { height: AD_HEIGHT, borderRadius: 22, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14 };
+const box: ViewStyle = { height: AD_HEIGHT, borderRadius: 22, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 18 };
 const shine: ViewStyle = { position: 'absolute', width: 260, height: 260, borderRadius: 130, top: -170, right: -60, backgroundColor: 'rgba(255,255,255,0.10)' };
 const goldGlow: ViewStyle = { position: 'absolute', width: 170, height: 170, borderRadius: 85, top: -10, left: -30, backgroundColor: 'rgba(245,196,49,0.16)' };
 const adTag = { position: 'absolute' as const, top: 7, left: 12, color: 'rgba(255,255,255,0.65)', fontFamily: fonts.semibold, fontSize: 9.5, lineHeight: 14 };
 const eyebrow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: '100%', backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', borderRadius: 999, paddingHorizontal: 9, marginBottom: 2 };
 const eyebrowText = { color: '#fff', fontFamily: fonts.bold, fontSize: 10.5, lineHeight: 18 };
-const title = { color: '#fff', fontFamily: fonts.bold, fontSize: 17.5, lineHeight: 27 };
-const body = { color: 'rgba(255,255,255,0.92)', fontSize: 11.5, lineHeight: 18 };
-const cta: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fff', borderRadius: 999, paddingHorizontal: 13, height: 28 };
-const ctaText = { fontFamily: fonts.bold, fontSize: 12, lineHeight: 18 };
+const title = { color: '#fff', fontFamily: fonts.bold, fontSize: 18.5, lineHeight: 29 };
+const body = { color: 'rgba(255,255,255,0.92)', fontSize: 12.5, lineHeight: 20 };
+const cta: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#fff', borderRadius: 999, paddingHorizontal: 18, height: 38, boxShadow: '0 4px 10px rgba(0,0,0,0.18)' };
+const ctaText = { fontFamily: fonts.bold, fontSize: 14, lineHeight: 22 };
 const cdBox: ViewStyle = { backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: 10, paddingHorizontal: 8, alignItems: 'center', minWidth: 40 };
 const cdNum = { color: '#fff', fontFamily: fonts.bold, fontSize: 15, lineHeight: 20 };
 const cdLabel = { color: 'rgba(255,255,255,0.85)', fontSize: 9.5, lineHeight: 13 };

@@ -34,10 +34,10 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
     reportCrash(error);
   }, [error]);
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12, backgroundColor: '#F3F6FC' }}>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12, backgroundColor: '#F5F6FA' }}>
       <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: '#0B1226' }}>صار خطأ بهاي الصفحة 😕</Text>
       <Text style={{ textAlign: 'center', color: '#5B6577' }}>وصل تقرير للإدارة حتى نصلّحه. جرّب مرة ثانية.</Text>
-      <Pressable onPress={() => void retry()} style={{ backgroundColor: '#1E4FD8', borderRadius: 14, paddingHorizontal: 22, paddingVertical: 10 }} accessibilityRole="button">
+      <Pressable onPress={() => void retry()} style={{ backgroundColor: '#EA580C', borderRadius: 14, paddingHorizontal: 22, paddingVertical: 10 }} accessibilityRole="button">
         <Text style={{ color: '#fff', fontFamily: fonts.bold }}>جرّب مرة ثانية</Text>
       </Pressable>
     </View>

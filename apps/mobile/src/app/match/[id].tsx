@@ -359,7 +359,7 @@ const useStyles = themed((c) => ({
   scoreTeam: { fontFamily: fonts.bold, fontSize: 15 },
   scoreBig: { fontFamily: fonts.bold, fontSize: 40, lineHeight: 56, color: '#fff', minWidth: 36, textAlign: 'center' },
   scoreDash: { fontFamily: fonts.bold, fontSize: 32, lineHeight: 56, color: 'rgba(255,255,255,0.6)', marginHorizontal: 6 },
-  bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: c.primary, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingTop: 10, paddingHorizontal: 20 },
+  bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: c.primary, backgroundImage: c.primaryGradient, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingTop: 10, paddingHorizontal: 20 },
   handle: { alignSelf: 'center', width: 52, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.75)', marginBottom: 14 },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   price: { fontFamily: fonts.bold, fontSize: 20, color: '#fff' },

@@ -27,6 +27,7 @@ export const ON_BAND_MUTED = 'rgba(255,255,255,0.85)';
 const useStyles = themed((c) => ({
   band: {
     backgroundColor: c.bandBg,
+    backgroundImage: c.bandGradient,
     borderBottomLeftRadius: 22,
     borderBottomRightRadius: 22,
     paddingHorizontal: 16,

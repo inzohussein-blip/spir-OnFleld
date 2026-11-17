@@ -14,7 +14,7 @@ import { fonts, themed, useColors } from '../theme';
 const STATUS = {
   joined: { label: 'سجّل — بعده ما لعب', color: '#B45309', icon: 'time-outline' },
   played: { label: 'لعب أول مباراة ✓', color: '#167A43', icon: 'checkmark-circle' },
-  rewarded: { label: 'انحسب بمكافأة 🎁', color: '#1E4FD8', icon: 'gift' },
+  rewarded: { label: 'انحسب بمكافأة 🎁', color: '#EA580C', icon: 'gift' },
 } as const;
 
 /** ادعُ أصدقاءك: رقمك ورابطك، التقدّم نحو المكافأة، وقائمة أصدقائك — وتسجيل رقم صديق دعاك */

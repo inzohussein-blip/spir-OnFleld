@@ -169,8 +169,8 @@ export default function Home() {
 
 const useStyles = themed((c) => ({
   hero: {
-    backgroundColor: '#0F2E86',
-    backgroundImage: 'linear-gradient(165deg, #081A4F 0%, #0F2E86 55%, #1E4FD8 100%)',
+    backgroundColor: c.bandBg,
+    backgroundImage: c.bandGradient,
     paddingHorizontal: 18,
     paddingBottom: 18,
     borderBottomLeftRadius: 30,
@@ -180,9 +180,9 @@ const useStyles = themed((c) => ({
   // الإعلان يطلع فوق طرف الرأس شوية
   heroWithAd: { paddingBottom: 58 },
   adWrap: { marginTop: -44, marginHorizontal: 16 },
-  // إضاءة الملعب: دوائر فاتحة بالزوايا العلوية
-  lightA: { position: 'absolute', width: 280, height: 280, borderRadius: 140, top: -170, right: -90, backgroundColor: 'rgba(158,193,255,0.22)' },
-  lightB: { position: 'absolute', width: 220, height: 220, borderRadius: 110, top: -140, left: -70, backgroundColor: 'rgba(158,193,255,0.16)' },
+  // إضاءة الملعب: توهّج برتقالي بالزوايا العلوية
+  lightA: { position: 'absolute', width: 280, height: 280, borderRadius: 140, top: -170, right: -90, backgroundColor: 'rgba(255,122,46,0.20)' },
+  lightB: { position: 'absolute', width: 220, height: 220, borderRadius: 110, top: -140, left: -70, backgroundColor: 'rgba(255,170,90,0.12)' },
   centerCircle: { position: 'absolute', width: 150, height: 150, borderRadius: 75, bottom: -75, alignSelf: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.08)' },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   greet: { color: 'rgba(255,255,255,0.8)', fontSize: 12, lineHeight: 18 },
@@ -195,7 +195,7 @@ const useStyles = themed((c) => ({
   // الأيام: 7 مربعات بنفس العرض — الرقم كبير وتحته اليوم
   days: { flexDirection: 'row', gap: 6 },
   day: { flex: 1, paddingTop: 5, paddingBottom: 4, borderRadius: 14, alignItems: 'center', backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
-  dayActive: { backgroundColor: c.primary, borderColor: c.primary, boxShadow: '0 5px 12px rgba(30,79,216,0.3)' },
+  dayActive: { backgroundColor: c.primary, borderColor: c.primary, boxShadow: '0 5px 12px rgba(234,88,12,0.3)' },
   dayNum: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 23 },
   dayName: { fontSize: 10, lineHeight: 15, color: c.muted },
   onActive: { color: '#fff' },

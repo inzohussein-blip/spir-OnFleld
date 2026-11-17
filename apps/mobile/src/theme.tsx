@@ -24,55 +24,66 @@ export type Palette = {
   onPrimary: string;
   /** خلفية شريط العنوان الملوّن */
   bandBg: string;
+  /** نفس الخلفية بتدرّج */
+  bandGradient: string;
+  /** تدرّج البرتقالي للمساحات الكبيرة (بطاقة اللاعب، شريط الحجز) */
+  primaryGradient: string;
 };
 
-/** لون نص العنوان على شريط الرأس */
-export const headerText = (c: Palette) => (c.header === '#FFFFFF' ? c.primary : '#FFFFFF');
+/** لون نص العنوان على شريط الرأس: كحلي على الأبيض */
+export const headerText = (c: Palette) => (c.header === '#FFFFFF' ? '#0B1F5C' : '#FFFFFF');
 
+/**
+ * ألوان «بالملعب»: برتقالي للأزرار والمختار، وكحلي (أزرق غامق) بتدرّج للرؤوس.
+ */
 export const light: Palette = {
-  primary: '#1E4FD8',
-  primaryDark: '#163CA8',
-  primarySoft: '#E6EDFD',
+  primary: '#EA580C',
+  primaryDark: '#C2410C',
+  primarySoft: '#FFEDD5',
   accent: '#F5B700',
   accentSoft: '#FFF4CC',
-  bg: '#F3F6FC',
+  bg: '#F5F6FA',
   card: '#FFFFFF',
-  cardAlt: '#EDF1F8',
-  text: '#101828',
+  cardAlt: '#EEF0F6',
+  text: '#0B1226',
   muted: '#5B6577',
-  border: '#DFE5F0',
+  border: '#E2E5EE',
   danger: '#D92D20',
   dangerSoft: '#FDECEA',
   warnSoft: '#FFF4CC',
   warnText: '#7A5B00',
-  teamA: '#1E4FD8',
-  teamB: '#E65100',
+  teamA: '#1E3FA0',
+  teamB: '#EA580C',
   header: '#FFFFFF',
   onPrimary: '#FFFFFF',
-  bandBg: '#1E4FD8',
+  bandBg: '#0B1F5C',
+  bandGradient: 'linear-gradient(160deg, #081640 0%, #0B1F5C 55%, #16307C 100%)',
+  primaryGradient: 'linear-gradient(135deg, #FB923C 0%, #EA580C 55%, #C2410C 100%)',
 };
 
 export const dark: Palette = {
-  primary: '#4D7CFF',
-  primaryDark: '#2F5EE8',
-  primarySoft: '#16224A',
+  primary: '#F26A21',
+  primaryDark: '#EA580C',
+  primarySoft: '#3A1D0C',
   accent: '#F5C431',
   accentSoft: '#3A3010',
-  bg: '#0B1226',
-  card: '#121B36',
-  cardAlt: '#1A2547',
-  text: '#E9EEFB',
+  bg: '#060D24',
+  card: '#0E1838',
+  cardAlt: '#152349',
+  text: '#EEF2FB',
   muted: '#9AA6C4',
   border: '#22305A',
   danger: '#FF6B6B',
   dangerSoft: '#3A1A1F',
   warnSoft: '#3A3010',
   warnText: '#F5D77A',
-  teamA: '#6F9BFF',
+  teamA: '#7FA2FF',
   teamB: '#FF9A4D',
-  header: '#0E1730',
+  header: '#0B1640',
   onPrimary: '#FFFFFF',
-  bandBg: '#1B3C9E',
+  bandBg: '#0B1A4D',
+  bandGradient: 'linear-gradient(160deg, #050B22 0%, #0B1A4D 60%, #13286E 100%)',
+  primaryGradient: 'linear-gradient(135deg, #FB8A3C 0%, #F26A21 55%, #C2410C 100%)',
 };
 
 export const fonts = {

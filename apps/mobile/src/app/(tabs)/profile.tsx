@@ -240,7 +240,7 @@ export default function Profile() {
 const useStyles = themed((c) => ({
   content: { paddingHorizontal: 16, gap: 18, paddingBottom: 130 },
   pageTitle: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 34 },
-  card: { backgroundColor: c.primary, borderRadius: 24, padding: 16, gap: 14, overflow: 'hidden' },
+  card: { backgroundColor: c.primary, backgroundImage: c.primaryGradient, borderRadius: 24, padding: 16, gap: 14, overflow: 'hidden' },
   cardStripe: { position: 'absolute', width: 140, height: 360, backgroundColor: 'rgba(255,255,255,0.07)', top: -80, left: 40, transform: [{ rotate: '25deg' }] },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   camera: { position: 'absolute', bottom: -2, left: -2, width: 26, height: 26, borderRadius: 13, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.primary },
