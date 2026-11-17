@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
-import { Image, Pressable, View, type ViewStyle } from 'react-native';
+import { Image, Pressable, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
 import { countdownParts } from '../lib/ads';
 import type { Ad } from '../lib/types';
 import { fonts } from '../theme';
@@ -23,13 +23,15 @@ const LOOK: Record<Ad['template'], { bg: string; base: string; accent: string; i
 export const AD_HEIGHT = 150;
 
 /** إعلان واحد بأحد القوالب الستة. `now` للعد التنازلي */
-export function AdBanner({ ad, now, onPress, style }: { ad: Ad; now: number; onPress?: () => void; style?: ViewStyle }) {
+export function AdBanner({ ad, now, onPress, onPressIn, onPressOut, style }: { ad: Ad; now: number; onPress?: (e: GestureResponderEvent) => void; onPressIn?: (e: GestureResponderEvent) => void; onPressOut?: () => void; style?: ViewStyle }) {
   const look = LOOK[ad.template];
   const countdown = ad.template === 'league' ? countdownParts(ad.countdown_to, now) : null;
   const photo = ad.template === 'partner' && ad.image_url ? ad.image_url : null;
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={`إعلان: ${ad.title}`}
