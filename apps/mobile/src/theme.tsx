@@ -30,60 +30,63 @@ export type Palette = {
   primaryGradient: string;
 };
 
-/** لون نص العنوان على شريط الرأس: كحلي على الأبيض */
-export const headerText = (c: Palette) => (c.header === '#FFFFFF' ? '#0B1F5C' : '#FFFFFF');
+/** لون نص العنوان على شريط الرأس: أسود على الأبيض */
+export const headerText = (c: Palette) => (c.header === '#FFFFFF' ? '#121212' : '#FFFFFF');
 
 /**
- * ألوان «بالملعب»: برتقالي للأزرار والمختار، وكحلي (أزرق غامق) بتدرّج للرؤوس.
+ * ألوان «بالملعب» (أسود + غروب): أسود وأبيض للأساس، وتدرّج الغروب (برتقالي ← وردي أحمر)
+ * للمهم بس: الأزرار، المختار، والتبويب.
  */
+export const SUNSET = 'linear-gradient(120deg, #FF6A00 0%, #E8173B 100%)';
+
 export const light: Palette = {
-  primary: '#EA580C',
-  primaryDark: '#C2410C',
-  primarySoft: '#FFEDD5',
+  primary: '#F2402E',
+  primaryDark: '#E8173B',
+  primarySoft: '#FFEAE6',
   accent: '#F5B700',
   accentSoft: '#FFF4CC',
-  bg: '#F5F6FA',
+  bg: '#F6F5F5',
   card: '#FFFFFF',
-  cardAlt: '#EEF0F6',
-  text: '#0B1226',
-  muted: '#5B6577',
-  border: '#E2E5EE',
+  cardAlt: '#F0EEEE',
+  text: '#121212',
+  muted: '#76716F',
+  border: '#ECE8E8',
   danger: '#D92D20',
   dangerSoft: '#FDECEA',
   warnSoft: '#FFF4CC',
   warnText: '#7A5B00',
-  teamA: '#1E3FA0',
-  teamB: '#EA580C',
+  teamA: '#2563EB',
+  teamB: '#FF6A00',
   header: '#FFFFFF',
   onPrimary: '#FFFFFF',
-  bandBg: '#0B1F5C',
-  bandGradient: 'linear-gradient(160deg, #081640 0%, #0B1F5C 55%, #16307C 100%)',
-  primaryGradient: 'linear-gradient(135deg, #FB923C 0%, #EA580C 55%, #C2410C 100%)',
+  bandBg: '#121212',
+  bandGradient: 'linear-gradient(160deg, #0B0A0B 0%, #1A1617 65%, #2A1219 100%)',
+  primaryGradient: SUNSET,
 };
 
 export const dark: Palette = {
-  primary: '#F26A21',
-  primaryDark: '#EA580C',
-  primarySoft: '#3A1D0C',
+  primary: '#FF5A3C',
+  primaryDark: '#E8173B',
+  primarySoft: '#2A1619',
   accent: '#F5C431',
   accentSoft: '#3A3010',
-  bg: '#060D24',
-  card: '#0E1838',
-  cardAlt: '#152349',
-  text: '#EEF2FB',
-  muted: '#9AA6C4',
-  border: '#22305A',
+  bg: '#0B0A0B',
+  card: '#171516',
+  cardAlt: '#211E1F',
+  text: '#FAF7F8',
+  muted: '#8F8A8C',
+  border: '#2A2628',
   danger: '#FF6B6B',
   dangerSoft: '#3A1A1F',
   warnSoft: '#3A3010',
   warnText: '#F5D77A',
-  teamA: '#7FA2FF',
+  teamA: '#6F9BFF',
   teamB: '#FF9A4D',
-  header: '#0B1640',
+  header: '#121011',
   onPrimary: '#FFFFFF',
-  bandBg: '#0B1A4D',
-  bandGradient: 'linear-gradient(160deg, #050B22 0%, #0B1A4D 60%, #13286E 100%)',
-  primaryGradient: 'linear-gradient(135deg, #FB8A3C 0%, #F26A21 55%, #C2410C 100%)',
+  bandBg: '#000000',
+  bandGradient: 'linear-gradient(160deg, #000000 0%, #141112 65%, #24121A 100%)',
+  primaryGradient: SUNSET,
 };
 
 export const fonts = {

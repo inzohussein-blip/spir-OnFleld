@@ -1,8 +1,9 @@
 import { Cairo_400Regular, Cairo_600SemiBold, Cairo_700Bold, useFonts } from '@expo-google-fonts/cairo';
 import { Stack, usePathname, useRouter, useSegments, type ErrorBoundaryProps, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppState, I18nManager, Platform, Pressable, View } from 'react-native';
+import { BrandSplash } from '../components/BrandSplash';
 import { ToastProvider, useToast } from '../components/feedback';
 import { Loading, Text } from '../components/ui';
 import { installCrashReporter, reportCrash, setCrashScreen } from '../lib/crash';
@@ -34,10 +35,10 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
     reportCrash(error);
   }, [error]);
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12, backgroundColor: '#F5F6FA' }}>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12, backgroundColor: '#F6F5F5' }}>
       <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: '#0B1226' }}>صار خطأ بهاي الصفحة 😕</Text>
       <Text style={{ textAlign: 'center', color: '#5B6577' }}>وصل تقرير للإدارة حتى نصلّحه. جرّب مرة ثانية.</Text>
-      <Pressable onPress={() => void retry()} style={{ backgroundColor: '#EA580C', borderRadius: 14, paddingHorizontal: 22, paddingVertical: 10 }} accessibilityRole="button">
+      <Pressable onPress={() => void retry()} style={{ backgroundColor: '#F2402E', backgroundImage: 'linear-gradient(120deg, #FF6A00 0%, #E8173B 100%)', borderRadius: 14, paddingHorizontal: 22, paddingVertical: 10 }} accessibilityRole="button">
         <Text style={{ color: '#fff', fontFamily: fonts.bold }}>جرّب مرة ثانية</Text>
       </Pressable>
     </View>
@@ -181,19 +182,33 @@ function Gate() {
   );
 }
 
+/** شاشة الشعار تبقى على الأقل هالمدة عند الفتح (وأكثر إذا الخطوط بعدها ما تحمّلت) */
+const SPLASH_MS = 1400;
+
 export default function RootLayout() {
   const [loaded] = useFonts({ Cairo_400Regular, Cairo_600SemiBold, Cairo_700Bold });
+  const [minDone, setMinDone] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMinDone(true), SPLASH_MS);
+    return () => clearTimeout(t);
+  }, []);
   return (
     <ThemeProvider>
-      {loaded ? (
-        <SessionProvider>
-          <ToastProvider>
-            <Gate />
-          </ToastProvider>
-        </SessionProvider>
-      ) : (
-        <Loading />
-      )}
+      <View style={{ flex: 1 }}>
+        {loaded ? (
+          <SessionProvider>
+            <ToastProvider>
+              <Gate />
+            </ToastProvider>
+          </SessionProvider>
+        ) : null}
+        {/* الشعار فوق التطبيق وهو يجهز بالخلفية */}
+        {!loaded || !minDone ? (
+          <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, zIndex: 100 }}>
+            <BrandSplash durationMs={SPLASH_MS - 100} />
+          </View>
+        ) : null}
+      </View>
     </ThemeProvider>
   );
 }

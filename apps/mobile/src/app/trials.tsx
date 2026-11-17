@@ -111,5 +111,5 @@ const useStyles = themed((c) => ({
   heroChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   step: { flex: 1, backgroundColor: c.card, borderRadius: 14, padding: 10, gap: 4, borderWidth: 1, borderColor: c.border },
   stepIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  stepNum: { fontFamily: fonts.bold, fontSize: 18, color: c.primarySoft === '#FFEDD5' ? '#FDBA74' : c.border },
+  stepNum: { fontFamily: fonts.bold, fontSize: 18, color: c.primarySoft === '#FFEAE6' ? '#FFB3A8' : c.border },
 }));

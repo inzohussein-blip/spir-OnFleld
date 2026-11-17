@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AdSingle } from '../../components/AdSingle';
+import { DripScroll } from '../../components/DripScroll';
 import { FilterBar } from '../../components/FilterBar';
 import { useFavoriteVenues } from '../../lib/favorites';
 import { applyFilters, EMPTY_FILTERS, filterOptions, type MatchFilters } from '../../lib/filters';
@@ -21,8 +22,8 @@ import { useMatchActions } from '../../lib/useMatchActions';
 import { fonts, themed, useColors, useTheme } from '../../theme';
 
 /**
- * الرئيسية «الملعب بالليل»: رأس كحلي بإضاءة ملعب وسؤال «جاهز تلعب الليلة؟» ويّا أيقونتي البحث والإشعارات،
- * الإعلان طايف على طرف الرأس (واحد بالمرة ويّا ✕)، الأيام (رقم وتحته اليوم)، ومباريات اليوم المختار.
+ * الرئيسية «الملعب بالليل»: رأس أسود بتوهّج الغروب وسؤال «جاهز تلعب الليلة؟» ويّا أيقونتي البحث والإشعارات،
+ * الإعلان طايف على طرف الرأس (واحد بالمرة)، الأيام (رقم وتحته اليوم)، ومباريات اليوم المختار.
  */
 export default function Home() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function Home() {
   const days = useMemo(() => nextDays(7), []);
   // null = لم يختر المستخدم يوماً بعد → نفتح على أول يوم بيه مباريات
   const [chosenDay, setChosenDay] = useState<number | null>(null);
-  const { data, error, offline, loading, refreshing, reload } = useAsync(() => api.listOpenMatches(), [], { cacheKey: 'open-matches' });
+  const { data, error, offline, loading, reload } = useAsync(() => api.listOpenMatches(), [], { cacheKey: 'open-matches' });
   const { data: notes, reload: reloadNotes } = useAsync(() => api.listNotifications(), []);
   const { data: ads, reload: reloadAds } = useAsync(() => api.listAds(), [], { cacheKey: 'ads' });
   useFocusEffect(
@@ -67,10 +68,7 @@ export default function Home() {
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 120 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={c.primary} colors={[c.primary]} progressViewOffset={insets.top} />}
-      >
+      <DripScroll contentContainerStyle={{ paddingBottom: 120 }} top={insets.top + 18} onRefresh={() => Promise.all([reload(), reloadAds(), reloadNotes()])}>
         {/* الرأس */}
         <View style={[st.hero, hasAd && st.heroWithAd, { paddingTop: insets.top + 12 }]}>
           <View style={st.lightA} />
@@ -162,7 +160,7 @@ export default function Home() {
             <MatchRow key={m.id} match={m} now={now} busy={busyId === m.id} onAction={() => void join(m)} />
           ))}
         </View>
-      </ScrollView>
+      </DripScroll>
     </View>
   );
 }
@@ -181,8 +179,8 @@ const useStyles = themed((c) => ({
   heroWithAd: { paddingBottom: 58 },
   adWrap: { marginTop: -44, marginHorizontal: 16 },
   // إضاءة الملعب: توهّج برتقالي بالزوايا العلوية
-  lightA: { position: 'absolute', width: 280, height: 280, borderRadius: 140, top: -170, right: -90, backgroundColor: 'rgba(255,122,46,0.20)' },
-  lightB: { position: 'absolute', width: 220, height: 220, borderRadius: 110, top: -140, left: -70, backgroundColor: 'rgba(255,170,90,0.12)' },
+  lightA: { position: 'absolute', width: 280, height: 280, borderRadius: 140, top: -170, right: -90, backgroundColor: 'rgba(255,106,0,0.18)' },
+  lightB: { position: 'absolute', width: 220, height: 220, borderRadius: 110, top: -140, left: -70, backgroundColor: 'rgba(232,23,59,0.16)' },
   centerCircle: { position: 'absolute', width: 150, height: 150, borderRadius: 75, bottom: -75, alignSelf: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.08)' },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   greet: { color: 'rgba(255,255,255,0.8)', fontSize: 12, lineHeight: 18 },
@@ -195,7 +193,7 @@ const useStyles = themed((c) => ({
   // الأيام: 7 مربعات بنفس العرض — الرقم كبير وتحته اليوم
   days: { flexDirection: 'row', gap: 6 },
   day: { flex: 1, paddingTop: 5, paddingBottom: 4, borderRadius: 14, alignItems: 'center', backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
-  dayActive: { backgroundColor: c.primary, borderColor: c.primary, boxShadow: '0 5px 12px rgba(234,88,12,0.3)' },
+  dayActive: { backgroundColor: c.primary, borderColor: 'transparent', backgroundImage: c.primaryGradient, boxShadow: '0 5px 12px rgba(232,23,59,0.3)' },
   dayNum: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 23 },
   dayName: { fontSize: 10, lineHeight: 15, color: c.muted },
   onActive: { color: '#fff' },
