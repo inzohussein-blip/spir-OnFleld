@@ -1,6 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
+import { PullRefreshScroll } from '../../components/PullRefreshScroll';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { AdCarousel } from '../../components/AdCarousel';
 import { FilterBar } from '../../components/FilterBar';
 import { MatchRow } from '../../components/MatchRow';
@@ -29,7 +30,7 @@ export default function Home() {
   const days = useMemo(() => nextDays(7), []);
   // null = لم يختر المستخدم يوماً بعد → نفتح على أول يوم بيه مباريات
   const [chosenDay, setChosenDay] = useState<number | null>(null);
-  const { data, error, offline, loading, refreshing, reload } = useAsync(() => api.listOpenMatches(), [], { cacheKey: 'open-matches' });
+  const { data, error, offline, loading, reload } = useAsync(() => api.listOpenMatches(), [], { cacheKey: 'open-matches' });
   const { data: notes, reload: reloadNotes } = useAsync(() => api.listNotifications(), []);
   const { data: ads, reload: reloadAds } = useAsync(() => api.listAds(), [], { cacheKey: 'ads' });
   useFocusEffect(
@@ -63,9 +64,9 @@ export default function Home() {
 
   return (
     <View style={st.screen}>
-      <ScrollView
+      <PullRefreshScroll
         contentContainerStyle={st.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void Promise.all([reload(), reloadAds(), reloadNotes()])} tintColor={c.primary} colors={[c.primary]} />}
+        onRefresh={() => Promise.all([reload(), reloadAds(), reloadNotes()])}
       >
         <PageHeader
             eyebrow={`${greetingFor(hour)}${firstName ? `، ${firstName}` : ''}`}
@@ -125,7 +126,7 @@ export default function Home() {
           <MatchRow key={m.id} match={m} now={now} busy={busyId === m.id} onAction={() => void join(m)} />
         ))}
         </View>
-      </ScrollView>
+      </PullRefreshScroll>
     </View>
   );
 }

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { PullRefreshScroll } from '../../components/PullRefreshScroll';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { Image, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
 import { toggleFavoriteVenue, useFavoriteVenues } from '../../lib/favorites';
 import { OfflineBanner, SkeletonList } from '../../components/feedback';
 import { MatchRow } from '../../components/MatchRow';
@@ -32,10 +33,10 @@ export default function VenueScreen() {
   const here = (matches.data ?? []).filter((m) => m.venue_id === id);
 
   return (
-    <ScrollView
+    <PullRefreshScroll
       style={{ flex: 1, backgroundColor: c.bg }}
       contentContainerStyle={{ paddingBottom: 60 }}
-      refreshControl={<RefreshControl refreshing={matches.refreshing} onRefresh={reloadMatches} tintColor={c.primary} colors={[c.primary]} />}
+      onRefresh={reloadMatches} top={8}
     >
       <Stack.Screen options={{ title: v?.name ?? 'الملعب' }} />
       <View style={st.hero}>
@@ -92,7 +93,7 @@ export default function VenueScreen() {
         ) : null}
         <Button title="اقترح مباراة بهذا الملعب" icon="bulb-outline" variant="outline" onPress={() => router.push({ pathname: '/suggest', params: { venue: id } })} />
       </View>
-    </ScrollView>
+    </PullRefreshScroll>
   );
 }
 

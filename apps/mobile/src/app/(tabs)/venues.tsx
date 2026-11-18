@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { PullRefreshScroll } from '../../components/PullRefreshScroll';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
 import { OfflineBanner, SkeletonList } from '../../components/feedback';
 import { Empty, ErrorText, PageHeader, SearchField, Text } from '../../components/ui';
 import { api } from '../../lib/api';
@@ -20,7 +21,7 @@ export default function Venues() {
   const router = useRouter();
   const c = useColors();
   const st = useStyles();
-  const { data, error, loading, offline, refreshing, reload } = useAsync(() => api.listVenues(), [], { cacheKey: 'venues' });
+  const { data, error, loading, offline, reload } = useAsync(() => api.listVenues(), [], { cacheKey: 'venues' });
   const [q, setQ] = useState('');
   const favs = useFavoriteVenues();
 
@@ -29,10 +30,10 @@ export default function Venues() {
 
   return (
     <View style={st.screen}>
-      <ScrollView
+      <PullRefreshScroll
         contentContainerStyle={st.content}
         keyboardShouldPersistTaps="handled"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={c.primary} colors={[c.primary]} />}
+        onRefresh={reload}
       >
         <PageHeader title="الملاعب" subtitle={data ? venuesCount(data.length) : undefined} />
         <View style={st.body}>
@@ -89,7 +90,7 @@ export default function Venues() {
           );
         })}
         </View>
-      </ScrollView>
+      </PullRefreshScroll>
     </View>
   );
 }

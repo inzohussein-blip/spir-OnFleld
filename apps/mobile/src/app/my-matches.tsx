@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
+import { PullRefreshScroll } from '../components/PullRefreshScroll';
 import { useCallback } from 'react';
-import { RefreshControl, ScrollView } from 'react-native';
 import { OfflineBanner, SkeletonList } from '../components/feedback';
 import { MatchRow } from '../components/MatchRow';
 import { Button, Empty, ErrorText, Text } from '../components/ui';
@@ -13,7 +13,7 @@ import { useColors } from '../theme';
 export default function MyMatches() {
   const router = useRouter();
   const c = useColors();
-  const { data, error, offline, loading, refreshing, reload } = useAsync(() => api.listMyMatches(), [], { cacheKey: 'my-matches' });
+  const { data, error, offline, loading, reload } = useAsync(() => api.listMyMatches(), [], { cacheKey: 'my-matches' });
   useFocusEffect(useCallback(() => void reload(), [reload]));
   const { join, busyId, error: actionError } = useMatchActions(reload);
   const now = useNow(30_000);
@@ -23,10 +23,10 @@ export default function MyMatches() {
   const past = (data ?? []).filter((m) => m.ends_at <= nowIso);
 
   return (
-    <ScrollView
+    <PullRefreshScroll
       style={{ flex: 1, backgroundColor: c.bg }}
       contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 60 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={c.primary} colors={[c.primary]} />}
+      onRefresh={reload} top={8}
     >
       <OfflineBanner show={offline} />
       <ErrorText message={error ?? actionError} />
@@ -45,6 +45,6 @@ export default function MyMatches() {
       {past.map((m) => (
         <MatchRow key={m.id} match={m} now={now} showDay onAction={() => {}} />
       ))}
-    </ScrollView>
+    </PullRefreshScroll>
   );
 }

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { PullRefreshScroll } from '../components/PullRefreshScroll';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { SkeletonList } from '../components/feedback';
 import { Empty, Text, type IconName } from '../components/ui';
 import { api } from '../lib/api';
@@ -29,7 +30,7 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const c = useColors();
   const st = useStyles();
-  const { data, loading, refreshing, reload } = useAsync(() => api.listNotifications(), []);
+  const { data, loading, reload } = useAsync(() => api.listNotifications(), []);
   useFocusEffect(
     useCallback(() => {
       // نقرأ القائمة أولاً (حتى تبين الجديدة مميزة) ثم نعلّمها مقروءة
@@ -38,10 +39,10 @@ export default function NotificationsScreen() {
   );
 
   return (
-    <ScrollView
+    <PullRefreshScroll
       style={{ flex: 1, backgroundColor: c.bg }}
       contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 40 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={c.primary} colors={[c.primary]} />}
+      onRefresh={reload} top={8}
     >
       <Pressable onPress={() => router.push('/chats')} style={st.chats}>
         <Ionicons name="chatbubbles-outline" size={22} color={c.primary} />
@@ -68,7 +69,7 @@ export default function NotificationsScreen() {
           {!n.read ? <View style={st.dot} /> : null}
         </Pressable>
       ))}
-    </ScrollView>
+    </PullRefreshScroll>
   );
 }
 
