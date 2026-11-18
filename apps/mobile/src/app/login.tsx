@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, View } from 'react-native';
+import mark from '../../assets/splash-icon.png';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, ErrorText, Input, Text } from '../components/ui';
+import { Button, ErrorText, Halftone, Input, Text } from '../components/ui';
 import { api } from '../lib/api';
 import { errMsg, useSession } from '../lib/session';
-import { fonts, themed, useColors } from '../theme';
+import { fonts, themed, useColors, wideSpaces } from '../theme';
 
 export default function Login() {
   const { refresh } = useSession();
@@ -32,8 +33,12 @@ export default function Login() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.primary }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.hero}>
-          <Text style={styles.logo}>⚽</Text>
-          <Text style={styles.brand}>بالملعب</Text>
+          {/* نفس هوية شاشة التحميل: نقاط القمصان والشريطين الأصفر والشعار */}
+          <Halftone rows={24} cols={30} style={{ top: 8, left: 8 }} color="rgba(255,255,255,0.10)" />
+          <View style={styles.stripeWide} pointerEvents="none" />
+          <View style={styles.stripeThin} pointerEvents="none" />
+          <Image source={mark} style={styles.logo} accessibilityLabel="شعار بالملعب" />
+          <Text style={styles.brand}>{wideSpaces('بالملعب')}</Text>
           <Text style={styles.tagline}>احجز ساحتك، كمّل فريقك، والعب</Text>
         </View>
         <View style={styles.sheet}>
@@ -74,10 +79,12 @@ export default function Login() {
 }
 
 const useStyles = themed((colors) => ({
-  hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  logo: { fontSize: 64 },
-  brand: { fontFamily: fonts.bold, fontSize: 40, color: '#fff', lineHeight: 60 },
-  tagline: { color: '#DDF3E5', fontSize: 16 },
+  hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, overflow: 'hidden' },
+  stripeWide: { position: 'absolute', top: -60, bottom: -60, left: -40, width: 90, backgroundColor: colors.cta, transform: [{ skewX: '-14deg' }] },
+  stripeThin: { position: 'absolute', top: -60, bottom: -60, left: 66, width: 16, backgroundColor: colors.cta, transform: [{ skewX: '-14deg' }] },
+  logo: { width: 140, height: 140, marginBottom: -24 },
+  brand: { fontFamily: fonts.display, fontSize: 38, color: '#fff', lineHeight: 54 },
+  tagline: { color: '#C9CEF5', fontSize: 15 },
   sheet: { backgroundColor: colors.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, gap: 14, paddingBottom: 40 },
   demo: { backgroundColor: colors.warnSoft, padding: 10, borderRadius: 10 },
 }));

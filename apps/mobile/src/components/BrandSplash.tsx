@@ -1,41 +1,76 @@
 import { useEffect, useState } from 'react';
-import { Animated, Easing, Image, Text, View } from 'react-native';
-import logo from '../../assets/icon.png';
+import { Animated, Easing, Image, Platform, Text, View } from 'react-native';
+import mark from '../../assets/splash-icon.png';
+import { Halftone } from './ui';
+
+const ROYAL = '#1A23C9';
+const YELLOW = '#FFD60A';
+const NAVY = '#0B1033';
+/** نفس حجم الشعار بشاشة البداية مال النظام (imageWidth بـ app.json) حتى ما يقفز */
+const MARK = 180;
+const NATIVE = Platform.OS !== 'web';
 
 /**
- * شاشة الشعار عند فتح التطبيق: الشعار على الأزرق الملكي وشريطين أصفر مايلين، وتحته «احجز · العب · اربح»
- * وشريط تحميل يتعبّى. تطلع بعد شاشة البداية مال النظام لحد ما يجهز التطبيق.
- * (ألوانها ثابتة — ما تعتمد على الوضع الفاتح/الداكن — وخطها خط النظام لأن خط Cairo ممكن بعده ما تحمّل)
+ * شاشة التحميل «ملكي»: تبدي مطابقة لشاشة البداية مال النظام (أزرق ملكي وبالنص الشعار بنفس الحجم)
+ * حتى الانتقال ما يبين. بعدين يدخل الشريطين الأصفر من الطرف، الشعار يصعد شوية ويطلع تحته الاسم
+ * والشعار النصي، وشريط التحميل الأصفر يتعبّى. لما يجهز التطبيق، الشاشة تختفي بتلاشي ناعم.
+ * (ألوانها ثابتة ما تعتمد على الوضع الفاتح/الداكن.)
  */
-export function BrandSplash({ durationMs = 1300 }: { durationMs?: number }) {
+export function BrandSplash({
+  durationMs = 1200,
+  done,
+  fontsReady,
+  onHidden,
+}: {
+  durationMs?: number;
+  /** التطبيق جاهز: نبدي التلاشي */
+  done: boolean;
+  /** خط العناوين تحمّل؟ (قبلها نستعمل خط النظام) */
+  fontsReady: boolean;
+  onHidden: () => void;
+}) {
+  const [intro] = useState(() => new Animated.Value(0));
   const [progress] = useState(() => new Animated.Value(0));
-  const [appear] = useState(() => new Animated.Value(0));
+  const [fade] = useState(() => new Animated.Value(1));
+
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(appear, { toValue: 1, duration: 450, easing: Easing.out(Easing.back(1.6)), useNativeDriver: true }),
-      Animated.timing(progress, { toValue: 1, duration: durationMs, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }),
-    ]).start();
-  }, [appear, progress, durationMs]);
-  const width = progress.interpolate({ inputRange: [0, 1], outputRange: ['8%', '100%'] });
-  const scale = appear.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] });
+    Animated.timing(intro, { toValue: 1, duration: 650, delay: 120, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }).start();
+    Animated.timing(progress, { toValue: 1, duration: durationMs, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start();
+  }, [intro, progress, durationMs]);
+
+  useEffect(() => {
+    if (!done) return;
+    Animated.timing(fade, { toValue: 0, duration: 320, easing: Easing.out(Easing.quad), useNativeDriver: NATIVE }).start(() => onHidden());
+  }, [done, fade, onHidden]);
+
+  const stripesX = intro.interpolate({ inputRange: [0, 1], outputRange: [-220, 0] });
+  const markY = intro.interpolate({ inputRange: [0, 1], outputRange: [0, -48] });
+  const markScale = intro.interpolate({ inputRange: [0, 1], outputRange: [1, 0.86] });
+  const textY = intro.interpolate({ inputRange: [0, 1], outputRange: [16, 0] });
+  const textOpacity = intro.interpolate({ inputRange: [0.35, 1], outputRange: [0, 1], extrapolate: 'clamp' });
+  const barWidth = progress.interpolate({ inputRange: [0, 1], outputRange: ['6%', '100%'] });
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#1A23C9', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }} accessibilityLabel="بالملعب — جاري التحميل">
-      {/* شريطين أصفر مايلين — علامة «ملكي» */}
-      <View style={{ position: 'absolute', top: -40, bottom: -40, left: -50, width: 130, backgroundColor: '#FFD60A', transform: [{ skewX: '-14deg' }] }} />
-      <View style={{ position: 'absolute', top: -40, bottom: -40, left: 96, width: 20, backgroundColor: '#FFD60A', transform: [{ skewX: '-14deg' }] }} />
-      <Animated.View style={{ alignItems: 'center', gap: 16, opacity: appear, transform: [{ scale }] }}>
-        <Image
-          source={logo}
-          style={{ width: 128, height: 128, borderRadius: 36, boxShadow: '0 6px 0 #0B1033' }}
-          accessibilityIgnoresInvertColors
-        />
-        <Text style={{ color: '#FFFFFF', fontSize: 34, fontWeight: '800', marginTop: 6 }}>بالملعب</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.65)', fontSize: 15 }}>احجز · العب · اربح</Text>
-      </Animated.View>
-      <View style={{ position: 'absolute', bottom: 90, width: 140, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
-        <Animated.View style={{ height: '100%', width, borderRadius: 3, backgroundColor: '#FFD60A' }} />
+    <Animated.View style={{ flex: 1, backgroundColor: ROYAL, opacity: fade, overflow: 'hidden' }} accessibilityLabel="بالملعب — جاري التحميل">
+      <Halftone rows={64} cols={30} style={{ top: 12, left: 12 }} color="rgba(255,255,255,0.10)" />
+      {/* الشريطين الأصفر يدخلون من الطرف */}
+      <Animated.View pointerEvents="none" style={{ position: 'absolute', top: -60, bottom: -60, left: -40, width: 90, transform: [{ translateX: stripesX }, { skewX: '-14deg' }], backgroundColor: YELLOW }} />
+      <Animated.View pointerEvents="none" style={{ position: 'absolute', top: -60, bottom: -60, left: 66, width: 16, transform: [{ translateX: stripesX }, { skewX: '-14deg' }], backgroundColor: YELLOW }} />
+
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <Animated.View style={{ transform: [{ translateY: markY }, { scale: markScale }] }}>
+          <Image source={mark} style={{ width: MARK, height: MARK }} accessibilityIgnoresInvertColors />
+        </Animated.View>
+        <Animated.View style={{ position: 'absolute', top: '50%', marginTop: MARK / 2 - 62, alignItems: 'center', gap: 4, opacity: textOpacity, transform: [{ translateY: textY }] }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 38, lineHeight: 52, fontFamily: fontsReady ? 'ReemKufi_700Bold' : undefined, fontWeight: fontsReady ? undefined : '800' }}>بالملعب</Text>
+          <Text style={{ color: '#C9CEF5', fontSize: 15, fontFamily: fontsReady ? 'ReadexPro_600SemiBold' : undefined }}>احجز · العب · اربح</Text>
+        </Animated.View>
       </View>
-    </View>
+
+      {/* شريط التحميل الأصفر بظل كحلي */}
+      <View style={{ position: 'absolute', bottom: 84, alignSelf: 'center', width: 150, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.18)', overflow: 'hidden' }}>
+        <Animated.View style={{ height: '100%', width: barWidth, borderRadius: 4, backgroundColor: YELLOW, borderBottomWidth: 2, borderBottomColor: NAVY }} />
+      </View>
+    </Animated.View>
   );
 }

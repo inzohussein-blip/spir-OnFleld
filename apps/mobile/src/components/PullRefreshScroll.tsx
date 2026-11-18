@@ -20,7 +20,6 @@ const THRESHOLD = 80;
 const MAX_PULL = 140;
 /** أقل مدة تبقى بيها الكرة تنط حتى الحركة تبين */
 const MIN_BALL_MS = 900;
-const NATIVE = Platform.OS !== 'web';
 
 type Phase = 'idle' | 'drip' | 'ball';
 
@@ -56,7 +55,8 @@ export function PullRefreshScroll({
   useEffect(() => {
     if (phase !== 'ball') return;
     spin.setValue(0);
-    const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 700, easing: Easing.linear, useNativeDriver: NATIVE }));
+    // على خيط JS مثل السحب نفسه: خلط الخيطين بنفس الحركة يخلّي الأندرويد يرفض إخفاء الكرة
+    const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 700, easing: Easing.linear, useNativeDriver: false }));
     loop.start();
     return () => loop.stop();
   }, [phase, spin]);
@@ -72,12 +72,27 @@ export function PullRefreshScroll({
     const started = Date.now();
     try {
       await g.onRefresh();
+    } catch {
+      // فشل التحديث ما يخلّي الكرة عالقة
     } finally {
       await new Promise((r) => setTimeout(r, Math.max(0, MIN_BALL_MS - (Date.now() - started))));
-      Animated.timing(pull, { toValue: 0, duration: 240, easing: Easing.in(Easing.cubic), useNativeDriver: false }).start(() => {
+      const done = () => {
+        if (!g.busy) return;
         setPhase('idle');
+        pull.setValue(0);
         g.busy = false;
-      });
+      };
+      // احتياط: الكرة تختفي حتى لو ما كملت الحركة لأي سبب
+      const safety = setTimeout(done, 600);
+      try {
+        Animated.timing(pull, { toValue: 0, duration: 240, easing: Easing.in(Easing.cubic), useNativeDriver: false }).start(() => {
+          clearTimeout(safety);
+          done();
+        });
+      } catch {
+        clearTimeout(safety);
+        done();
+      }
     }
   });
 
