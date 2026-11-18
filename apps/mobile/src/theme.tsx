@@ -2,14 +2,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { StyleSheet, useColorScheme } from 'react-native';
 
+/**
+ * نظام التصميم: لون أساسي واحد (أخضر الملعب) فوق خلفيات محايدة.
+ * بدون تدرّجات ولا أشرطة غامقة — الألوان القوية بس للأزرار والمختار والحالة.
+ */
 export type Palette = {
+  /** الأخضر الأساسي: الأزرار، المختار، الروابط */
   primary: string;
-  primaryDark: string;
+  /** خلفية خفيفة للأيقونات والمختار */
   primarySoft: string;
+  /** لون الكتابة فوق الأساسي */
+  onPrimary: string;
+  /** الذهبي: التقييم والمراكز الأولى بس */
   accent: string;
   accentSoft: string;
+  /** خلفية الصفحات */
   bg: string;
+  /** البطاقات والأشرطة */
   card: string;
+  /** حقول ومسارات وخلفيات ثانوية داخل البطاقة */
   cardAlt: string;
   text: string;
   muted: string;
@@ -18,76 +29,66 @@ export type Palette = {
   dangerSoft: string;
   warnSoft: string;
   warnText: string;
+  success: string;
+  successSoft: string;
   teamA: string;
   teamB: string;
+  /** خلفية رأس الصفحات الداخلية (نفس الخلفية حتى يبين الرأس جزء من الصفحة) */
   header: string;
-  onPrimary: string;
-  /** خلفية شريط العنوان الملوّن */
-  bandBg: string;
-  /** نفس الخلفية بتدرّج */
-  bandGradient: string;
-  /** تدرّج البرتقالي للمساحات الكبيرة (بطاقة اللاعب، شريط الحجز) */
-  primaryGradient: string;
+  /** لون أرضية الملعب بصور الملاعب الافتراضية */
+  pitch: string;
 };
 
-/** لون نص العنوان على شريط الرأس: أسود على الأبيض */
-export const headerText = (c: Palette) => (c.header === '#FFFFFF' ? '#121212' : '#FFFFFF');
-
-/**
- * ألوان «بالملعب» (أسود + غروب): أسود وأبيض للأساس، وتدرّج الغروب (برتقالي ← وردي أحمر)
- * للمهم بس: الأزرار، المختار، والتبويب.
- */
-export const SUNSET = 'linear-gradient(120deg, #FF6A00 0%, #E8173B 100%)';
-
 export const light: Palette = {
-  primary: '#F2402E',
-  primaryDark: '#E8173B',
-  primarySoft: '#FFEAE6',
-  accent: '#F5B700',
-  accentSoft: '#FFF4CC',
-  bg: '#F6F5F5',
+  primary: '#0B8A5F',
+  primarySoft: '#E6F4EE',
+  onPrimary: '#FFFFFF',
+  accent: '#D99A00',
+  accentSoft: '#FFF5D6',
+  bg: '#F4F6F5',
   card: '#FFFFFF',
-  cardAlt: '#F0EEEE',
-  text: '#121212',
-  muted: '#76716F',
-  border: '#ECE8E8',
+  cardAlt: '#EEF2F0',
+  text: '#14191A',
+  muted: '#66716E',
+  border: '#E2E8E5',
   danger: '#D92D20',
   dangerSoft: '#FDECEA',
-  warnSoft: '#FFF4CC',
+  warnSoft: '#FFF5D6',
   warnText: '#7A5B00',
+  success: '#0B8A5F',
+  successSoft: '#E6F4EE',
   teamA: '#2563EB',
-  teamB: '#FF6A00',
-  header: '#FFFFFF',
-  onPrimary: '#FFFFFF',
-  bandBg: '#121212',
-  bandGradient: 'linear-gradient(160deg, #0B0A0B 0%, #1A1617 65%, #2A1219 100%)',
-  primaryGradient: SUNSET,
+  teamB: '#E8590C',
+  header: '#F4F6F5',
+  pitch: '#1E8A55',
 };
 
 export const dark: Palette = {
-  primary: '#FF5A3C',
-  primaryDark: '#E8173B',
-  primarySoft: '#2A1619',
-  accent: '#F5C431',
-  accentSoft: '#3A3010',
-  bg: '#0B0A0B',
-  card: '#171516',
-  cardAlt: '#211E1F',
-  text: '#FAF7F8',
-  muted: '#8F8A8C',
-  border: '#2A2628',
+  primary: '#22A06B',
+  primarySoft: '#13261F',
+  onPrimary: '#FFFFFF',
+  accent: '#F0B429',
+  accentSoft: '#33290F',
+  bg: '#0D1110',
+  card: '#161B1A',
+  cardAlt: '#1F2624',
+  text: '#F1F4F3',
+  muted: '#93A09C',
+  border: '#27302D',
   danger: '#FF6B6B',
   dangerSoft: '#3A1A1F',
-  warnSoft: '#3A3010',
+  warnSoft: '#33290F',
   warnText: '#F5D77A',
+  success: '#34C38F',
+  successSoft: '#13261F',
   teamA: '#6F9BFF',
   teamB: '#FF9A4D',
-  header: '#121011',
-  onPrimary: '#FFFFFF',
-  bandBg: '#000000',
-  bandGradient: 'linear-gradient(160deg, #000000 0%, #141112 65%, #24121A 100%)',
-  primaryGradient: SUNSET,
+  header: '#0D1110',
+  pitch: '#1A6B45',
 };
+
+/** لون نص العنوان على رأس الصفحة */
+export const headerText = (c: Palette) => c.text;
 
 export const fonts = {
   regular: 'Cairo_400Regular',
@@ -95,7 +96,23 @@ export const fonts = {
   bold: 'Cairo_700Bold',
 };
 
-export const radius = 14;
+/** المسافات: كلها من مضاعفات 4 */
+export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
+
+/** الزوايا: 12 للأزرار والحقول، 16 للبطاقات */
+export const radius = 12;
+export const cardRadius = 16;
+
+/** أحجام الخطوط الموحّدة [الحجم، ارتفاع السطر] */
+export const type = {
+  largeTitle: { fontFamily: fonts.bold, fontSize: 26, lineHeight: 38 },
+  title: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 30 },
+  headline: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 26 },
+  body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 24 },
+  label: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 22 },
+  caption: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 20 },
+  micro: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 16 },
+} as const;
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 interface ThemeState {

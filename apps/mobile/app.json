@@ -15,7 +15,7 @@
       "package": "com.balmalaab.app",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#0B0A0B",
+        "backgroundColor": "#0D1110",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -29,7 +29,7 @@
       "shortName": "بالملعب",
       "lang": "ar",
       "dir": "rtl",
-      "themeColor": "#0B0A0B",
+      "themeColor": "#0D1110",
       "backgroundColor": "#F4F7F5",
       "display": "standalone"
     },
@@ -49,16 +49,16 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 140,
           "resizeMode": "contain",
-          "backgroundColor": "#0B0A0B",
+          "backgroundColor": "#0D1110",
           "dark": {
-            "backgroundColor": "#0B0A0B"
+            "backgroundColor": "#0D1110"
           }
         }
       ],
       [
         "expo-notifications",
         {
-          "color": "#F2402E"
+          "color": "#0B8A5F"
         }
       ],
       [

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActionPill, SPOTS } from '../../components/MatchRow';
+import { ActionPill, useSpotsColor } from '../../components/MatchRow';
 import { Avatar } from '../../components/Avatar';
 import { OfflineBanner, useToast } from '../../components/feedback';
 import { hasRegistrationAlert, notificationsSupported, scheduleRegistrationAlert } from '../../lib/notifications';
@@ -18,7 +18,7 @@ import { matchAction } from '../../lib/matchAction';
 import { errMsg, useAsync, useNow, useSession } from '../../lib/session';
 import { balanceTeams } from '../../lib/teamBalance';
 import type { MatchDetail, RosterEntry, Team } from '../../lib/types';
-import { fonts, themed, useColors } from '../../theme';
+import { cardRadius, fonts, radius, space, themed, useColors } from '../../theme';
 
 function PlayerRow({ r, me, onPress }: { r: RosterEntry; me: boolean; onPress: () => void }) {
   const st = useStyles();
@@ -68,6 +68,7 @@ export default function MatchScreen() {
   const router = useRouter();
   const c = useColors();
   const st = useStyles();
+  const spotsColor = useSpotsColor();
   const { userId } = useSession();
   const insets = useSafeAreaInsets();
   const now = useNow(30_000);
@@ -191,11 +192,11 @@ export default function MatchScreen() {
           {m.motm_name ? (
             <Pressable onPress={() => m.motm_player_id && openPlayer(m.motm_player_id)} style={st.motm} accessibilityRole="button">
               <View style={st.motmIcon}>
-                <Ionicons name="medal" size={22} color="#7A5B00" />
+                <Ionicons name="medal" size={22} color={c.accent} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: fonts.bold, fontSize: 12, color: '#7A5B00' }}>رجل المباراة</Text>
-                <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: '#3D2E00' }}>{m.motm_name} 🏅</Text>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 12, color: c.warnText }}>رجل المباراة</Text>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: c.text }}>{m.motm_name} 🏅</Text>
               </View>
             </Pressable>
           ) : null}
@@ -211,7 +212,7 @@ export default function MatchScreen() {
           <View style={st.playersCard}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
               <Text style={{ fontFamily: fonts.bold, fontSize: 16 }}>اللاعبين: {joined.length} من {m.max_players}</Text>
-              <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: finished ? c.muted : SPOTS[spots.tone].fg }}>
+              <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: finished ? c.muted : spotsColor(spots.tone) }}>
                 {finished ? 'انتهت' : spots.left === 0 ? 'مكتملة' : spots.left === 1 ? 'باقي مكان واحد' : spots.left === 2 ? 'باقي مكانين' : `باقي ${spots.left} أماكن`}
               </Text>
             </View>
@@ -282,10 +283,9 @@ export default function MatchScreen() {
 
       {/* الشريط السفلي الملوّن: الزر + السعر */}
       <View style={[st.bottomBar, { paddingBottom: Math.max(insets.bottom, 18) }]}>
-        <View style={st.handle} />
         <View style={st.barRow}>
           <View style={{ flex: 1 }}>
-            <ActionPill action={action} busy={actions.busyId === m.id} onPress={() => void actions.join(m)} big onBar />
+            <ActionPill action={action} busy={actions.busyId === m.id} onPress={() => void actions.join(m)} big />
           </View>
           {m.cost_per_player ? (
             <View>
@@ -330,8 +330,8 @@ function SmallAction({ icon, label, onPress, danger }: { icon: IconName; label: 
 const useStyles = themed((c) => ({
   player: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
   initial: { width: 48, height: 48, borderRadius: 24, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' },
-  teamCol: { flex: 1, borderWidth: 2, borderRadius: 14, padding: 10, gap: 2, backgroundColor: c.card },
-  hero: { minHeight: 220, backgroundColor: '#1C8B4A', overflow: 'hidden', borderBottomLeftRadius: 26, borderBottomRightRadius: 26, justifyContent: 'flex-end' },
+  teamCol: { flex: 1, borderWidth: 2, borderRadius: radius, padding: 10, gap: 2, backgroundColor: c.card },
+  hero: { minHeight: 220, backgroundColor: c.pitch, overflow: 'hidden', justifyContent: 'flex-end' },
   heroHalf: { position: 'absolute', top: 0, bottom: 0, left: '50%', width: 3, backgroundColor: 'rgba(255,255,255,0.35)' },
   heroCircle: { position: 'absolute', width: 96, height: 96, borderRadius: 48, borderWidth: 3, borderColor: 'rgba(255,255,255,0.35)', top: '50%', marginTop: -48, left: '50%', marginLeft: -47 },
   heroBoxTop: { position: 'absolute', left: -3, width: 58, top: '50%', marginTop: -50, height: 100, borderWidth: 3, borderColor: 'rgba(255,255,255,0.35)' },
@@ -341,29 +341,28 @@ const useStyles = themed((c) => ({
   heroSub: { color: 'rgba(255,255,255,0.9)', fontSize: 13, fontFamily: fonts.semibold },
   heroTitle: { color: '#fff', fontSize: 25, lineHeight: 38, fontFamily: fonts.bold },
   heroTime: { color: '#fff', fontSize: 15, fontFamily: fonts.bold },
-  shareBtn: { position: 'absolute', left: 16, height: 40, paddingHorizontal: 14, borderRadius: 20, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', gap: 6 },
+  shareBtn: { position: 'absolute', left: 16, height: 44, paddingHorizontal: 16, borderRadius: 22, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', gap: 6 },
   shareText: { color: c.primary, fontFamily: fonts.bold, fontSize: 14, lineHeight: 22 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  tile: { flexBasis: '47%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.card, borderRadius: 18, borderWidth: 1, borderColor: c.border, padding: 11 },
-  tileIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  playersCard: { backgroundColor: c.card, borderRadius: 20, borderWidth: 1, borderColor: c.border, padding: 14, gap: 6 },
-  fillTrack: { height: 8, borderRadius: 4, backgroundColor: c.cardAlt, overflow: 'hidden', marginBottom: 6 },
+  tile: { flexBasis: '47%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.card, borderRadius: cardRadius, borderWidth: 1, borderColor: c.border, padding: space.md },
+  tileIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  playersCard: { backgroundColor: c.card, borderRadius: cardRadius, borderWidth: 1, borderColor: c.border, padding: space.lg, gap: 6 },
+  fillTrack: { height: 6, borderRadius: 3, backgroundColor: c.cardAlt, overflow: 'hidden', marginBottom: 6 },
   fillBar: { height: '100%', borderRadius: 4 },
   slots: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginTop: 4 },
   slot: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderStyle: 'dashed', borderColor: c.border },
-  back: { position: 'absolute', right: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' },
+  back: { position: 'absolute', right: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
   body: { padding: 16, gap: 12 },
-  small: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.primarySoft, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
-  scoreBoard: { backgroundColor: '#0E1730', borderRadius: 18, paddingVertical: 18, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },
+  small: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.card, borderWidth: 1, borderColor: c.border, borderRadius: radius, paddingHorizontal: 14, minHeight: 40 },
+  scoreBoard: { backgroundColor: '#14191A', borderRadius: cardRadius, paddingVertical: 18, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },
   scoreSide: { flex: 1, alignItems: 'center' },
   scoreTeam: { fontFamily: fonts.bold, fontSize: 15 },
   scoreBig: { fontFamily: fonts.bold, fontSize: 40, lineHeight: 56, color: '#fff', minWidth: 36, textAlign: 'center' },
   scoreDash: { fontFamily: fonts.bold, fontSize: 32, lineHeight: 56, color: 'rgba(255,255,255,0.6)', marginHorizontal: 6 },
-  bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: c.primary, backgroundImage: c.primaryGradient, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingTop: 10, paddingHorizontal: 20 },
-  handle: { alignSelf: 'center', width: 52, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.75)', marginBottom: 14 },
+  bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: c.card, borderTopWidth: 1, borderTopColor: c.border, paddingTop: space.md, paddingHorizontal: space.lg },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 18 },
-  price: { fontFamily: fonts.bold, fontSize: 20, color: '#fff' },
-  motm: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 18, padding: 12, backgroundColor: '#F5C431', backgroundImage: 'linear-gradient(135deg, #FFE58A 0%, #F5C431 60%, #E0A91F 100%)' },
-  motmIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.55)', alignItems: 'center', justifyContent: 'center' },
-  oldPrice: { color: 'rgba(255,255,255,0.75)', fontSize: 11, lineHeight: 15, textDecorationLine: 'line-through' },
+  price: { fontFamily: fonts.bold, fontSize: 20, color: c.text },
+  motm: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: cardRadius, padding: space.md, backgroundColor: c.accentSoft },
+  motmIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center' },
+  oldPrice: { color: c.muted, fontSize: 11, lineHeight: 15, textDecorationLine: 'line-through' },
 }));

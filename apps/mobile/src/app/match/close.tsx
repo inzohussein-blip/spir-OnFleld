@@ -137,6 +137,6 @@ const useStyles = themed((c) => ({
   optText: { fontFamily: fonts.bold, fontSize: 13, color: c.muted },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.card, borderRadius: 999, borderWidth: 1, borderColor: c.border, paddingHorizontal: 12, paddingVertical: 6 },
-  chipOn: { backgroundColor: '#FFE58A', borderColor: '#F5C431' },
+  chipOn: { backgroundColor: c.accentSoft, borderColor: c.accent },
   confirm: { backgroundColor: c.card, borderRadius: 16, borderWidth: 1, borderColor: c.border, padding: 14, gap: 8 },
 }));

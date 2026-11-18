@@ -21,7 +21,7 @@ const LOOK: Record<Ad['template'], { bg: string; base: string; accent: string; i
 };
 
 /** أطول شوية من تحت حتى العنوان والتفاصيل والزر ياخذون راحتهم */
-export const AD_HEIGHT = 178;
+export const AD_HEIGHT = 168;
 
 /** إعلان واحد بأحد القوالب الستة. `now` للعد التنازلي */
 export function AdBanner({ ad, now, onPress, onPressIn, onPressOut, style }: { ad: Ad; now: number; onPress?: (e: GestureResponderEvent) => void; onPressIn?: (e: GestureResponderEvent) => void; onPressOut?: () => void; style?: ViewStyle }) {
@@ -210,7 +210,7 @@ function Stripes() {
 }
 
 const fill: ViewStyle = { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 };
-const box: ViewStyle = { height: AD_HEIGHT, borderRadius: 22, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 18 };
+const box: ViewStyle = { height: AD_HEIGHT, borderRadius: 16, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 18 };
 const shine: ViewStyle = { position: 'absolute', width: 260, height: 260, borderRadius: 130, top: -170, right: -60, backgroundColor: 'rgba(255,255,255,0.10)' };
 const goldGlow: ViewStyle = { position: 'absolute', width: 170, height: 170, borderRadius: 85, top: -10, left: -30, backgroundColor: 'rgba(245,196,49,0.16)' };
 const adTag = { position: 'absolute' as const, top: 7, left: 12, color: 'rgba(255,255,255,0.65)', fontFamily: fonts.semibold, fontSize: 9.5, lineHeight: 14 };

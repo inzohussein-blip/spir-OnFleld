@@ -38,7 +38,7 @@ export default function WalletScreen() {
               <Text style={{ fontFamily: fonts.semibold }}>{t.note}</Text>
               <Text variant="small" style={{ color: c.muted }}>{KIND[t.kind].label} · {timeAgo(t.created_at)}</Text>
             </View>
-            <Text style={{ fontFamily: fonts.bold, color: t.amount >= 0 ? '#1C8B4A' : c.danger }}>{formatSigned(t.amount)}</Text>
+            <Text style={{ fontFamily: fonts.bold, color: t.amount >= 0 ? c.success : c.danger }}>{formatSigned(t.amount)}</Text>
           </Row>
         ))}
       </Card>
