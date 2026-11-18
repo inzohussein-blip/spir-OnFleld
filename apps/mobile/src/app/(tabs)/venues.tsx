@@ -29,12 +29,13 @@ export default function Venues() {
 
   return (
     <View style={st.screen}>
-      <PageHeader title="الملاعب" subtitle={data ? venuesCount(data.length) : undefined} />
       <ScrollView
         contentContainerStyle={st.content}
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={c.primary} colors={[c.primary]} />}
       >
+        <PageHeader title="الملاعب" subtitle={data ? venuesCount(data.length) : undefined} />
+        <View style={st.body}>
         <SearchField value={q} onChange={setQ} placeholder="ابحث عن ملعب أو منطقة" />
 
         <OfflineBanner show={offline} />
@@ -87,6 +88,7 @@ export default function Venues() {
             </Pressable>
           );
         })}
+        </View>
       </ScrollView>
     </View>
   );
@@ -94,7 +96,8 @@ export default function Venues() {
 
 const useStyles = themed((c) => ({
   screen: { flex: 1, backgroundColor: c.bg },
-  content: { paddingHorizontal: space.lg, paddingBottom: space.xl, gap: space.md },
+  content: { paddingBottom: space.xl },
+  body: { paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.md },
   card: { flexDirection: 'row', gap: space.md, alignItems: 'center', backgroundColor: c.card, borderRadius: cardRadius, borderWidth: 1, borderColor: c.border, padding: space.md },
   thumb: { width: 72, height: 72, borderRadius: radius, backgroundColor: c.pitch, overflow: 'hidden' },
   thumbLine: { position: 'absolute', top: 0, bottom: 0, left: '50%', width: 1.5, backgroundColor: 'rgba(255,255,255,0.35)' },

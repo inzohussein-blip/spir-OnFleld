@@ -89,15 +89,17 @@ export default function Profile() {
 
   return (
     <View style={st.screen}>
-      <PageHeader title="حسابي" />
-      <ScrollView contentContainerStyle={st.content}>
+      <ScrollView contentContainerStyle={{ paddingBottom: space.xl }}>
+        <PageHeader title="حسابي" />
+        <View style={st.content}>
         {/* بطاقة اللاعب */}
-        <View style={st.card}>
+        <View style={st.playerCard}>
+          <View style={st.cardStripe} />
           <View style={st.cardTop}>
             <Pressable onPress={changePhoto} accessibilityRole="button" accessibilityLabel="تغيير الصورة الشخصية">
-              <Avatar name={profile.full_name} url={profile.avatar_url} size={64} />
+              <Avatar name={profile.full_name} url={profile.avatar_url} size={64} ring="rgba(255,255,255,0.7)" />
               <View style={st.camera}>
-                <Ionicons name={uploading ? 'hourglass-outline' : 'camera'} size={13} color={c.text} />
+                <Ionicons name={uploading ? 'hourglass-outline' : 'camera'} size={13} color={c.primary} />
               </View>
             </Pressable>
             <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
@@ -117,7 +119,7 @@ export default function Profile() {
                   accessibilityLabel={`رقمك ${profile.public_id} — اضغط للنسخ`}
                 >
                   <Text style={st.idText}>ID {profile.public_id}</Text>
-                  <Ionicons name="copy-outline" size={13} color={c.muted} />
+                  <Ionicons name="copy-outline" size={13} color="#FFFFFF" />
                 </Pressable>
               ) : null}
             </View>
@@ -196,6 +198,7 @@ export default function Profile() {
             </Row>
           </View>
         ) : null}
+        </View>
       </ScrollView>
     </View>
   );
@@ -203,28 +206,30 @@ export default function Profile() {
 
 const useStyles = themed((c) => ({
   screen: { flex: 1, backgroundColor: c.bg },
-  content: { paddingHorizontal: space.lg, paddingBottom: space.xl, gap: space.xl },
+  content: { paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.xl },
   card: { backgroundColor: c.card, borderRadius: cardRadius, borderWidth: 1, borderColor: c.border, padding: space.lg, gap: space.lg },
+  playerCard: { backgroundColor: c.primary, backgroundImage: c.primaryGradient, borderRadius: cardRadius + 4, padding: space.lg, gap: space.lg, overflow: 'hidden', boxShadow: '0 8px 20px rgba(232,23,59,0.25)' },
+  cardStripe: { position: 'absolute', width: 140, height: 360, backgroundColor: 'rgba(255,255,255,0.07)', top: -80, left: 40, transform: [{ rotate: '25deg' }] },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  camera: { position: 'absolute', bottom: -2, left: -2, width: 26, height: 26, borderRadius: 13, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border },
-  cardName: { ...type.title, fontSize: 19 },
-  cardMeta: { ...type.caption, color: c.muted },
-  idPill: { flexDirection: 'row', alignItems: 'center', gap: space.xs + 2, alignSelf: 'flex-start', backgroundColor: c.cardAlt, borderRadius: 999, paddingHorizontal: 10, minHeight: 28, marginTop: 2 },
-  idText: { ...type.micro, fontSize: 12, lineHeight: 20, color: c.muted, letterSpacing: 0.4 },
-  rating: { backgroundColor: c.accentSoft, borderRadius: radius, paddingHorizontal: space.md, paddingVertical: space.xs, alignItems: 'center', minWidth: 64 },
-  ratingValue: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 34, color: c.accent },
-  ratingLabel: { ...type.micro, color: c.accent },
-  stats: { flexDirection: 'row', backgroundColor: c.cardAlt, borderRadius: radius, paddingVertical: space.sm },
+  camera: { position: 'absolute', bottom: -2, left: -2, width: 26, height: 26, borderRadius: 13, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  cardName: { ...type.title, fontSize: 19, color: '#FFFFFF' },
+  cardMeta: { ...type.caption, color: 'rgba(255,255,255,0.9)' },
+  idPill: { flexDirection: 'row', alignItems: 'center', gap: space.xs + 2, alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 999, paddingHorizontal: 10, minHeight: 28, marginTop: 2 },
+  idText: { ...type.micro, fontSize: 12, lineHeight: 20, color: '#FFFFFF', letterSpacing: 0.4 },
+  rating: { backgroundColor: '#FFFFFF', borderRadius: radius, paddingHorizontal: space.md, paddingVertical: space.xs, alignItems: 'center', minWidth: 64 },
+  ratingValue: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 34, color: c.primary },
+  ratingLabel: { ...type.micro, color: c.primary },
+  stats: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: radius, paddingVertical: space.sm },
   statCell: { flex: 1, alignItems: 'center' },
-  statSep: { borderRightWidth: 1, borderRightColor: c.border },
-  statValue: { ...type.title, fontSize: 18, lineHeight: 28 },
-  statLabel: { ...type.caption, color: c.muted },
+  statSep: { borderRightWidth: 1, borderRightColor: 'rgba(255,255,255,0.25)' },
+  statValue: { ...type.title, fontSize: 18, lineHeight: 28, color: '#FFFFFF' },
+  statLabel: { ...type.caption, color: 'rgba(255,255,255,0.85)' },
   value: { ...type.caption, color: c.muted },
   badge: { minWidth: 22, height: 22, borderRadius: 11, backgroundColor: c.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   badgeText: { color: '#fff', fontFamily: fonts.bold, fontSize: 12, lineHeight: 18 },
   picker: { flexDirection: 'row', backgroundColor: c.cardAlt, borderRadius: 10, padding: 3 },
   pickOpt: { paddingHorizontal: 10, minHeight: 30, justifyContent: 'center', borderRadius: 8 },
-  pickOn: { backgroundColor: c.card, boxShadow: '0 1px 3px rgba(0,0,0,0.12)' },
+  pickOn: { backgroundColor: c.primary, backgroundImage: c.primaryGradient },
   pickText: { ...type.micro, fontSize: 12, lineHeight: 20, color: c.muted },
-  pickTextOn: { color: c.text },
+  pickTextOn: { color: '#FFFFFF' },
 }));

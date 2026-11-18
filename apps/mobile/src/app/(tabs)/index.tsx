@@ -63,21 +63,22 @@ export default function Home() {
 
   return (
     <View style={st.screen}>
-      <PageHeader
-        eyebrow={`${greetingFor(hour)}${firstName ? `، ${firstName}` : ''}`}
-        title={readyHeadline(hour)}
-        subtitle={summary}
-        actions={
-          <>
-            <IconButton icon="search-outline" label="ابحث عن ملعب أو منطقة" onPress={() => router.push('/venues')} />
-            <IconButton icon="notifications-outline" label={hasUnread ? 'الإشعارات — يوجد جديد' : 'الإشعارات'} dot={hasUnread} onPress={() => router.push('/notifications')} />
-          </>
-        }
-      />
       <ScrollView
         contentContainerStyle={st.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void Promise.all([reload(), reloadAds(), reloadNotes()])} tintColor={c.primary} colors={[c.primary]} />}
       >
+        <PageHeader
+            eyebrow={`${greetingFor(hour)}${firstName ? `، ${firstName}` : ''}`}
+            title={readyHeadline(hour)}
+            subtitle={summary}
+            actions={
+              <>
+                  <IconButton onBand icon="search-outline" label="ابحث عن ملعب أو منطقة" onPress={() => router.push('/venues')} />
+                  <IconButton onBand icon="notifications-outline" label={hasUnread ? 'الإشعارات — يوجد جديد' : 'الإشعارات'} dot={hasUnread} onPress={() => router.push('/notifications')} />
+              </>
+            }
+          />
+        <View style={st.body}>
         {ads?.length ? <AdCarousel ads={ads} now={now} /> : null}
 
         {/* أيام الأسبوع: سبعة مربعات متساوية — الرقم وتحته اليوم */}
@@ -123,6 +124,7 @@ export default function Home() {
         {dayMatches.map((m) => (
           <MatchRow key={m.id} match={m} now={now} busy={busyId === m.id} onAction={() => void join(m)} />
         ))}
+        </View>
       </ScrollView>
     </View>
   );
@@ -130,10 +132,11 @@ export default function Home() {
 
 const useStyles = themed((c) => ({
   screen: { flex: 1, backgroundColor: c.bg },
-  content: { paddingHorizontal: space.lg, paddingBottom: space.xl, gap: space.md },
+  content: { paddingBottom: space.xl },
+  body: { paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.md },
   days: { flexDirection: 'row', gap: space.xs + 2 },
   day: { flex: 1, minHeight: 64, borderRadius: radius, alignItems: 'center', justifyContent: 'center', backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
-  dayActive: { backgroundColor: c.primary, borderColor: c.primary },
+  dayActive: { backgroundColor: c.primary, backgroundImage: c.primaryGradient, borderColor: 'transparent', boxShadow: '0 5px 12px rgba(232,23,59,0.28)' },
   dayName: { ...type.micro, color: c.muted },
   dayNum: { ...type.headline, fontSize: 17, lineHeight: 24 },
   dayDot: { width: 4, height: 4, borderRadius: 2, marginTop: 2, backgroundColor: 'transparent' },

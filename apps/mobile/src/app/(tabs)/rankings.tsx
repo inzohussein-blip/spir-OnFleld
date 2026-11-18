@@ -28,11 +28,12 @@ export default function Rankings() {
 
   return (
     <View style={st.screen}>
-      <PageHeader title="التصنيفات" subtitle="النقاط من نتائج مباريات الشهر" />
       <ScrollView
         contentContainerStyle={st.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={c.primary} colors={[c.primary]} />}
       >
+        <PageHeader title="التصنيفات" subtitle="النقاط من نتائج مباريات الشهر" />
+        <View style={st.body}>
         <OfflineBanner show={offline} />
 
         {/* الشهر */}
@@ -86,6 +87,7 @@ export default function Rankings() {
           </ListGroup>
         ) : null}
         {rows.length ? <Text style={st.legend}>النقاط: فوز 3 · تعادل 1 · هدف 2 · صناعة 1 · رجل المباراة 3</Text> : null}
+        </View>
       </ScrollView>
     </View>
   );
@@ -93,7 +95,8 @@ export default function Rankings() {
 
 const useStyles = themed((c) => ({
   screen: { flex: 1, backgroundColor: c.bg },
-  content: { paddingHorizontal: space.lg, paddingBottom: space.xl, gap: space.lg },
+  content: { paddingBottom: space.xl },
+  body: { paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.lg },
   month: { flexDirection: 'row', alignItems: 'center', gap: space.sm, backgroundColor: c.card, borderRadius: cardRadius, borderWidth: 1, borderColor: c.border, padding: space.sm },
   monthTitle: { ...type.headline },
   monthHint: { ...type.caption, color: c.muted },

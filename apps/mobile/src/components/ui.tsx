@@ -1,5 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { createElement, type ComponentProps, type ReactNode } from 'react';
+import { setStatusBarStyle } from 'expo-status-bar';
+import { useFocusEffect } from 'expo-router';
+import { createElement, useCallback, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -14,7 +16,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toWesternDigits } from '../lib/format';
-import { cardRadius, fonts, radius, space, themed, type, useColors } from '../theme';
+import { cardRadius, fonts, radius, space, themed, type, useColors, useTheme } from '../theme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 type Variant = 'body' | 'title' | 'h2' | 'muted' | 'small';
@@ -45,26 +47,38 @@ export function Screen({ children, scroll = true, style }: { children: ReactNode
 }
 
 /**
- * رأس الأقسام الرئيسية: عنوان كبير على خلفية الصفحة نفسها، وسطر صغير تحته،
- * وأزرار أيقونات على الطرف. نفس الشكل بكل التبويبات.
+ * رأس الأقسام الرئيسية: شريط غامق بتوهّج برتقالي وزوايا سفلية دائرية،
+ * عنوان أبيض كبير وسطر صغير تحته، وأزرار أيقونات على الطرف. نفس الشكل بكل التبويبات.
  */
-export function PageHeader({ title, subtitle, actions, eyebrow }: { title: string; subtitle?: string; actions?: ReactNode; eyebrow?: string }) {
+export function PageHeader({ title, subtitle, actions, eyebrow, children }: { title: string; subtitle?: string; actions?: ReactNode; eyebrow?: string; children?: ReactNode }) {
   const s = useStyles();
   const insets = useSafeAreaInsets();
+  const { scheme } = useTheme();
+  // الرأس غامق: أرقام الساعة والبطارية بيضاء، وترجع مثل ما جانت لما نطلع
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('light');
+      return () => setStatusBarStyle(scheme === 'dark' ? 'light' : 'dark');
+    }, [scheme]),
+  );
   return (
-    <View style={[s.pageHeader, { paddingTop: insets.top + space.md }]}>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        {eyebrow ? <Text style={s.pageEyebrow} numberOfLines={1}>{eyebrow}</Text> : null}
-        <Text style={s.pageTitle} numberOfLines={1}>{title}</Text>
-        {subtitle ? <Text style={s.pageSubtitle} numberOfLines={1}>{subtitle}</Text> : null}
+    <View style={[s.band, { paddingTop: insets.top + space.md }]}>
+      <View style={s.glow} pointerEvents="none" />
+      <View style={s.bandRow}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          {eyebrow ? <Text style={s.bandEyebrow} numberOfLines={1}>{eyebrow}</Text> : null}
+          <Text style={s.bandTitle} numberOfLines={1}>{title}</Text>
+          {subtitle ? <Text style={s.bandSubtitle} numberOfLines={1}>{subtitle}</Text> : null}
+        </View>
+        {actions ? <View style={s.pageActions}>{actions}</View> : null}
       </View>
-      {actions ? <View style={s.pageActions}>{actions}</View> : null}
+      {children}
     </View>
   );
 }
 
-/** زر أيقونة دائري بحجم ثابت (44) — مع نقطة تنبيه اختيارية */
-export function IconButton({ icon, onPress, label, dot, disabled }: { icon: IconName; onPress: () => void; label: string; dot?: boolean; disabled?: boolean }) {
+/** زر أيقونة دائري بحجم ثابت (44) — `onBand` للزر فوق الرأس الغامق، مع نقطة تنبيه اختيارية */
+export function IconButton({ icon, onPress, label, dot, disabled, onBand }: { icon: IconName; onPress: () => void; label: string; dot?: boolean; disabled?: boolean; onBand?: boolean }) {
   const s = useStyles();
   const c = useColors();
   return (
@@ -74,10 +88,10 @@ export function IconButton({ icon, onPress, label, dot, disabled }: { icon: Icon
       hitSlop={4}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={({ pressed }) => [s.iconBtn, disabled && { opacity: 0.35 }, pressed && { backgroundColor: c.cardAlt }]}
+      style={({ pressed }) => [s.iconBtn, onBand && s.iconBtnBand, disabled && { opacity: 0.35 }, pressed && { opacity: 0.75 }]}
     >
-      <Ionicons name={icon} size={21} color={c.text} />
-      {dot ? <View style={s.iconDot} /> : null}
+      <Ionicons name={icon} size={21} color={onBand ? '#FFFFFF' : c.primary} />
+      {dot ? <View style={[s.iconDot, onBand && { borderColor: 'transparent' }]} /> : null}
     </Pressable>
   );
 }
@@ -158,7 +172,7 @@ export function SearchField({ value, onChange, placeholder }: { value: string; o
   const c = useColors();
   return (
     <View style={s.search}>
-      <Ionicons name="search" size={19} color={c.muted} />
+      <Ionicons name="search" size={20} color={c.primary} />
       <TextInput
         value={value}
         onChangeText={(v) => onChange(toWesternDigits(v))}
@@ -198,8 +212,8 @@ export function Segmented<T extends string>({ options, value, onChange }: { opti
         const active = o.value === value;
         return (
           <Pressable key={o.value} onPress={() => onChange(o.value)} style={[s.segmentItem, active && s.segmentActive]} accessibilityRole="tab" accessibilityState={{ selected: active }}>
-            {o.icon ? <Ionicons name={o.icon} size={16} color={active ? c.text : c.muted} /> : null}
-            <Text style={[s.segmentText, { color: active ? c.text : c.muted }]}>{o.label}</Text>
+            {o.icon ? <Ionicons name={o.icon} size={16} color={active ? c.onPrimary : c.muted} /> : null}
+            <Text style={[s.segmentText, { color: active ? c.onPrimary : c.muted }]}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -361,18 +375,22 @@ export const useStyles = themed((c) => ({
   mutedText: { color: c.muted },
   screen: { flex: 1, backgroundColor: c.bg },
   screenPad: { padding: space.lg, gap: space.md, paddingBottom: space.xxl },
-  pageHeader: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm, paddingHorizontal: space.lg, paddingBottom: space.md, backgroundColor: c.bg },
-  pageEyebrow: { ...type.caption, color: c.muted },
-  pageTitle: { ...type.largeTitle },
-  pageSubtitle: { ...type.caption, color: c.muted, marginTop: -4 },
+  band: { backgroundColor: c.bandBg, backgroundImage: c.bandGradient, paddingHorizontal: space.lg, paddingBottom: space.xl, borderBottomLeftRadius: 28, borderBottomRightRadius: 28, overflow: 'hidden', gap: space.md },
+  // توهّج الغروب: تدرّج ناعم من الزاوية بدل دوائر
+  glow: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundImage: 'linear-gradient(215deg, rgba(255,106,0,0.34) 0%, rgba(232,23,59,0.16) 45%, rgba(232,23,59,0) 80%)' },
+  bandRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm },
+  bandEyebrow: { ...type.caption, color: 'rgba(255,255,255,0.75)' },
+  bandTitle: { ...type.largeTitle, color: '#FFFFFF' },
+  bandSubtitle: { ...type.caption, color: 'rgba(255,255,255,0.8)', marginTop: -4 },
   pageActions: { flexDirection: 'row', gap: space.sm, paddingBottom: 4 },
   iconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.card, borderWidth: 1, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
-  iconDot: { position: 'absolute', top: 10, right: 11, width: 9, height: 9, borderRadius: 5, backgroundColor: c.danger, borderWidth: 2, borderColor: c.card },
+  iconBtnBand: { backgroundColor: 'rgba(255,255,255,0.14)', borderColor: 'rgba(255,255,255,0.12)' },
+  iconDot: { position: 'absolute', top: 10, right: 11, width: 9, height: 9, borderRadius: 5, backgroundColor: '#FF5A5F', borderWidth: 2, borderColor: c.card },
   card: { backgroundColor: c.card, borderRadius: cardRadius, padding: space.lg, gap: space.sm, borderWidth: 1, borderColor: c.border },
   btn: { minHeight: 48, borderRadius: radius, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.lg },
   btnInner: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  btnPrimary: { backgroundColor: c.primary },
-  btnOutline: { backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
+  btnPrimary: { backgroundColor: c.primary, backgroundImage: c.primaryGradient },
+  btnOutline: { backgroundColor: c.card, borderWidth: 1.5, borderColor: c.primary },
   btnDanger: { backgroundColor: c.dangerSoft },
   btnGhost: { backgroundColor: 'transparent' },
   btnText: { ...type.headline, fontSize: 15 },
@@ -392,11 +410,11 @@ export const useStyles = themed((c) => ({
   search: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, backgroundColor: c.card, borderRadius: radius, borderWidth: 1, borderColor: c.border, paddingHorizontal: 14 },
   searchInput: { flex: 1, minHeight: 46, fontFamily: fonts.regular, fontSize: 15, color: c.text, outlineWidth: 0 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 14, borderRadius: 18, borderWidth: 1, borderColor: c.border, backgroundColor: c.card },
-  chipActive: { backgroundColor: c.primary, borderColor: c.primary },
+  chipActive: { backgroundColor: c.primary, backgroundImage: c.primaryGradient, borderColor: 'transparent' },
   chipText: { ...type.label, fontSize: 13 },
   segment: { flexDirection: 'row', backgroundColor: c.cardAlt, borderRadius: radius, padding: 3, gap: 3 },
   segmentItem: { flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', minHeight: 38, borderRadius: radius - 3 },
-  segmentActive: { backgroundColor: c.card, boxShadow: '0 1px 3px rgba(0,0,0,0.12)' },
+  segmentActive: { backgroundColor: c.primary, backgroundImage: c.primaryGradient },
   segmentText: { ...type.label, fontSize: 13 },
   badge: { paddingHorizontal: 10, borderRadius: 999, alignSelf: 'flex-start' },
   badgeText: { ...type.micro, lineHeight: 22 },

@@ -70,7 +70,7 @@ export function buildMapHtml(o: MapOptions): string {
     initial: o.initialIds ?? null,
     rtl: RTL_PLUGIN,
   };
-  const bg = o.dark ? '#0D1110' : '#EEF2F0';
+  const bg = o.dark ? '#0B1226' : '#EEF2FA';
   return `<!doctype html>
 <html lang="ar" dir="rtl"><head>
 <meta charset="utf-8">
@@ -80,8 +80,8 @@ export function buildMapHtml(o: MapOptions): string {
 html,body,#map{margin:0;height:100%;width:100%;background:${bg};overflow:hidden}
 body{font-family:Cairo,system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;-webkit-tap-highlight-color:transparent}
 .pin{display:flex;flex-direction:column;align-items:center;cursor:pointer;transform-origin:bottom center;transition:transform .15s}
-.pin .tag{background:${o.dark ? '#161B1A' : '#fff'};color:${o.dark ? '#F1F4F3' : '#14191A'};font-weight:700;font-size:12px;line-height:1;padding:7px 10px;border-radius:14px;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.25);border:1.5px solid ${o.primary}}
-.pin .dot{width:14px;height:14px;border-radius:50%;background:${o.primary};border:3px solid #fff;margin-top:4px;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.pin .tag{background:${o.dark ? '#16213F' : '#fff'};color:${o.dark ? '#E6ECFF' : '#0B1226'};font-weight:700;font-size:12px;line-height:1;padding:7px 10px;border-radius:14px;white-space:nowrap;box-shadow:0 3px 10px rgba(6,19,74,.25);border:1.5px solid ${o.primary}}
+.pin .dot{width:14px;height:14px;border-radius:50%;background:${o.primary};border:3px solid #fff;margin-top:4px;box-shadow:0 2px 6px rgba(6,19,74,.35)}
 .pin.on{transform:scale(1.12);z-index:5}
 .far .pin:not(.on) .tag{display:none}
 .pin.on .tag{background:${o.primary};color:#fff}

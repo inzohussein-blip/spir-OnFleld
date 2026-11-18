@@ -35,10 +35,10 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
     reportCrash(error);
   }, [error]);
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12, backgroundColor: '#F4F6F5' }}>
-      <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: '#14191A' }}>صار خطأ بهاي الصفحة 😕</Text>
-      <Text style={{ textAlign: 'center', color: '#66716E' }}>وصل تقرير للإدارة حتى نصلّحه. جرّب مرة ثانية.</Text>
-      <Pressable onPress={() => void retry()} style={{ backgroundColor: '#0B8A5F', borderRadius: 12, paddingHorizontal: 22, paddingVertical: 10 }} accessibilityRole="button">
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12, backgroundColor: '#F6F5F5' }}>
+      <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: '#0B1226' }}>صار خطأ بهاي الصفحة 😕</Text>
+      <Text style={{ textAlign: 'center', color: '#5B6577' }}>وصل تقرير للإدارة حتى نصلّحه. جرّب مرة ثانية.</Text>
+      <Pressable onPress={() => void retry()} style={{ backgroundColor: '#F2402E', backgroundImage: 'linear-gradient(120deg, #FF6A00 0%, #E8173B 100%)', borderRadius: 14, paddingHorizontal: 22, paddingVertical: 10 }} accessibilityRole="button">
         <Text style={{ color: '#fff', fontFamily: fonts.bold }}>جرّب مرة ثانية</Text>
       </Pressable>
     </View>
@@ -140,8 +140,7 @@ function Gate() {
           headerStyle: { backgroundColor: c.header },
           headerTintColor: headerText(c),
           headerShadowVisible: false,
-          headerTitleStyle: { fontFamily: fonts.bold, fontSize: 17 },
-          headerTitleAlign: 'center',
+          headerTitleStyle: { fontFamily: fonts.bold },
           contentStyle: { backgroundColor: c.bg },
           headerBackTitle: 'رجوع',
         }}

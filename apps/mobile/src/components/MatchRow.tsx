@@ -27,12 +27,13 @@ export function actionLabel(a: MatchAction, short = false) {
 }
 
 /** زر حالة المباراة. `big` لشريط الحجز أسفل صفحة المباراة */
-export function ActionPill({ action, busy, onPress, big, short }: { action: MatchAction; busy?: boolean; onPress: () => void; big?: boolean; onBar?: boolean; short?: boolean }) {
+export function ActionPill({ action, busy, onPress, big, onBar, short }: { action: MatchAction; busy?: boolean; onPress: () => void; big?: boolean; onBar?: boolean; short?: boolean }) {
   const st = useStyles();
   const c = useColors();
   const { text, tone, enabled } = actionLabel(action, short);
-  const box = { primary: st.pPrimary, soft: st.pSoft, done: st.pSoft, muted: st.pMuted }[tone];
-  const fg = { primary: c.onPrimary, soft: c.primary, done: c.primary, muted: c.muted }[tone];
+  // على الشريط البرتقالي أسفل صفحة المباراة: زر أبيض
+  const box = onBar ? (enabled ? st.pOnBar : st.pOnBarMuted) : { primary: st.pPrimary, soft: st.pSoft, done: st.pSoft, muted: st.pMuted }[tone];
+  const fg = onBar ? (enabled ? c.primary : '#FFFFFF') : { primary: c.onPrimary, soft: c.primary, done: c.primary, muted: c.muted }[tone];
   return (
     <Pressable
       accessibilityRole="button"
@@ -130,7 +131,9 @@ const useStyles = themed((c) => ({
   pill: { minHeight: 44, borderRadius: radius, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.lg },
   pillShort: { minHeight: 40, minWidth: 72, maxWidth: 104, paddingHorizontal: space.md },
   pillBig: { minHeight: 52, paddingHorizontal: space.xl },
-  pPrimary: { backgroundColor: c.primary },
+  pPrimary: { backgroundColor: c.primary, backgroundImage: c.primaryGradient },
+  pOnBar: { backgroundColor: '#FFFFFF' },
+  pOnBarMuted: { backgroundColor: 'rgba(255,255,255,0.18)' },
   pSoft: { backgroundColor: c.primarySoft },
   pMuted: { backgroundColor: c.cardAlt },
   pillText: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 20, textAlign: 'center' },

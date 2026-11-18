@@ -12,7 +12,7 @@ const TIERS: Record<CardTier, { bg: string; edge: string; fg: string; label: str
   bronze: { bg: '#C98B5A', edge: '#8A5530', fg: '#2B1607', label: 'برونزية' },
   silver: { bg: '#C9D2D8', edge: '#8796A0', fg: '#1C262C', label: 'فضية' },
   gold: { bg: '#F0C64A', edge: '#B38A12', fg: '#2E2203', label: 'ذهبية' },
-  elite: { bg: '#14191A', edge: '#E0A500', fg: '#FFFFFF', label: 'نخبة' },
+  elite: { bg: '#121212', edge: '#FF6A00', fg: '#FFFFFF', label: 'نخبة' },
 };
 
 const ATTRS: [keyof Attributes, string][] = [
@@ -24,7 +24,7 @@ const ATTRS: [keyof Attributes, string][] = [
   ['physical', 'بدنية'],
 ];
 
-const ARCADE = { bg: '#E6F4EE', edge: '#0B8A5F', fg: '#14191A', label: 'أركيد' };
+const ARCADE = { bg: '#FFEAE6', edge: '#F2402E', fg: '#101828', label: 'أركيد' };
 
 /** mode: «full» بطاقة 11 ضد 11 (حسب المركز)، «arcade» بطاقة المباريات السريعة */
 export function PlayerCardView({ card, onPress, width = 220, mode = 'full' }: { card: PlayerCard; onPress?: () => void; width?: number; mode?: 'full' | 'arcade' }) {

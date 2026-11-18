@@ -14,7 +14,7 @@ import { fonts, themed, useColors } from '../theme';
 const STATUS = {
   joined: { label: 'سجّل — بعده ما لعب', color: '#B45309', icon: 'time-outline' },
   played: { label: 'لعب أول مباراة ✓', color: '#167A43', icon: 'checkmark-circle' },
-  rewarded: { label: 'انحسب بمكافأة 🎁', color: '#0B8A5F', icon: 'gift' },
+  rewarded: { label: 'انحسب بمكافأة 🎁', color: '#F2402E', icon: 'gift' },
 } as const;
 
 /** ادعُ أصدقاءك: رقمك ورابطك، التقدّم نحو المكافأة، وقائمة أصدقائك — وتسجيل رقم صديق دعاك */
@@ -137,15 +137,15 @@ export default function InviteScreen() {
 
 const useStyles = themed((c) => ({
   page: { padding: 16, gap: 12, paddingBottom: 48 },
-  hero: { borderRadius: 16, padding: 20, gap: 8, alignItems: 'center', backgroundColor: c.primary },
+  hero: { borderRadius: 24, padding: 18, gap: 8, alignItems: 'center', backgroundColor: '#0C9A6F', backgroundImage: 'linear-gradient(135deg, #12B886 0%, #0C9A6F 55%, #077A57 100%)' },
   gift: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   heroTitle: { color: '#fff', fontFamily: fonts.bold, fontSize: 20, lineHeight: 32, textAlign: 'center' },
   heroBody: { color: 'rgba(255,255,255,0.92)', textAlign: 'center', lineHeight: 23, fontSize: 13.5 },
   code: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 4, marginVertical: 2 },
   codeLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 12 },
   codeText: { color: '#fff', fontFamily: fonts.bold, fontSize: 18, letterSpacing: 1 },
-  share: { alignSelf: 'stretch', flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderRadius: 12, minHeight: 48 },
-  card: { backgroundColor: c.card, borderRadius: 16, borderWidth: 1, borderColor: c.border, padding: 14, gap: 8 },
+  share: { alignSelf: 'stretch', flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderRadius: 16, minHeight: 50 },
+  card: { backgroundColor: c.card, borderRadius: 18, borderWidth: 1, borderColor: c.border, padding: 14, gap: 8 },
   h: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 26 },
   steps: { flexDirection: 'row', gap: 8 },
   step: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },

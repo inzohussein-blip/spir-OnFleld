@@ -10,6 +10,7 @@ export function Avatar({ name, url, size = 44, ring, style }: { name: string; ur
     height: size,
     borderRadius: size / 2,
     backgroundColor: c.primary,
+    backgroundImage: c.primaryGradient,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',

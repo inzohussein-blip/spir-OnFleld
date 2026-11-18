@@ -215,6 +215,6 @@ const useStyles = themed((c) => ({
   name: { ...type.headline },
   btn: { flex: 1, minHeight: 44, borderRadius: radius, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border, backgroundColor: c.card },
   btnText: { ...type.label, color: c.text },
-  btnPrimary: { backgroundColor: c.primary, borderColor: c.primary },
+  btnPrimary: { backgroundColor: c.primary, backgroundImage: c.primaryGradient, borderColor: 'transparent' },
   btnPrimaryText: { ...type.label, color: c.onPrimary },
 }));
