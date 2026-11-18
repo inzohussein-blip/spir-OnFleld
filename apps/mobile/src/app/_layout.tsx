@@ -1,5 +1,6 @@
 import { ReadexPro_400Regular, ReadexPro_600SemiBold, ReadexPro_700Bold, useFonts } from '@expo-google-fonts/readex-pro';
 import { ReemKufi_700Bold } from '@expo-google-fonts/reem-kufi';
+import { StackHeader } from '../components/StackHeader';
 import { Stack, usePathname, useRouter, useSegments, type ErrorBoundaryProps, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -139,6 +140,7 @@ function Gate() {
       <StatusBar style="light" />
       <Stack
         screenOptions={{
+          header: (props) => <StackHeader {...props} />,
           headerStyle: { backgroundColor: c.header },
           headerTintColor: headerText(c),
           headerShadowVisible: false,

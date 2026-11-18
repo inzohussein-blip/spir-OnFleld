@@ -2,11 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { View } from 'react-native';
-import { Badge, Button, Card, Empty, Loading, Row, Screen, SectionTitle, Text, type IconName } from '../components/ui';
+import { BandDecor, Badge, Button, Card, Empty, Loading, Row, Screen, SectionTitle, Text, type IconName } from '../components/ui';
 import { api } from '../lib/api';
 import { APP_LABEL, formatDateTime, POSITION_LABEL, TRIAL_STATUS } from '../lib/format';
 import { useAsync } from '../lib/session';
-import { fonts, themed, useColors } from '../theme';
+import { padLeft, fonts, themed, useColors } from '../theme';
 
 const STEPS: { n: string; title: string; body: string; icon: IconName }[] = [
   { n: '01', title: 'كمّل بطاقتك', body: 'صورتك ومركزك وإحصائياتك', icon: 'id-card' },
@@ -36,7 +36,7 @@ export default function Trials() {
   return (
     <Screen>
       <View style={st.hero}>
-        <View style={st.heroCircle} />
+        <BandDecor />
         <Row style={{ justifyContent: 'space-between' }}>
           <Text style={st.heroTitle}>اختبارات الأندية</Text>
           <Badge label="● قريباً المزيد" tone="green" />
@@ -104,12 +104,11 @@ export default function Trials() {
 
 
 const useStyles = themed((c) => ({
-  hero: { backgroundColor: c.primary, borderRadius: 20, padding: 18, gap: 8, overflow: 'hidden' },
-  heroCircle: { position: 'absolute', width: 200, height: 200, borderRadius: 100, borderWidth: 24, borderColor: 'rgba(255,255,255,0.07)', top: -40, left: -50 },
+  hero: { backgroundColor: c.bandBg, borderRadius: 16, padding: 18, ...padLeft(52), gap: 8, overflow: 'hidden' },
   heroTitle: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 36, color: '#fff' },
   heroBody: { color: 'rgba(255,255,255,0.9)', fontSize: 13, lineHeight: 22 },
   heroChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   step: { flex: 1, backgroundColor: c.card, borderRadius: 14, padding: 10, gap: 4, borderWidth: 1, borderColor: c.border },
   stepIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  stepNum: { fontFamily: fonts.bold, fontSize: 18, color: c.primarySoft === '#FFEAE6' ? '#FFB3A8' : c.border },
+  stepNum: { fontFamily: fonts.bold, fontSize: 18, color: c.border },
 }));

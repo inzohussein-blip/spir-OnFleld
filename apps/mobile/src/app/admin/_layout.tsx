@@ -1,3 +1,4 @@
+import { StackHeader } from '../../components/StackHeader';
 import { Redirect, Stack } from 'expo-router';
 import { Platform, View } from 'react-native';
 import { Empty, Loading } from '../../components/ui';
@@ -21,6 +22,7 @@ export default function AdminLayout() {
   return (
     <Stack
       screenOptions={{
+        header: (props) => <StackHeader {...props} />,
         headerStyle: { backgroundColor: c.header },
         headerTintColor: headerText(c),
         headerTitleStyle: { fontFamily: fonts.bold },

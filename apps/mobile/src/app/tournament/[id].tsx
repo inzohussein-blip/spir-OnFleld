@@ -209,7 +209,7 @@ function TournamentBoard({ t, onOpen }: { t: TournamentDetail; onOpen: (playerId
       />
       {sub === 'stats' ? (
         <>
-          {section('الهدافون', 'أكثر اللاعبين تسجيلاً بالبطولة', 'football', '#1C8B4A', rows((r) => r.goals), 'هدف')}
+          {section('الهدافون', 'أكثر اللاعبين تسجيلاً بالبطولة', 'football', c.primary, rows((r) => r.goals), 'هدف')}
           {section('صنّاع اللعب', 'أكثر اللاعبين صناعة بالبطولة', 'git-merge', c.primary, rows((r) => r.assists), 'صناعة')}
           {section('الكروت', 'أكثر اللاعبين حصولاً على الإنذارات (الأحمر = 2)', 'card', c.danger, rows((r) => r.yellow + r.red * 2), 'إنذار')}
         </>

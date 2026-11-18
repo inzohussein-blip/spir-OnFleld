@@ -60,6 +60,18 @@ export function Halftone({ rows, cols, color = 'rgba(255,255,255,0.16)', style }
   );
 }
 
+/** زخرفة الهوية لأي بطاقة زرقاء (لازم البطاقة overflow: hidden): نقاط القمصان وشريطين أصفر مايلين */
+export function BandDecor({ dots = true }: { dots?: boolean }) {
+  const s = useStyles();
+  return (
+    <>
+      {dots ? <Halftone rows={6} cols={8} style={{ top: 10, ...fromLeft(10) }} /> : null}
+      <View style={s.decorWide} pointerEvents="none" />
+      <View style={s.decorThin} pointerEvents="none" />
+    </>
+  );
+}
+
 /**
  * رأس الأقسام الرئيسية «ملكي»: أزرق ملكي بنقاط القمصان وشريطين أصفر مايلين على الطرف،
  * عنوان أبيض كوفي كبير وسطر صغير تحته، وأزرار أيقونات. نفس الشكل بكل التبويبات.
@@ -256,7 +268,10 @@ export function SectionTitle({ title, hint, action }: { title: string; hint?: st
   return (
     <View style={s.section}>
       <View style={{ flex: 1 }}>
-        <Text style={s.sectionTitle}>{title}</Text>
+        <View style={s.sectionHead}>
+          <View style={s.sectionMark} />
+          <Text style={s.sectionTitle}>{wideSpaces(title)}</Text>
+        </View>
         {hint ? <Text style={s.sectionHint}>{hint}</Text> : null}
       </View>
       {action}
@@ -341,9 +356,9 @@ export function Empty({ title, hint, icon = 'football-outline' }: { title: strin
   return (
     <View style={[s.center, { paddingVertical: space.xxl }]}>
       <View style={s.emptyIcon}>
-        <Ionicons name={icon} size={28} color={c.muted} />
+        <Ionicons name={icon} size={28} color={c.cta} />
       </View>
-      <Text style={[s.sectionTitle, { textAlign: 'center' }]}>{title}</Text>
+      <Text style={[s.sectionTitle, { textAlign: 'center', fontFamily: fonts.bold, fontSize: 16 }]}>{title}</Text>
       {hint ? <Text style={[s.sectionHint, { textAlign: 'center' }]}>{hint}</Text> : null}
     </View>
   );
@@ -430,7 +445,11 @@ export const useStyles = themed((c) => ({
   badgeText: { ...type.micro, lineHeight: 22 },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' },
   section: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: space.xs },
-  sectionTitle: { ...type.headline },
+  sectionTitle: { ...type.headline, fontFamily: fonts.display, fontSize: 18, lineHeight: 28 },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionMark: { width: 6, height: 18, borderRadius: 2, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
+  decorWide: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(-44), width: 70, backgroundColor: c.cta, opacity: 0.95, transform: [{ skewX: '-14deg' }] },
+  decorThin: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(36), width: 10, backgroundColor: c.cta, opacity: 0.95, transform: [{ skewX: '-14deg' }] },
   sectionHint: { ...type.caption, color: c.muted },
   stat: { flex: 1, backgroundColor: c.card, borderRadius: cardRadius, padding: space.md, alignItems: 'center', gap: 2, borderWidth: 2, borderColor: c.border },
   statValue: { ...type.title },
@@ -440,7 +459,7 @@ export const useStyles = themed((c) => ({
   listIcon: { width: 36, height: 36, borderRadius: 9, backgroundColor: c.bandBg, alignItems: 'center', justifyContent: 'center' },
   listTitle: { ...type.body },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.sm, padding: space.xl },
-  emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: c.cardAlt, alignItems: 'center', justifyContent: 'center', marginBottom: space.xs },
+  emptyIcon: { width: 64, height: 64, borderRadius: 16, backgroundColor: c.bandBg, boxShadow: ctaShadow(c), alignItems: 'center', justifyContent: 'center', marginBottom: space.xs },
   error: { flexDirection: 'row', alignItems: 'center', gap: space.sm, backgroundColor: c.dangerSoft, borderRadius: radius, padding: space.md },
   progressTrack: { height: 6, borderRadius: 3, backgroundColor: c.cardAlt, overflow: 'hidden' },
   progressFill: { height: 6, borderRadius: 3 },

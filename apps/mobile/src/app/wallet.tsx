@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
-import { Card, Empty, Loading, Row, Screen, SectionTitle, Text, type IconName } from '../components/ui';
+import { BandDecor, Card, Empty, Loading, Row, Screen, SectionTitle, Text, type IconName } from '../components/ui';
 import { api } from '../lib/api';
 import { formatIQD, formatSigned, timeAgo } from '../lib/format';
 import { useAsync } from '../lib/session';
 import type { WalletTx } from '../lib/types';
-import { fonts, useColors } from '../theme';
+import { padLeft, ctaShadow, fonts, useColors } from '../theme';
 
 const KIND: Record<WalletTx['kind'], { label: string; icon: IconName }> = {
   topup: { label: 'شحن', icon: 'add-circle' },
@@ -21,9 +21,10 @@ export default function WalletScreen() {
   if (!data) return null;
   return (
     <Screen>
-      <View style={{ backgroundColor: c.primary, borderRadius: 20, padding: 20, gap: 4 }}>
+      <View style={{ backgroundColor: c.bandBg, borderRadius: 16, padding: 20, ...padLeft(52), gap: 4, overflow: 'hidden', boxShadow: ctaShadow(c) }}>
+        <BandDecor />
         <Text style={{ color: 'rgba(255,255,255,0.85)' }}>رصيدك الحالي</Text>
-        <Text style={{ color: '#fff', fontFamily: fonts.bold, fontSize: 32, lineHeight: 46 }}>{formatIQD(data.balance)}</Text>
+        <Text style={{ color: c.cta, fontFamily: fonts.display, fontSize: 34, lineHeight: 50 }}>{formatIQD(data.balance)}</Text>
         <Text variant="small" style={{ color: 'rgba(255,255,255,0.85)' }}>يُستخدم لدفع حصتك من الحجوزات واشتراكات البطولات. الشحن الإلكتروني (زين كاش، FastPay، كي كارد) قريباً.</Text>
       </View>
       <SectionTitle title="سجل العمليات" />
@@ -38,7 +39,7 @@ export default function WalletScreen() {
               <Text style={{ fontFamily: fonts.semibold }}>{t.note}</Text>
               <Text variant="small" style={{ color: c.muted }}>{KIND[t.kind].label} · {timeAgo(t.created_at)}</Text>
             </View>
-            <Text style={{ fontFamily: fonts.bold, color: t.amount >= 0 ? '#1C8B4A' : c.danger }}>{formatSigned(t.amount)}</Text>
+            <Text style={{ fontFamily: fonts.bold, color: t.amount >= 0 ? c.success : c.danger }}>{formatSigned(t.amount)}</Text>
           </Row>
         ))}
       </Card>

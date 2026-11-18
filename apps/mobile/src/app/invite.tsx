@@ -3,13 +3,13 @@ import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useToast } from '../components/feedback';
-import { Button, ErrorText, Text } from '../components/ui';
+import { BandDecor, Button, ErrorText, Text } from '../components/ui';
 import { api } from '../lib/api';
-import { formatIQD, timeAgo } from '../lib/format';
+import { timeAgo } from '../lib/format';
 import { normalizePublicId } from '../lib/teams';
 import { shareInvite } from '../lib/share';
 import { errMsg, useAsync } from '../lib/session';
-import { fonts, themed, useColors } from '../theme';
+import { padLeft, fonts, themed, useColors } from '../theme';
 
 const STATUS = {
   joined: { label: 'سجّل — بعده ما لعب', color: '#B45309', icon: 'time-outline' },
@@ -30,7 +30,6 @@ export default function InviteScreen() {
 
   const data = ref.data;
   const needed = settings.data?.referral_needed ?? 3;
-  const reward = settings.data?.referral_reward ?? 0;
   const played = (data?.friends ?? []).filter((f) => f.status === 'played').length;
 
   async function claim() {
@@ -51,11 +50,12 @@ export default function InviteScreen() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={st.page} keyboardShouldPersistTaps="handled">
       <View style={st.hero}>
+        <BandDecor dots={false} />
         <View style={st.gift}>
           <Ionicons name="gift" size={30} color="#1A23C9" />
         </View>
         <Text style={st.heroTitle}>
-          {needed} أصدقاء = {reward ? formatIQD(reward) : 'مكافأة'} بمحفظتك
+          ادعُ {needed} أصدقاء واكسب مكافأة
         </Text>
         <Text style={st.heroBody}>دزّ رابطك لأصدقائك. لما {needed} منهم يلعبون أول مباراة، المكافأة تنضاف لمحفظتك تلقائياً.</Text>
         {data?.code ? (
@@ -137,7 +137,7 @@ export default function InviteScreen() {
 
 const useStyles = themed((c) => ({
   page: { padding: 16, gap: 12, paddingBottom: 48 },
-  hero: { borderRadius: 16, padding: 18, gap: 8, alignItems: 'center', backgroundColor: c.bandBg, overflow: 'hidden' },
+  hero: { borderRadius: 16, padding: 18, ...padLeft(52), gap: 8, alignItems: 'center', backgroundColor: c.bandBg, overflow: 'hidden' },
   gift: { width: 60, height: 60, borderRadius: 14, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   heroTitle: { color: '#fff', fontFamily: fonts.bold, fontSize: 20, lineHeight: 32, textAlign: 'center' },
   heroBody: { color: 'rgba(255,255,255,0.92)', textAlign: 'center', lineHeight: 23, fontSize: 13.5 },
@@ -149,7 +149,7 @@ const useStyles = themed((c) => ({
   h: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 26 },
   steps: { flexDirection: 'row', gap: 8 },
   step: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
-  stepOn: { backgroundColor: '#12B886', borderColor: '#12B886' },
+  stepOn: { backgroundColor: c.success, borderColor: c.success },
   friend: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.card, borderRadius: 16, borderWidth: 1, borderColor: c.border, padding: 12 },
   claim: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   input: { flex: 1, minHeight: 48, borderRadius: 14, borderWidth: 1, borderColor: c.border, paddingHorizontal: 12, fontSize: 16, color: c.text, backgroundColor: c.bg, outlineWidth: 0 },

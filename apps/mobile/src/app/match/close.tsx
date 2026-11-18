@@ -97,9 +97,9 @@ function CloseForm({ m, votes, motmReward }: { m: MatchDetail; votes: MotmVote[]
             const on = motm === r.player_id;
             return (
               <Pressable key={r.player_id} onPress={() => setMotm(on ? null : r.player_id)} style={[st.chip, on && st.chipOn]} accessibilityRole="button" accessibilityState={{ selected: on }}>
-                {on ? <Ionicons name="medal" size={15} color="#7A5B00" /> : null}
-                <Text style={[{ fontFamily: fonts.semibold }, on && { color: '#3D2E00' }]}>{r.profile.full_name}</Text>
-                {votesOf(r.player_id) ? <Text variant="small" style={{ color: on ? '#7A5B00' : c.muted }}>{votesOf(r.player_id)} صوت</Text> : null}
+                {on ? <Ionicons name="medal" size={15} color={c.onCta} /> : null}
+                <Text style={[{ fontFamily: fonts.semibold }, on && { color: c.onCta }]}>{r.profile.full_name}</Text>
+                {votesOf(r.player_id) ? <Text variant="small" style={{ color: on ? c.onCta : c.muted }}>{votesOf(r.player_id)} صوت</Text> : null}
               </Pressable>
             );
           })}
@@ -132,11 +132,11 @@ const useStyles = themed((c) => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.card, borderRadius: 16, borderWidth: 1, borderColor: c.border, padding: 10 },
   toggle: { flexDirection: 'row', backgroundColor: c.cardAlt, borderRadius: 12, padding: 3 },
   opt: { paddingHorizontal: 12, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  optOn: { backgroundColor: '#22A559' },
+  optOn: { backgroundColor: c.success },
   optNo: { backgroundColor: c.danger },
   optText: { fontFamily: fonts.bold, fontSize: 13, color: c.muted },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.card, borderRadius: 999, borderWidth: 1, borderColor: c.border, paddingHorizontal: 12, paddingVertical: 6 },
-  chipOn: { backgroundColor: '#FFE58A', borderColor: '#F5C431' },
+  chipOn: { backgroundColor: c.cta, borderColor: c.primaryDark },
   confirm: { backgroundColor: c.card, borderRadius: 16, borderWidth: 1, borderColor: c.border, padding: 14, gap: 8 },
 }));
