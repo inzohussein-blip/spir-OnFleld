@@ -11,7 +11,7 @@ import { api } from '../../lib/api';
 import { directionsUrl, distanceKm, formatDistance, hasCoords, IRAQ_CENTER, mainCluster, type LatLng } from '../../lib/geo';
 import { buildMapHtml, type MapMessage } from '../../lib/mapHtml';
 import { useAsync } from '../../lib/session';
-import { cardRadius, fonts, radius, space, themed, type, useColors, useTheme } from '../../theme';
+import { cardRadius, ctaShadow, fonts, radius, space, themed, type, useColors, useTheme } from '../../theme';
 
 /** خريطة الملاعب المسجّلة: دبوس لكل ملعب + بطاقات تحت + موقعي + الاتجاهات */
 export default function MapTab() {
@@ -215,6 +215,6 @@ const useStyles = themed((c) => ({
   name: { ...type.headline },
   btn: { flex: 1, minHeight: 44, borderRadius: radius, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border, backgroundColor: c.card },
   btnText: { ...type.label, color: c.text },
-  btnPrimary: { backgroundColor: c.primary, backgroundImage: c.primaryGradient, borderColor: 'transparent' },
-  btnPrimaryText: { ...type.label, color: c.onPrimary },
+  btnPrimary: { backgroundColor: c.cta, borderColor: c.cta, boxShadow: ctaShadow(c) },
+  btnPrimaryText: { ...type.label, color: c.onCta },
 }));

@@ -14,7 +14,7 @@ import { dayCounts, firstDayWithMatches } from '../../lib/schedule';
 import { useAsync, useNow, useSession } from '../../lib/session';
 import { nextDays } from '../../lib/slots';
 import { useMatchActions } from '../../lib/useMatchActions';
-import { radius, space, themed, type, useColors } from '../../theme';
+import { ctaShadow, fonts, radius, space, themed, type, useColors } from '../../theme';
 
 /**
  * الرئيسية: تحية وسؤال «جاهز تلعب؟» مع البحث والإشعارات، الإعلانات (تتبدّل)،
@@ -98,7 +98,7 @@ export default function Home() {
               >
                 <Text style={[st.dayName, active && st.onActive]}>{shortWeekday(d)}</Text>
                 <Text style={[st.dayNum, active && st.onActive]}>{d.getDate()}</Text>
-                <View style={[st.dayDot, has && { backgroundColor: active ? c.onPrimary : c.primary }]} />
+                <View style={[st.dayDot, has && { backgroundColor: active ? c.onCta : c.primary }]} />
               </Pressable>
             );
           })}
@@ -135,11 +135,11 @@ const useStyles = themed((c) => ({
   content: { paddingBottom: space.xl },
   body: { paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.md },
   days: { flexDirection: 'row', gap: space.xs + 2 },
-  day: { flex: 1, minHeight: 64, borderRadius: radius, alignItems: 'center', justifyContent: 'center', backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
-  dayActive: { backgroundColor: c.primary, backgroundImage: c.primaryGradient, borderColor: 'transparent', boxShadow: '0 5px 12px rgba(232,23,59,0.28)' },
+  day: { flex: 1, minHeight: 64, borderRadius: radius, alignItems: 'center', justifyContent: 'center', backgroundColor: c.card, borderWidth: 2, borderColor: c.border },
+  dayActive: { backgroundColor: c.cta, borderColor: c.cta, boxShadow: ctaShadow(c) },
   dayName: { ...type.micro, color: c.muted },
-  dayNum: { ...type.headline, fontSize: 17, lineHeight: 24 },
+  dayNum: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: c.text },
   dayDot: { width: 4, height: 4, borderRadius: 2, marginTop: 2, backgroundColor: 'transparent' },
-  onActive: { color: c.onPrimary },
+  onActive: { color: c.onCta },
   count: { ...type.caption, color: c.muted },
 }));

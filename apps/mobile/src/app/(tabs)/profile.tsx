@@ -6,12 +6,12 @@ import { useCallback, useState } from 'react';
 import { Platform, Pressable, ScrollView, View } from 'react-native';
 import { Avatar } from '../../components/Avatar';
 import { useToast } from '../../components/feedback';
-import { Button, ErrorText, ListGroup, ListRow, PageHeader, Row, Text } from '../../components/ui';
+import { Button, ErrorText, Halftone, ListGroup, ListRow, PageHeader, Row, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { formatIQD, POSITION_LABEL } from '../../lib/format';
 import { pickSquareImage } from '../../lib/pickImage';
 import { errMsg, useAsync, useSession } from '../../lib/session';
-import { cardRadius, fonts, radius, space, themed, type, useTheme, type ThemeMode } from '../../theme';
+import { cardRadius, ctaShadow, fonts, radius, space, themed, type ThemeMode, type, useTheme, wideSpaces } from '../../theme';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '—';
 
@@ -94,16 +94,18 @@ export default function Profile() {
         <View style={st.content}>
         {/* بطاقة اللاعب */}
         <View style={st.playerCard}>
+          <Halftone rows={14} cols={12} />
           <View style={st.cardStripe} />
+          <View style={st.cardStripeThin} />
           <View style={st.cardTop}>
             <Pressable onPress={changePhoto} accessibilityRole="button" accessibilityLabel="تغيير الصورة الشخصية">
               <Avatar name={profile.full_name} url={profile.avatar_url} size={64} ring="rgba(255,255,255,0.7)" />
               <View style={st.camera}>
-                <Ionicons name={uploading ? 'hourglass-outline' : 'camera'} size={13} color={c.primary} />
+                <Ionicons name={uploading ? 'hourglass-outline' : 'camera'} size={13} color={c.onCta} />
               </View>
             </Pressable>
             <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-              <Text style={st.cardName} numberOfLines={1}>{profile.full_name}</Text>
+              <Text style={st.cardName} numberOfLines={1}>{wideSpaces(profile.full_name)}</Text>
               <Text style={st.cardMeta} numberOfLines={1}>
                 {POSITION_LABEL[profile.preferred_position]}
                 {profile.city ? ` · ${profile.city}` : ''}
@@ -124,8 +126,8 @@ export default function Profile() {
               ) : null}
             </View>
             <View style={st.rating} accessibilityLabel={`التقييم ${card?.overall ?? ''}`}>
-              <Text style={st.ratingValue}>{card?.overall ?? '—'}</Text>
               <Text style={st.ratingLabel}>التقييم</Text>
+              <Text style={st.ratingValue}>{card?.overall ?? '—'}</Text>
             </View>
           </View>
           <View style={st.stats}>
@@ -208,17 +210,20 @@ const useStyles = themed((c) => ({
   screen: { flex: 1, backgroundColor: c.bg },
   content: { paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.xl },
   card: { backgroundColor: c.card, borderRadius: cardRadius, borderWidth: 1, borderColor: c.border, padding: space.lg, gap: space.lg },
-  playerCard: { backgroundColor: c.primary, backgroundImage: c.primaryGradient, borderRadius: cardRadius + 4, padding: space.lg, gap: space.lg, overflow: 'hidden', boxShadow: '0 8px 20px rgba(232,23,59,0.25)' },
-  cardStripe: { position: 'absolute', width: 140, height: 360, backgroundColor: 'rgba(255,255,255,0.07)', top: -80, left: 40, transform: [{ rotate: '25deg' }] },
+  playerCard: { backgroundColor: c.bandBg, borderRadius: cardRadius + 2, padding: space.lg, gap: space.lg, overflow: 'hidden' },
+  // شريطين أصفر مايلين — نفس رأس الأقسام
+  cardStripe: { position: 'absolute', top: -20, bottom: -20, left: -40, width: 80, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
+  cardStripeThin: { position: 'absolute', top: -20, bottom: -20, left: 56, width: 12, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  camera: { position: 'absolute', bottom: -2, left: -2, width: 26, height: 26, borderRadius: 13, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
-  cardName: { ...type.title, fontSize: 19, color: '#FFFFFF' },
+  camera: { position: 'absolute', bottom: -2, left: -2, width: 26, height: 26, borderRadius: 8, backgroundColor: c.cta, alignItems: 'center', justifyContent: 'center' },
+  cardName: { fontFamily: fonts.display, fontSize: 24, lineHeight: 34, color: '#FFFFFF' },
   cardMeta: { ...type.caption, color: 'rgba(255,255,255,0.9)' },
   idPill: { flexDirection: 'row', alignItems: 'center', gap: space.xs + 2, alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 999, paddingHorizontal: 10, minHeight: 28, marginTop: 2 },
   idText: { ...type.micro, fontSize: 12, lineHeight: 20, color: '#FFFFFF', letterSpacing: 0.4 },
-  rating: { backgroundColor: '#FFFFFF', borderRadius: radius, paddingHorizontal: space.md, paddingVertical: space.xs, alignItems: 'center', minWidth: 64 },
-  ratingValue: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 34, color: c.primary },
-  ratingLabel: { ...type.micro, color: c.primary },
+  // التقييم بشكل درع أبيض بظل كحلي
+  rating: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 28, borderBottomRightRadius: 28, paddingHorizontal: space.md, paddingTop: space.sm, paddingBottom: space.md, alignItems: 'center', minWidth: 72, boxShadow: ctaShadow(c) },
+  ratingValue: { fontFamily: fonts.display, fontSize: 34, lineHeight: 42, color: '#1A23C9' },
+  ratingLabel: { ...type.micro, color: '#0B1033' },
   stats: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: radius, paddingVertical: space.sm },
   statCell: { flex: 1, alignItems: 'center' },
   statSep: { borderRightWidth: 1, borderRightColor: 'rgba(255,255,255,0.25)' },
@@ -229,7 +234,7 @@ const useStyles = themed((c) => ({
   badgeText: { color: '#fff', fontFamily: fonts.bold, fontSize: 12, lineHeight: 18 },
   picker: { flexDirection: 'row', backgroundColor: c.cardAlt, borderRadius: 10, padding: 3 },
   pickOpt: { paddingHorizontal: 10, minHeight: 30, justifyContent: 'center', borderRadius: 8 },
-  pickOn: { backgroundColor: c.primary, backgroundImage: c.primaryGradient },
+  pickOn: { backgroundColor: c.cta },
   pickText: { ...type.micro, fontSize: 12, lineHeight: 20, color: c.muted },
-  pickTextOn: { color: '#FFFFFF' },
+  pickTextOn: { color: c.onCta },
 }));

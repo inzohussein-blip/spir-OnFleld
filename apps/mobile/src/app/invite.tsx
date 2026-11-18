@@ -14,7 +14,7 @@ import { fonts, themed, useColors } from '../theme';
 const STATUS = {
   joined: { label: 'سجّل — بعده ما لعب', color: '#B45309', icon: 'time-outline' },
   played: { label: 'لعب أول مباراة ✓', color: '#167A43', icon: 'checkmark-circle' },
-  rewarded: { label: 'انحسب بمكافأة 🎁', color: '#F2402E', icon: 'gift' },
+  rewarded: { label: 'انحسب بمكافأة 🎁', color: '#1A23C9', icon: 'gift' },
 } as const;
 
 /** ادعُ أصدقاءك: رقمك ورابطك، التقدّم نحو المكافأة، وقائمة أصدقائك — وتسجيل رقم صديق دعاك */
@@ -52,7 +52,7 @@ export default function InviteScreen() {
     <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={st.page} keyboardShouldPersistTaps="handled">
       <View style={st.hero}>
         <View style={st.gift}>
-          <Ionicons name="gift" size={30} color="#0C9A6F" />
+          <Ionicons name="gift" size={30} color="#1A23C9" />
         </View>
         <Text style={st.heroTitle}>
           {needed} أصدقاء = {reward ? formatIQD(reward) : 'مكافأة'} بمحفظتك
@@ -74,8 +74,8 @@ export default function InviteScreen() {
           </Pressable>
         ) : null}
         <Pressable onPress={() => void shareInvite(data?.code)} style={st.share} accessibilityRole="button">
-          <Ionicons name="share-social-outline" size={20} color="#0C9A6F" />
-          <Text style={{ color: '#0C9A6F', fontFamily: fonts.bold, fontSize: 16 }}>دز الرابط لأصدقائك</Text>
+          <Ionicons name="share-social-outline" size={20} color="#0B1033" />
+          <Text style={{ color: '#0B1033', fontFamily: fonts.bold, fontSize: 16 }}>دز الرابط لأصدقائك</Text>
         </Pressable>
       </View>
 
@@ -137,14 +137,14 @@ export default function InviteScreen() {
 
 const useStyles = themed((c) => ({
   page: { padding: 16, gap: 12, paddingBottom: 48 },
-  hero: { borderRadius: 24, padding: 18, gap: 8, alignItems: 'center', backgroundColor: '#0C9A6F', backgroundImage: 'linear-gradient(135deg, #12B886 0%, #0C9A6F 55%, #077A57 100%)' },
-  gift: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  hero: { borderRadius: 16, padding: 18, gap: 8, alignItems: 'center', backgroundColor: c.bandBg, overflow: 'hidden' },
+  gift: { width: 60, height: 60, borderRadius: 14, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   heroTitle: { color: '#fff', fontFamily: fonts.bold, fontSize: 20, lineHeight: 32, textAlign: 'center' },
   heroBody: { color: 'rgba(255,255,255,0.92)', textAlign: 'center', lineHeight: 23, fontSize: 13.5 },
   code: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 4, marginVertical: 2 },
   codeLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 12 },
   codeText: { color: '#fff', fontFamily: fonts.bold, fontSize: 18, letterSpacing: 1 },
-  share: { alignSelf: 'stretch', flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderRadius: 16, minHeight: 50 },
+  share: { alignSelf: 'stretch', flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: c.cta, borderRadius: 10, minHeight: 50, boxShadow: '0 3px 0 #0B1033' },
   card: { backgroundColor: c.card, borderRadius: 18, borderWidth: 1, borderColor: c.border, padding: 14, gap: 8 },
   h: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 26 },
   steps: { flexDirection: 'row', gap: 8 },

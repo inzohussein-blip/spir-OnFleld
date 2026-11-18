@@ -5,7 +5,7 @@ import { matchAction, type MatchAction } from '../lib/matchAction';
 import { finalPrice } from '../lib/pricing';
 import { spotsInfo } from '../lib/schedule';
 import type { Match } from '../lib/types';
-import { cardRadius, fonts, radius, space, themed, type, useColors, useTheme } from '../theme';
+import { cardRadius, ctaShadow, fonts, radius, space, themed, type, useColors, useTheme } from '../theme';
 import { Text } from './ui';
 
 /** نص وشكل الزر الرئيسي حسب حالة المباراة — `short` للزر الصغير ببطاقة المباراة */
@@ -33,7 +33,7 @@ export function ActionPill({ action, busy, onPress, big, onBar, short }: { actio
   const { text, tone, enabled } = actionLabel(action, short);
   // على الشريط البرتقالي أسفل صفحة المباراة: زر أبيض
   const box = onBar ? (enabled ? st.pOnBar : st.pOnBarMuted) : { primary: st.pPrimary, soft: st.pSoft, done: st.pSoft, muted: st.pMuted }[tone];
-  const fg = onBar ? (enabled ? c.primary : '#FFFFFF') : { primary: c.onPrimary, soft: c.primary, done: c.primary, muted: c.muted }[tone];
+  const fg = onBar ? (enabled ? c.onCta : '#FFFFFF') : { primary: c.onCta, soft: c.primary, done: c.primary, muted: c.muted }[tone];
   return (
     <Pressable
       accessibilityRole="button"
@@ -91,7 +91,7 @@ export function MatchRow({ match, now, busy, onAction, showDay }: { match: Match
           <Text style={st.clock}>{clock}</Text>
           <Text style={st.mer}>{mer === 'م' ? 'مساءً' : 'صباحاً'}</Text>
         </View>
-        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <View style={{ flex: 1, minWidth: 0, gap: 2, paddingVertical: space.md }}>
           <Text style={st.venue} numberOfLines={1}>{venue}</Text>
           {meta ? <Text style={st.meta} numberOfLines={1}>{meta}</Text> : null}
           <View style={st.priceRow}>
@@ -114,11 +114,12 @@ export function MatchRow({ match, now, busy, onAction, showDay }: { match: Match
 }
 
 const useStyles = themed((c) => ({
-  card: { flexDirection: 'row', alignItems: 'center', gap: space.md, backgroundColor: c.card, borderRadius: cardRadius, borderWidth: 1, borderColor: c.border, padding: space.md },
+  card: { flexDirection: 'row', alignItems: 'stretch', backgroundColor: c.card, borderRadius: cardRadius, borderWidth: 2, borderColor: c.border, overflow: 'hidden' },
   main: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.md },
-  time: { width: 64, height: 64, borderRadius: radius, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  clock: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 24, color: c.primary },
-  mer: { ...type.micro, color: c.primary },
+  // عمود الوقت الأزرق على طرف البطاقة
+  time: { width: 76, alignSelf: 'stretch', minHeight: 84, backgroundColor: c.bandBg, alignItems: 'center', justifyContent: 'center' },
+  clock: { fontFamily: fonts.display, fontSize: 22, lineHeight: 30, color: '#FFFFFF' },
+  mer: { ...type.micro, color: c.cta },
   venue: { ...type.headline, fontSize: 15, lineHeight: 24 },
   meta: { ...type.caption, color: c.muted },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
@@ -126,13 +127,13 @@ const useStyles = themed((c) => ({
   off: { backgroundColor: c.dangerSoft, borderRadius: 999, paddingHorizontal: 6 },
   offText: { ...type.micro, color: c.danger, lineHeight: 18 },
   spotsText: { ...type.micro, fontSize: 12, marginStart: 'auto' },
-  track: { height: 4, borderRadius: 2, backgroundColor: c.cardAlt, overflow: 'hidden', marginTop: 4 },
+  track: { height: 6, borderRadius: 1, backgroundColor: c.cardAlt, overflow: 'hidden', marginTop: 4 },
   fill: { height: '100%', borderRadius: 2 },
-  pill: { minHeight: 44, borderRadius: radius, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.lg },
+  pill: { alignSelf: 'center', marginHorizontal: space.md, minHeight: 44, borderRadius: radius, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.lg },
   pillShort: { minHeight: 40, minWidth: 72, maxWidth: 104, paddingHorizontal: space.md },
   pillBig: { minHeight: 52, paddingHorizontal: space.xl },
-  pPrimary: { backgroundColor: c.primary, backgroundImage: c.primaryGradient },
-  pOnBar: { backgroundColor: '#FFFFFF' },
+  pPrimary: { backgroundColor: c.cta, boxShadow: ctaShadow(c) },
+  pOnBar: { backgroundColor: c.cta, boxShadow: '0 3px 0 #0B1033' },
   pOnBarMuted: { backgroundColor: 'rgba(255,255,255,0.18)' },
   pSoft: { backgroundColor: c.primarySoft },
   pMuted: { backgroundColor: c.cardAlt },

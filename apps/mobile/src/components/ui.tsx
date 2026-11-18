@@ -1,7 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { setStatusBarStyle } from 'expo-status-bar';
-import { useFocusEffect } from 'expo-router';
-import { createElement, useCallback, type ComponentProps, type ReactNode } from 'react';
+import { createElement, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -16,7 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toWesternDigits } from '../lib/format';
-import { cardRadius, fonts, radius, space, themed, type, useColors, useTheme } from '../theme';
+import { cardRadius, ctaShadow, fonts, radius, space, themed, type, useColors, wideSpaces } from '../theme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 type Variant = 'body' | 'title' | 'h2' | 'muted' | 'small';
@@ -46,28 +44,38 @@ export function Screen({ children, scroll = true, style }: { children: ReactNode
   );
 }
 
+/** نقاط مثل قماش القمصان (نقطة كل 14px) — للزخرفة بس */
+export function Halftone({ rows, cols, color = 'rgba(255,255,255,0.16)', style }: { rows: number; cols: number; color?: string; style?: StyleProp<ViewStyle> }) {
+  const line = Array.from({ length: cols }, (_, i) => i);
+  return (
+    <View pointerEvents="none" aria-hidden style={[{ position: 'absolute', gap: 11 }, style]}>
+      {Array.from({ length: rows }, (_, r) => (
+        <View key={r} style={{ flexDirection: 'row', gap: 11 }}>
+          {line.map((i) => (
+            <View key={i} style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: color }} />
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
 /**
- * رأس الأقسام الرئيسية: شريط غامق بتوهّج برتقالي وزوايا سفلية دائرية،
- * عنوان أبيض كبير وسطر صغير تحته، وأزرار أيقونات على الطرف. نفس الشكل بكل التبويبات.
+ * رأس الأقسام الرئيسية «ملكي»: أزرق ملكي بنقاط القمصان وشريطين أصفر مايلين على الطرف،
+ * عنوان أبيض كوفي كبير وسطر صغير تحته، وأزرار أيقونات. نفس الشكل بكل التبويبات.
  */
 export function PageHeader({ title, subtitle, actions, eyebrow, children }: { title: string; subtitle?: string; actions?: ReactNode; eyebrow?: string; children?: ReactNode }) {
   const s = useStyles();
   const insets = useSafeAreaInsets();
-  const { scheme } = useTheme();
-  // الرأس غامق: أرقام الساعة والبطارية بيضاء، وترجع مثل ما جانت لما نطلع
-  useFocusEffect(
-    useCallback(() => {
-      setStatusBarStyle('light');
-      return () => setStatusBarStyle(scheme === 'dark' ? 'light' : 'dark');
-    }, [scheme]),
-  );
   return (
     <View style={[s.band, { paddingTop: insets.top + space.md }]}>
-      <View style={s.glow} pointerEvents="none" />
+      <Halftone rows={10} cols={13} style={{ top: 10, left: 8 }} />
+      <View style={s.stripeWide} pointerEvents="none" />
+      <View style={s.stripeThin} pointerEvents="none" />
       <View style={s.bandRow}>
         <View style={{ flex: 1, minWidth: 0 }}>
           {eyebrow ? <Text style={s.bandEyebrow} numberOfLines={1}>{eyebrow}</Text> : null}
-          <Text style={s.bandTitle} numberOfLines={1}>{title}</Text>
+          <Text style={s.bandTitle} numberOfLines={1}>{wideSpaces(title)}</Text>
           {subtitle ? <Text style={s.bandSubtitle} numberOfLines={1}>{subtitle}</Text> : null}
         </View>
         {actions ? <View style={s.pageActions}>{actions}</View> : null}
@@ -129,7 +137,7 @@ export function Button({
   const s = useStyles();
   const c = useColors();
   const box = { primary: s.btnPrimary, outline: s.btnOutline, danger: s.btnDanger, ghost: s.btnGhost }[variant];
-  const fg = { primary: c.onPrimary, outline: c.primary, danger: c.danger, ghost: c.primary }[variant];
+  const fg = { primary: c.onCta, outline: c.primary, danger: c.danger, ghost: c.primary }[variant];
   return (
     <Pressable
       accessibilityRole="button"
@@ -196,8 +204,8 @@ export function Chip({ label, active, onPress, style, icon }: { label: string; a
   const c = useColors();
   return (
     <Pressable onPress={onPress} style={[s.chip, active && s.chipActive, style]} accessibilityRole="button" accessibilityState={{ selected: !!active }}>
-      {icon ? <Ionicons name={icon} size={15} color={active ? c.onPrimary : c.text} /> : null}
-      <Text style={[s.chipText, { color: active ? c.onPrimary : c.text }]}>{label}</Text>
+      {icon ? <Ionicons name={icon} size={15} color={active ? c.onCta : c.text} /> : null}
+      <Text style={[s.chipText, { color: active ? c.onCta : c.text }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -212,8 +220,8 @@ export function Segmented<T extends string>({ options, value, onChange }: { opti
         const active = o.value === value;
         return (
           <Pressable key={o.value} onPress={() => onChange(o.value)} style={[s.segmentItem, active && s.segmentActive]} accessibilityRole="tab" accessibilityState={{ selected: active }}>
-            {o.icon ? <Ionicons name={o.icon} size={16} color={active ? c.onPrimary : c.muted} /> : null}
-            <Text style={[s.segmentText, { color: active ? c.onPrimary : c.muted }]}>{o.label}</Text>
+            {o.icon ? <Ionicons name={o.icon} size={16} color={active ? c.onCta : c.muted} /> : null}
+            <Text style={[s.segmentText, { color: active ? c.onCta : c.muted }]}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -293,7 +301,7 @@ export function ListRow({ icon, title, subtitle, onPress, right, danger, chevron
     <>
       {icon ? (
         <View style={[s.listIcon, danger && { backgroundColor: c.dangerSoft }]}>
-          <Ionicons name={icon} size={19} color={danger ? c.danger : c.primary} />
+          <Ionicons name={icon} size={19} color={danger ? c.danger : c.cta} />
         </View>
       ) : null}
       <View style={{ flex: 1, minWidth: 0 }}>
@@ -375,22 +383,23 @@ export const useStyles = themed((c) => ({
   mutedText: { color: c.muted },
   screen: { flex: 1, backgroundColor: c.bg },
   screenPad: { padding: space.lg, gap: space.md, paddingBottom: space.xxl },
-  band: { backgroundColor: c.bandBg, backgroundImage: c.bandGradient, paddingHorizontal: space.lg, paddingBottom: space.xl, borderBottomLeftRadius: 28, borderBottomRightRadius: 28, overflow: 'hidden', gap: space.md },
-  // توهّج الغروب: تدرّج ناعم من الزاوية بدل دوائر
-  glow: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundImage: 'linear-gradient(215deg, rgba(255,106,0,0.34) 0%, rgba(232,23,59,0.16) 45%, rgba(232,23,59,0) 80%)' },
+  band: { backgroundColor: c.bandBg, paddingHorizontal: space.lg, paddingBottom: space.xl, overflow: 'hidden', gap: space.md },
+  // شريطين أصفر مايلين على الطرف — علامة «ملكي»
+  stripeWide: { position: 'absolute', top: -20, bottom: -20, left: -36, width: 96, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
+  stripeThin: { position: 'absolute', top: -20, bottom: -20, left: 74, width: 14, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
   bandRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm },
   bandEyebrow: { ...type.caption, color: 'rgba(255,255,255,0.75)' },
   bandTitle: { ...type.largeTitle, color: '#FFFFFF' },
   bandSubtitle: { ...type.caption, color: 'rgba(255,255,255,0.8)', marginTop: -4 },
   pageActions: { flexDirection: 'row', gap: space.sm, paddingBottom: 4 },
-  iconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.card, borderWidth: 1, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
-  iconBtnBand: { backgroundColor: 'rgba(255,255,255,0.14)', borderColor: 'rgba(255,255,255,0.12)' },
+  iconBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: c.card, borderWidth: 2, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
+  iconBtnBand: { backgroundColor: c.bandBg, borderColor: 'rgba(255,255,255,0.45)' },
   iconDot: { position: 'absolute', top: 10, right: 11, width: 9, height: 9, borderRadius: 5, backgroundColor: '#FF5A5F', borderWidth: 2, borderColor: c.card },
-  card: { backgroundColor: c.card, borderRadius: cardRadius, padding: space.lg, gap: space.sm, borderWidth: 1, borderColor: c.border },
+  card: { backgroundColor: c.card, borderRadius: cardRadius, padding: space.lg, gap: space.sm, borderWidth: 2, borderColor: c.border },
   btn: { minHeight: 48, borderRadius: radius, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.lg },
   btnInner: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  btnPrimary: { backgroundColor: c.primary, backgroundImage: c.primaryGradient },
-  btnOutline: { backgroundColor: c.card, borderWidth: 1.5, borderColor: c.primary },
+  btnPrimary: { backgroundColor: c.cta, boxShadow: ctaShadow(c) },
+  btnOutline: { backgroundColor: c.card, borderWidth: 2, borderColor: c.primary },
   btnDanger: { backgroundColor: c.dangerSoft },
   btnGhost: { backgroundColor: 'transparent' },
   btnText: { ...type.headline, fontSize: 15 },
@@ -398,7 +407,7 @@ export const useStyles = themed((c) => ({
   input: {
     minHeight: 48,
     borderRadius: radius,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: c.border,
     backgroundColor: c.card,
     paddingHorizontal: 14,
@@ -407,14 +416,14 @@ export const useStyles = themed((c) => ({
     color: c.text,
     outlineWidth: 0,
   },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, backgroundColor: c.card, borderRadius: radius, borderWidth: 1, borderColor: c.border, paddingHorizontal: 14 },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, backgroundColor: c.card, borderRadius: radius, borderWidth: 2, borderColor: c.border, paddingHorizontal: 14 },
   searchInput: { flex: 1, minHeight: 46, fontFamily: fonts.regular, fontSize: 15, color: c.text, outlineWidth: 0 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 14, borderRadius: 18, borderWidth: 1, borderColor: c.border, backgroundColor: c.card },
-  chipActive: { backgroundColor: c.primary, backgroundImage: c.primaryGradient, borderColor: 'transparent' },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 38, paddingHorizontal: 14, borderRadius: radius, borderWidth: 2, borderColor: c.border, backgroundColor: c.card },
+  chipActive: { backgroundColor: c.cta, borderColor: c.primaryDark, boxShadow: ctaShadow(c) },
   chipText: { ...type.label, fontSize: 13 },
   segment: { flexDirection: 'row', backgroundColor: c.cardAlt, borderRadius: radius, padding: 3, gap: 3 },
   segmentItem: { flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', minHeight: 38, borderRadius: radius - 3 },
-  segmentActive: { backgroundColor: c.primary, backgroundImage: c.primaryGradient },
+  segmentActive: { backgroundColor: c.cta, boxShadow: ctaShadow(c) },
   segmentText: { ...type.label, fontSize: 13 },
   badge: { paddingHorizontal: 10, borderRadius: 999, alignSelf: 'flex-start' },
   badgeText: { ...type.micro, lineHeight: 22 },
@@ -422,12 +431,12 @@ export const useStyles = themed((c) => ({
   section: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: space.xs },
   sectionTitle: { ...type.headline },
   sectionHint: { ...type.caption, color: c.muted },
-  stat: { flex: 1, backgroundColor: c.card, borderRadius: cardRadius, padding: space.md, alignItems: 'center', gap: 2, borderWidth: 1, borderColor: c.border },
+  stat: { flex: 1, backgroundColor: c.card, borderRadius: cardRadius, padding: space.md, alignItems: 'center', gap: 2, borderWidth: 2, borderColor: c.border },
   statValue: { ...type.title },
   groupTitle: { ...type.label, color: c.muted, paddingHorizontal: space.xs },
-  group: { backgroundColor: c.border, borderRadius: cardRadius, borderWidth: 1, borderColor: c.border, overflow: 'hidden', gap: 1 },
+  group: { backgroundColor: c.bg, borderRadius: cardRadius, borderWidth: 2, borderColor: c.border, overflow: 'hidden', gap: 2 },
   listRow: { backgroundColor: c.card, flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 56, paddingHorizontal: space.lg, paddingVertical: space.sm },
-  listIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  listIcon: { width: 36, height: 36, borderRadius: 9, backgroundColor: c.bandBg, alignItems: 'center', justifyContent: 'center' },
   listTitle: { ...type.body },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.sm, padding: space.xl },
   emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: c.cardAlt, alignItems: 'center', justifyContent: 'center', marginBottom: space.xs },

@@ -18,8 +18,8 @@ const ICONS: Record<string, [IconName, IconName]> = {
 };
 
 /**
- * الشريط السفلي: ملتصق بأسفل الشاشة بعرضها، خمسة أقسام متساوية،
- * أيقونة بحجم 24 وتحتها اسمها. النشط بالأخضر وبأيقونة معبّاة.
+ * الشريط السفلي «ملكي»: أزرق ملكي ملتصق بأسفل الشاشة، خمسة أقسام متساوية،
+ * أيقونة بحجم 24 وتحتها اسمها. النشط بالأصفر وبأيقونة معبّاة.
  */
 export function TabBar({ state, descriptors, navigateToTab, insets }: TabBarProps) {
   const c = useColors();
@@ -41,7 +41,7 @@ export function TabBar({ state, descriptors, navigateToTab, insets }: TabBarProp
             style={st.item}
             testID={`tab-${route.name}`}
           >
-            <Ionicons name={focused ? filled : outline} size={24} color={focused ? c.primary : c.muted} />
+            <Ionicons name={focused ? filled : outline} size={24} color={focused ? c.cta : ON_BAR_MUTED} />
             <Text style={[st.label, focused && st.labelOn]} numberOfLines={1}>{title}</Text>
           </Pressable>
         );
@@ -50,9 +50,12 @@ export function TabBar({ state, descriptors, navigateToTab, insets }: TabBarProp
   );
 }
 
+/** لون الأقسام غير المختارة فوق الأزرق */
+const ON_BAR_MUTED = '#C9CEF5';
+
 const useStyles = themed((c) => ({
-  bar: { flexDirection: 'row', backgroundColor: c.card, borderTopWidth: 1, borderTopColor: c.border, paddingTop: 6 },
+  bar: { flexDirection: 'row', backgroundColor: c.bandBg, paddingTop: 8 },
   item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: 52 },
-  label: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 16, color: c.muted },
-  labelOn: { color: c.primary },
+  label: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 16, color: ON_BAR_MUTED },
+  labelOn: { fontFamily: fonts.bold, color: c.cta },
 }));
