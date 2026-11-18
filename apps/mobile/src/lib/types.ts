@@ -13,7 +13,7 @@ export interface Profile {
   matches_played: number;
   /** صورة اللاعب (اختيارية) */
   avatar_url?: string | null;
-  role?: 'player' | 'owner' | 'staff' | 'admin';
+  role?: UserRole;
   /** رقم اللاعب العام (ID) — يبحث بيه أصدقاءه حتى يضيفوه لفرقهم */
   public_id?: string | null;
 }
@@ -51,6 +51,17 @@ export interface Booking {
   starts_at: string;
   ends_at: string;
   price: number;
+}
+
+/** دور الحساب */
+export type UserRole = 'player' | 'owner' | 'staff' | 'admin';
+
+/** موظف يدير المباريات */
+export interface StaffMember {
+  id: string;
+  full_name: string;
+  public_id: string | null;
+  avatar_url: string | null;
 }
 
 export interface Match {
@@ -355,7 +366,7 @@ export interface TeamInvite {
 }
 
 // ---------- الإشعارات داخل التطبيق ----------
-export type NotificationKind = 'promoted' | 'registration_open' | 'match_created' | 'suggestion' | 'reminder' | 'general' | 'spot_opened' | 'fav_day' | 'motm' | 'referral' | 'no_show';
+export type NotificationKind = 'promoted' | 'registration_open' | 'match_created' | 'suggestion' | 'reminder' | 'general' | 'spot_opened' | 'fav_day' | 'motm' | 'referral' | 'no_show' | 'one_left' | 'cancelled';
 export interface AppNotification {
   id: string;
   kind: NotificationKind;

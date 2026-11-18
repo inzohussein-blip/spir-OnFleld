@@ -1,21 +1,34 @@
 import { StackHeader } from '../../components/StackHeader';
-import { Redirect, Stack } from 'expo-router';
+import { Redirect, Stack, useSegments } from 'expo-router';
 import { Platform, View } from 'react-native';
 import { Empty, Loading } from '../../components/ui';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/session';
 import { fonts, headerText, useColors } from '../../theme';
 
-/** لوحة التحكم: على المتصفح فقط، وللمدير فقط (في الوضع التجريبي مفتوحة للتجربة) */
+/** صفحات إدارة المباريات: يدخلها الموظف والمدير، ومن الهاتف كمان (الموظف بالملعب) */
+const STAFF_ROUTES = new Set(['index', 'new-match', 'matches']);
+
+/**
+ * لوحة التحكم:
+ * - المدير: كل الصفحات (الباقي على المتصفح بس)
+ * - الموظف: إدارة المباريات بس
+ * في الوضع التجريبي مفتوحة للتجربة.
+ */
 export default function AdminLayout() {
   const c = useColors();
-  const { data: isAdmin, loading } = useAsync(() => api.isAdmin(), []);
-  if (Platform.OS !== 'web') return <Redirect href="/" />;
-  if (loading && isAdmin === null) return <Loading />;
-  if (!isAdmin) {
+  const segments = useSegments() as string[];
+  const page = segments[1] ?? 'index';
+  const { data: role, loading } = useAsync(() => api.myRole(), []);
+  const isAdmin = role === 'admin';
+  const isStaff = role === 'staff' || isAdmin;
+  const staffPage = STAFF_ROUTES.has(page);
+  if (loading && role === null) return <Loading />;
+  if (Platform.OS !== 'web' && !(isStaff && staffPage)) return <Redirect href="/" />;
+  if (!isStaff || (!isAdmin && !staffPage)) {
     return (
       <View style={{ flex: 1, backgroundColor: c.bg }}>
-        <Empty title="هاي الصفحة للإدارة فقط" hint="سجّل دخول بحساب مدير" icon="lock-closed-outline" />
+        <Empty title={isStaff ? 'هاي الصفحة للمدير بس' : 'هاي الصفحة للإدارة فقط'} hint={isStaff ? 'حساب الموظف يدير المباريات بس' : 'سجّل دخول بحساب مدير أو موظف'} icon="lock-closed-outline" />
       </View>
     );
   }
@@ -30,8 +43,10 @@ export default function AdminLayout() {
         contentStyle: { backgroundColor: c.bg },
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'لوحة التحكم' }} />
+      <Stack.Screen name="index" options={{ title: isAdmin ? 'لوحة التحكم' : 'لوحة الموظفين' }} />
       <Stack.Screen name="new-match" options={{ title: 'مباراة جديدة' }} />
+      <Stack.Screen name="matches" options={{ title: 'إدارة المباريات' }} />
+      <Stack.Screen name="staff" options={{ title: 'الموظفين' }} />
       <Stack.Screen name="suggestions" options={{ title: 'اقتراحات اللاعبين' }} />
       <Stack.Screen name="venues" options={{ title: 'الملاعب والصور والمواقع' }} />
       <Stack.Screen name="venue-location" options={{ title: 'موقع الملعب على الخريطة' }} />

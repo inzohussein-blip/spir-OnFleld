@@ -6,10 +6,12 @@ export type MatchAction =
   | { kind: 'joined' }
   | { kind: 'waiting' }
   | { kind: 'opens_later'; ms: number }
-  | { kind: 'finished' };
+  | { kind: 'finished' }
+  | { kind: 'cancelled' };
 
 /** ما الذي يستطيع اللاعب فعله الآن مع هذه المباراة — مصدر واحد للبطاقة وصفحة المباراة */
-export function matchAction(m: Pick<Match, 'my_status' | 'registration_opens_at' | 'ends_at' | 'joined_count' | 'max_players'>, now: number): MatchAction {
+export function matchAction(m: Pick<Match, 'my_status' | 'registration_opens_at' | 'ends_at' | 'joined_count' | 'max_players'> & { status?: Match['status'] }, now: number): MatchAction {
+  if (m.status === 'cancelled') return { kind: 'cancelled' };
   if (new Date(m.ends_at).getTime() <= now) return { kind: 'finished' };
   if (m.my_status === 'joined') return { kind: 'joined' };
   if (m.my_status === 'waitlist') return { kind: 'waiting' };

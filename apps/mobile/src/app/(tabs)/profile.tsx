@@ -38,7 +38,9 @@ export default function Profile() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [uploading, setUploading] = useState(false);
   const toast = useToast();
-  const admin = useAsync(() => api.isAdmin(), [userId]);
+  const role = useAsync(() => api.myRole(), [userId]);
+  const admin = { data: role.data === 'admin' };
+  const isStaff = role.data === 'staff' || role.data === 'admin';
   const invites = useAsync(() => api.listTeamInvites(), [userId]);
   const wallet = useAsync(() => api.getWallet(), [userId]);
   const reloadInvites = invites.reload;
@@ -129,6 +131,7 @@ export default function Profile() {
           <ListRow icon="bulb-outline" title="اقترح مباراة" onPress={go('/suggest')} />
           {showOwner ? <ListRow icon="business-outline" title="ملاعبي (صاحب الملعب)" onPress={go('/owner')} /> : null}
           {showAdmin ? <ListRow icon="speedometer-outline" title="لوحة التحكم (للإدارة)" onPress={go('/admin')} /> : null}
+          {isStaff && !showAdmin ? <ListRow icon="football-outline" title="لوحة الموظفين: إدارة المباريات" onPress={go('/admin')} /> : null}
         </ListGroup>
 
         <ListGroup title="الإعدادات">

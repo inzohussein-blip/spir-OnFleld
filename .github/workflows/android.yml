@@ -66,6 +66,17 @@ jobs:
           npm run lint
           npm test
 
+      - name: ملف Firebase للإشعارات (اختياري — من سر GOOGLE_SERVICES_JSON)
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > google-services.json
+            echo "إشعارات الخادم: مفعّلة"
+          else
+            echo "::warning::ماكو GOOGLE_SERVICES_JSON — إشعارات الخادم ما تشتغل بهاي النسخة (التذكيرات المحلية تشتغل)"
+          fi
+
       - name: توليد مشروع الأندرويد
         run: npx expo prebuild --platform android --no-install
 

@@ -3,6 +3,8 @@ import type {
   LeaderKind,
   LeaderRow,
   Match,
+  StaffMember,
+  UserRole,
   MatchDetail,
   MatchResultInput,
   NewMatchInput,
@@ -112,8 +114,19 @@ export interface Api {
   markNotificationsRead(): Promise<void>;
   savePushToken(token: string, platform: 'android' | 'ios' | 'web'): Promise<void>;
 
-  // ---------- لوحة التحكم (المدير فقط) ----------
+  /** «نبهني لما ينفتح التسجيل» — يوصل كإشعار من الخادم حتى لو التطبيق مسكّر */
+  setRegistrationAlert(matchId: string, on: boolean): Promise<void>;
+
+  // ---------- لوحة التحكم ----------
   isAdmin(): Promise<boolean>;
+  /** دور الحساب: الموظف يدير المباريات بس، والمدير كلشي */
+  myRole(): Promise<UserRole>;
+  /** مباريات لوحة الموظفين: من أمس وطالع */
+  staffListMatches(): Promise<Match[]>;
+  staffCancelMatch(matchId: string, reason?: string): Promise<void>;
+  adminListStaff(): Promise<StaffMember[]>;
+  /** يرجّع اسم اللاعب */
+  adminSetStaff(publicId: string, on: boolean): Promise<string>;
   adminCreateMatch(input: AdminMatchInput): Promise<string>;
   adminListSuggestions(): Promise<MatchSuggestion[]>;
   adminSetSuggestionStatus(id: string, status: SuggestionStatus): Promise<void>;

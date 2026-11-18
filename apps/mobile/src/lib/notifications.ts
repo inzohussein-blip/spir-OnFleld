@@ -96,16 +96,23 @@ export async function hasRegistrationAlert(matchId: string) {
 
 export const notificationsSupported = supported;
 
-/** تسجيل الجهاز لإشعارات الخادم — يعمل فقط بعد ربط التطبيق بمشروع EAS (extra.eas.projectId) */
+/**
+ * تسجيل الجهاز لإشعارات الخادم («انفتح التسجيل»، «باقي مكان واحد»، «مباراتك بعد ساعة»...):
+ * - إذا التطبيق مربوط بمشروع EAS ← رمز Expo
+ * - غير ذلك بالأندرويد ← رمز Firebase مباشر (يحتاج google-services.json وقت البناء)
+ * بدون أي إعداد ما يطلع رمز، والتذكيرات المحلية تبقى تشتغل.
+ */
 export async function registerForPush() {
   if (!supported) return;
   const projectId = (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId;
-  if (!projectId) return;
+  if (!projectId && Platform.OS !== 'android') return;
   try {
     if (!(await ensurePermission())) return;
-    const { data } = await Notifications.getExpoPushTokenAsync({ projectId });
-    await api.savePushToken(data, Platform.OS === 'ios' ? 'ios' : 'android');
+    const token = projectId
+      ? (await Notifications.getExpoPushTokenAsync({ projectId })).data
+      : String((await Notifications.getDevicePushTokenAsync()).data);
+    if (token) await api.savePushToken(token, Platform.OS === 'ios' ? 'ios' : 'android');
   } catch {
-    /* بدون إعداد FCM لن يتوفر رمز — الإشعارات المحلية تبقى تعمل */
+    /* بدون إعداد Firebase ما يتوفر رمز — الإشعارات المحلية تبقى تعمل */
   }
 }

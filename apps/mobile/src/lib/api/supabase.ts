@@ -5,7 +5,7 @@ import type { Api, ProfileInput } from './types';
 import { toWesternDigits } from '../format';
 import { normalizePublicId } from '../teams';
 import { attributesFromRating, monthRange, overallOf, pickTeamOfWeek, pointsOf } from '../stats';
-import type { PlayerTeam, TeamInvite, MatchSuggestion, RankingRow, ChannelKind, ChatChannel, ChatMessage, Post, Trial, Wallet, Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue, Ad, FieldBlock } from '../types';
+import type { PlayerTeam, TeamInvite, MatchSuggestion, RankingRow, ChannelKind, ChatChannel, ChatMessage, Post, Trial, Wallet, Attributes, LeaderRow, Match, MatchDetail, MatchEvent, PlayerCard, PlayerStats, Profile, RosterEntry, Tournament, TournamentDetail, Venue, Ad, FieldBlock, StaffMember, UserRole } from '../types';
 import { adError, liveAdsFor } from '../ads';
 
 const PROFILE_COLS = 'id, full_name, city, preferred_position, skill_rating, reliability_score, matches_played, attributes, avatar_url, role, public_id';
@@ -161,6 +161,7 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
         .from('match_cards')
         .select('*')
         .eq('visibility', 'public')
+        .neq('status', 'cancelled')
         .gt('ends_at', new Date().toISOString())
         .order('starts_at');
       fail(error);
@@ -514,6 +515,40 @@ export function createSupabaseApi(url: string, anonKey: string): Api {
       if (!me) return false;
       const { data } = await sb.from('profiles').select('role').eq('id', me).maybeSingle();
       return data?.role === 'admin';
+    },
+    async myRole() {
+      const me = await uid();
+      if (!me) return 'player';
+      const { data } = await sb.from('profiles').select('role').eq('id', me).maybeSingle();
+      return (data?.role as UserRole | undefined) ?? 'player';
+    },
+    async setRegistrationAlert(matchId, on) {
+      const me = await uid();
+      if (!me) return;
+      const { error } = on
+        ? await sb.from('registration_alerts').upsert({ match_id: matchId, player_id: me })
+        : await sb.from('registration_alerts').delete().eq('match_id', matchId).eq('player_id', me);
+      fail(error);
+    },
+    async staffListMatches() {
+      const from = new Date(Date.now() - 24 * 3600_000).toISOString();
+      const { data, error } = await sb.from('match_cards').select('*').gte('starts_at', from).order('starts_at').limit(300);
+      fail(error);
+      return withMyStatus(data ?? []);
+    },
+    async staffCancelMatch(matchId, reason) {
+      const { error } = await sb.rpc('staff_cancel_match', { p_match: matchId, p_reason: reason ?? null });
+      fail(error);
+    },
+    async adminListStaff() {
+      const { data, error } = await sb.rpc('admin_list_staff');
+      fail(error);
+      return (data ?? []) as StaffMember[];
+    },
+    async adminSetStaff(publicId, on) {
+      const { data, error } = await sb.rpc('admin_set_staff', { p_public_id: publicId, p_on: on });
+      fail(error);
+      return data as string;
     },
     async adminCreateMatch(input) {
       const { data, error } = await sb.rpc('admin_create_match', {

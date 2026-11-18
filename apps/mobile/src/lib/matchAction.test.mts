@@ -21,3 +21,7 @@ test('موعد التسجيل مضى → انضم عادي', () => {
   const opened = new Date(now - 60000).toISOString();
   assert.deepEqual(matchAction({ ...base, registration_opens_at: opened }, now), { kind: 'join' });
 });
+test('ملغية → ما ينضم حتى لو منضم أو التسجيل بعده', () => {
+  assert.deepEqual(matchAction({ ...base, status: 'cancelled' }, now), { kind: 'cancelled' });
+  assert.deepEqual(matchAction({ ...base, status: 'cancelled', my_status: 'joined' }, now), { kind: 'cancelled' });
+});
