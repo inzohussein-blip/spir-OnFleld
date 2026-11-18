@@ -5,7 +5,7 @@ import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useToast } from '../components/feedback';
 import { BandDecor, Button, ErrorText, Text } from '../components/ui';
 import { api } from '../lib/api';
-import { formatIQD, timeAgo } from '../lib/format';
+import { timeAgo } from '../lib/format';
 import { normalizePublicId } from '../lib/teams';
 import { shareInvite } from '../lib/share';
 import { errMsg, useAsync } from '../lib/session';
@@ -30,7 +30,6 @@ export default function InviteScreen() {
 
   const data = ref.data;
   const needed = settings.data?.referral_needed ?? 3;
-  const reward = settings.data?.referral_reward ?? 0;
   const played = (data?.friends ?? []).filter((f) => f.status === 'played').length;
 
   async function claim() {
@@ -56,7 +55,7 @@ export default function InviteScreen() {
           <Ionicons name="gift" size={30} color="#1A23C9" />
         </View>
         <Text style={st.heroTitle}>
-          {needed} أصدقاء = {reward ? formatIQD(reward) : 'مكافأة'} بمحفظتك
+          ادعُ {needed} أصدقاء واكسب مكافأة
         </Text>
         <Text style={st.heroBody}>دزّ رابطك لأصدقائك. لما {needed} منهم يلعبون أول مباراة، المكافأة تنضاف لمحفظتك تلقائياً.</Text>
         {data?.code ? (
