@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, ErrorText, Halftone, Input, Text } from '../components/ui';
 import { api } from '../lib/api';
 import { errMsg, useSession } from '../lib/session';
-import { fonts, fromLeft, themed, useColors, wideSpaces } from '../theme';
+import { fonts, fromLeft, themed, useColors } from '../theme';
 
 export default function Login() {
   const { refresh } = useSession();
@@ -38,7 +38,11 @@ export default function Login() {
           <View style={styles.stripeWide} pointerEvents="none" />
           <View style={styles.stripeThin} pointerEvents="none" />
           <Image source={mark} style={styles.logo} accessibilityLabel="شعار بالملعب" />
-          <Text style={styles.brand}>{wideSpaces('بالملعب')}</Text>
+          {/* «احجزلي بالملعب» مثل شاشة التحميل — «احجزلي» بالأصفر */}
+          <Text style={styles.brand}>
+            <Text style={[styles.brand, { color: colors.cta }]}>احجزلي</Text>
+            {'\u2002'}بالملعب
+          </Text>
           <Text style={styles.tagline}>احجز ساحتك، كمّل فريقك، والعب</Text>
         </View>
         <View style={styles.sheet}>

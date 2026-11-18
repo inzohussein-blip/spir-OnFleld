@@ -12,7 +12,8 @@ import { Text } from './ui';
 export function actionLabel(a: MatchAction, short = false) {
   switch (a.kind) {
     case 'join':
-      return { text: short ? 'انضم' : 'انضم إلى المباراة', tone: 'primary' as const, enabled: true };
+      // الزر الكبير بصفحة المباراة: «احجزلي مكان» — والصغير بالبطاقة يبقى «انضم»
+      return { text: short ? 'انضم' : 'احجزلي مكان', tone: 'primary' as const, enabled: true };
     case 'waitlist':
       return { text: short ? 'الانتظار' : 'انضم إلى قائمة الانتظار', tone: 'soft' as const, enabled: true };
     case 'joined':
