@@ -12,6 +12,9 @@ const RELEASE_CONFIG = `
                 keyAlias BALMALAAB_KEY_ALIAS
                 keyPassword BALMALAAB_KEY_PASSWORD
             }
+            enableV1Signing true
+            enableV2Signing true
+            enableV3Signing true
         }`;
 
 function addReleaseSigning(gradle) {
@@ -20,7 +23,11 @@ function addReleaseSigning(gradle) {
   const sc = gradle.indexOf('signingConfigs {');
   if (sc < 0) throw new Error('withReleaseSigning: signingConfigs not found');
   const debugStart = gradle.indexOf('debug {', sc);
-  const debugEnd = gradle.indexOf('}', debugStart);
+  let debugEnd = gradle.indexOf('}', debugStart);
+  // كل أنواع التوقيع (v1 + v2 + v3) حتى مثبّت الحزم بأي تلفون يقبل الملف — نفس المفتاح
+  const schemes = '    enableV1Signing true\n            enableV2Signing true\n            enableV3Signing true\n        ';
+  gradle = gradle.slice(0, debugEnd) + schemes + gradle.slice(debugEnd);
+  debugEnd = gradle.indexOf('}', debugStart);
   gradle = gradle.slice(0, debugEnd + 1) + RELEASE_CONFIG + gradle.slice(debugEnd + 1);
   // 2) نوع البناء release يستخدمه (والتجريبي إذا ماكو مفتاح)
   const bt = gradle.indexOf('buildTypes {');
