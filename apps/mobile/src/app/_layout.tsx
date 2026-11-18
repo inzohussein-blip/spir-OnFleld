@@ -2,7 +2,7 @@ import { ReadexPro_400Regular, ReadexPro_600SemiBold, ReadexPro_700Bold, useFont
 import { ReemKufi_700Bold } from '@expo-google-fonts/reem-kufi';
 import { Stack, usePathname, useRouter, useSegments, type ErrorBoundaryProps, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, I18nManager, Platform, Pressable, View } from 'react-native';
 import { BrandSplash } from '../components/BrandSplash';
 import { ToastProvider, useToast } from '../components/feedback';
@@ -185,11 +185,14 @@ function Gate() {
 }
 
 /** شاشة الشعار تبقى على الأقل هالمدة عند الفتح (وأكثر إذا الخطوط بعدها ما تحمّلت) */
-const SPLASH_MS = 1400;
+const SPLASH_MS = 1300;
 
 export default function RootLayout() {
   const [loaded] = useFonts({ ReadexPro_400Regular, ReadexPro_600SemiBold, ReadexPro_700Bold, ReemKufi_700Bold });
   const [minDone, setMinDone] = useState(false);
+  // الشاشة تبقى فوق التطبيق لحد ما يخلص تلاشيها
+  const [splashGone, setSplashGone] = useState(false);
+  const hideSplash = useCallback(() => setSplashGone(true), []);
   useEffect(() => {
     const t = setTimeout(() => setMinDone(true), SPLASH_MS);
     return () => clearTimeout(t);
@@ -205,9 +208,9 @@ export default function RootLayout() {
           </SessionProvider>
         ) : null}
         {/* الشعار فوق التطبيق وهو يجهز بالخلفية */}
-        {!loaded || !minDone ? (
+        {!splashGone ? (
           <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, zIndex: 100 }}>
-            <BrandSplash durationMs={SPLASH_MS - 100} />
+            <BrandSplash durationMs={SPLASH_MS - 100} done={loaded && minDone} fontsReady={loaded} onHidden={hideSplash} />
           </View>
         ) : null}
       </View>
