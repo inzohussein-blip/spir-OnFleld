@@ -40,7 +40,7 @@ test('تشكيلة الأسبوع: حارس واحد و11 لاعباً بدون 
     profile: { id: `p${i}`, full_name: `p${i}`, city: null, preferred_position: p, skill_rating: 3, reliability_score: 100, matches_played: 0 },
     overall: 60 + i,
     attributes: attributesFromRating(3, p),
-    stats: { matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0 },
+    stats: { matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0, yellow: 0, red: 0 },
   }));
   const all = pickTeamOfWeek(cards);
   const xi = all.filter((x) => !x.slot.startsWith('SUB'));
@@ -51,8 +51,8 @@ test('تشكيلة الأسبوع: حارس واحد و11 لاعباً بدون 
 });
 
 test('نقاط التصنيف', () => {
-  assert.equal(pointsOf({ matches: 4, wins: 2, draws: 1, losses: 1, goals: 3, assists: 2, mvps: 1 }), 2 * 3 + 1 + 3 * 2 + 2 + 3);
-  assert.equal(pointsOf({ matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0 }), 0);
+  assert.equal(pointsOf({ matches: 4, wins: 2, draws: 1, losses: 1, goals: 3, assists: 2, mvps: 1, yellow: 2, red: 1 }), 2 * 3 + 1 + 3 * 2 + 2 + 3);
+  assert.equal(pointsOf({ matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0, yellow: 0, red: 0 }), 0);
 });
 
 test('حدود الشهر: الحالي والماضي وعبور السنة', () => {

@@ -1,24 +1,23 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { Avatar } from '../../components/Avatar';
 import { OfflineBanner } from '../../components/feedback';
-import { HeaderBand } from '../../components/HeaderBand';
-import { Empty, Loading, Row, Text } from '../../components/ui';
+import { Empty, IconButton, ListGroup, Loading, PageHeader, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { MONTHS } from '../../lib/format';
 import { useAsync } from '../../lib/session';
 import { monthRange } from '../../lib/stats';
-import { fonts, themed, useColors } from '../../theme';
+import { cardRadius, fonts, space, themed, type, useColors } from '../../theme';
 
-const MEDAL = ['#F5B700', '#A7B1B8', '#C98B5A'];
+/** ذهبي، فضي، برونزي — بس لحلقة الصورة ورقم المركز */
+const MEDAL = ['#E0A500', '#9AA5AE', '#C0814F'];
 
 /** تصنيف الشهر: منصة لأول ثلاثة + قائمة بالنقاط */
 export default function Rankings() {
   const router = useRouter();
   const c = useColors();
-  const st = useRankStyles();
+  const st = useStyles();
   const [offset, setOffset] = useState(0);
   const { data, loading, refreshing, reload, offline } = useAsync(() => api.getRankings(offset), [offset], { cacheKey: 'rankings' });
   const open = (id: string) => router.push({ pathname: '/player/[id]', params: { id } });
@@ -28,76 +27,89 @@ export default function Rankings() {
   const podium = [{ rank: 2, r: rows[1] }, { rank: 1, r: rows[0] }, { rank: 3, r: rows[2] }];
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <HeaderBand title="التصنيفات" />
+    <View style={st.screen}>
       <ScrollView
-        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 120 }}
+        contentContainerStyle={st.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={c.primary} colors={[c.primary]} />}
       >
-      <OfflineBanner show={offline} />
-      <Row style={{ justifyContent: 'center', flexWrap: 'nowrap' }}>
-        <Pressable onPress={() => setOffset(offset + 1)} style={st.arrow} accessibilityLabel="الشهر السابق" hitSlop={8}>
-          <Ionicons name="chevron-forward" size={20} color={c.primary} />
-        </Pressable>
+        <PageHeader title="التصنيفات" subtitle="النقاط من نتائج مباريات الشهر" />
+        <View style={st.body}>
+        <OfflineBanner show={offline} />
+
+        {/* الشهر */}
         <View style={st.month}>
-          <Ionicons name="calendar-outline" size={18} color={c.primary} />
-          <Text style={{ fontFamily: fonts.bold }}>تصنيف شهر {MONTHS[from.getMonth()]}</Text>
+          <IconButton icon="chevron-forward" label="الشهر السابق" onPress={() => setOffset(offset + 1)} />
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Text style={st.monthTitle}>{MONTHS[from.getMonth()]} {from.getFullYear()}</Text>
+            <Text style={st.monthHint}>{offset === 0 ? 'الشهر الحالي' : 'شهر سابق'}</Text>
+          </View>
+          <IconButton icon="chevron-back" label="الشهر التالي" disabled={offset === 0} onPress={() => offset > 0 && setOffset(offset - 1)} />
         </View>
-        <Pressable onPress={() => offset > 0 && setOffset(offset - 1)} disabled={offset === 0} style={[st.arrow, offset === 0 && { opacity: 0.3 }]} accessibilityLabel="الشهر التالي" hitSlop={8}>
-          <Ionicons name="chevron-back" size={20} color={c.primary} />
-        </Pressable>
-      </Row>
 
-      {loading && !data ? <Loading /> : null}
-      {data && rows.length === 0 ? <Empty title="ماكو نتائج بهذا الشهر" hint="التصنيف يطلع بعد ما تنسجل نتائج المباريات" icon="podium-outline" /> : null}
+        {loading && !data ? <Loading /> : null}
+        {data && rows.length === 0 ? <Empty title="ماكو نتائج بهذا الشهر" hint="التصنيف يطلع بعد ما تنسجل نتائج المباريات" icon="podium-outline" /> : null}
 
-      {rows.length ? (
-        <View style={st.podium}>
-          {podium.map(({ rank, r }) => {
-            if (!r) return <View key={`rank-${rank}`} style={{ flex: 1 }} />;
-            const size = rank === 1 ? 104 : 84;
-            return (
-              <Pressable key={r.profile.id} onPress={() => open(r.profile.id)} style={[st.podiumItem, rank === 1 && { marginTop: -8 }]}>
-                {rank === 1 ? <Ionicons name="trophy" size={34} color={MEDAL[0]} /> : <View style={{ height: 34 }} />}
-                <View>
-                  <Avatar name={r.profile.full_name} url={r.profile.avatar_url} size={size} ring={MEDAL[rank - 1]} />
-                  <View style={[st.rankBadge, { backgroundColor: MEDAL[rank - 1] }]}>
-                    <Text style={{ fontFamily: fonts.bold, fontSize: 12, color: '#101828' }}>{rank}</Text>
+        {rows.length ? (
+          <View style={st.podium}>
+            {podium.map(({ rank, r }) => {
+              if (!r) return <View key={`rank-${rank}`} style={{ flex: 1 }} />;
+              const size = rank === 1 ? 84 : 68;
+              return (
+                <Pressable key={r.profile.id} onPress={() => open(r.profile.id)} style={[st.podiumItem, rank !== 1 && { paddingTop: space.lg }]} accessibilityRole="button" accessibilityLabel={`المركز ${rank}: ${r.profile.full_name}، ${r.points} نقطة`}>
+                  <View>
+                    <Avatar name={r.profile.full_name} url={r.profile.avatar_url} size={size} ring={MEDAL[rank - 1]} />
+                    <View style={[st.rankBadge, { backgroundColor: MEDAL[rank - 1] }]}>
+                      <Text style={st.rankBadgeText}>{rank}</Text>
+                    </View>
                   </View>
-                </View>
-                <Text style={{ fontFamily: fonts.bold, textAlign: 'center' }} numberOfLines={2}>{r.profile.full_name}</Text>
-                <Text variant="small" style={{ color: c.muted }}>مستوى {Math.round(r.profile.skill_rating)}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      ) : null}
+                  <Text style={st.podiumName} numberOfLines={1}>{r.profile.full_name}</Text>
+                  <Text style={st.podiumPoints}>{r.points} نقطة</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
 
-      {rows.map((r, i) => (
-        <Pressable key={r.profile.id} onPress={() => open(r.profile.id)} style={[st.row, i < 3 && { backgroundColor: MEDAL[i], borderColor: MEDAL[i] }]}>
-          <Text style={[st.pos, i < 3 && { color: '#101828' }]}>{i + 1}</Text>
-          <Avatar name={r.profile.full_name} url={r.profile.avatar_url} size={42} />
-          <Text style={[{ flex: 1, fontFamily: fonts.semibold }, i < 3 && { color: '#101828' }]} numberOfLines={1}>{r.profile.full_name}</Text>
-          <Text style={[st.points, i < 3 && { color: '#101828' }]}>{r.points}</Text>
-          <Text variant="small" style={i < 3 ? { color: '#101828' } : { color: c.muted }}>نقطة</Text>
-        </Pressable>
-      ))}
-      {rows.length ? <Text variant="small" style={{ color: c.muted, textAlign: 'center' }}>النقاط: فوز 3 · تعادل 1 · هدف 2 · صناعة 1 · رجل المباراة 3</Text> : null}
+        {rows.length ? (
+          <ListGroup title="الترتيب الكامل">
+            {rows.map((r, i) => (
+              <Pressable key={r.profile.id} onPress={() => open(r.profile.id)} style={({ pressed }) => [st.row, pressed && { backgroundColor: c.cardAlt }]} accessibilityRole="button">
+                <Text style={[st.pos, i < 3 && { color: MEDAL[i] }]}>{i + 1}</Text>
+                <Avatar name={r.profile.full_name} url={r.profile.avatar_url} size={40} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={st.rowName} numberOfLines={1}>{r.profile.full_name}</Text>
+                  <Text style={st.rowHint}>مستوى {Math.round(r.profile.skill_rating)}</Text>
+                </View>
+                <Text style={st.points}>{r.points}</Text>
+                <Text style={st.rowHint}>نقطة</Text>
+              </Pressable>
+            ))}
+          </ListGroup>
+        ) : null}
+        {rows.length ? <Text style={st.legend}>النقاط: فوز 3 · تعادل 1 · هدف 2 · صناعة 1 · رجل المباراة 3</Text> : null}
+        </View>
       </ScrollView>
     </View>
   );
 }
 
-const useRankStyles = themed((c) => ({
-  month: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: c.primarySoft, borderRadius: 999, paddingHorizontal: 20, paddingVertical: 10, borderWidth: 1, borderColor: c.border },
-  arrow: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
-  podium: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingVertical: 8 },
-  podiumItem: { flex: 1, alignItems: 'center', gap: 4 },
-  ring: { borderWidth: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: c.primarySoft },
-  rankBadge: { position: 'absolute', bottom: -10, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.card },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.card, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: c.border },
-  pos: { fontFamily: fonts.bold, width: 22, textAlign: 'center', color: c.muted },
-  avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.primarySoft },
-  points: { fontFamily: fonts.bold, fontSize: 18 },
+const useStyles = themed((c) => ({
+  screen: { flex: 1, backgroundColor: c.bg },
+  content: { paddingBottom: space.xl },
+  body: { paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.lg },
+  month: { flexDirection: 'row', alignItems: 'center', gap: space.sm, backgroundColor: c.card, borderRadius: cardRadius, borderWidth: 1, borderColor: c.border, padding: space.sm },
+  monthTitle: { ...type.headline },
+  monthHint: { ...type.caption, color: c.muted },
+  podium: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm, backgroundColor: c.card, borderRadius: cardRadius, borderWidth: 1, borderColor: c.border, paddingVertical: space.lg, paddingHorizontal: space.sm },
+  podiumItem: { flex: 1, alignItems: 'center', gap: space.xs },
+  rankBadge: { position: 'absolute', bottom: -6, alignSelf: 'center', width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.card },
+  rankBadgeText: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 18, color: '#FFFFFF' },
+  podiumName: { ...type.label, marginTop: space.sm, textAlign: 'center' },
+  podiumPoints: { ...type.caption, color: c.muted },
+  row: { backgroundColor: c.card, flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, minHeight: 64 },
+  pos: { fontFamily: fonts.bold, fontSize: 15, width: 22, textAlign: 'center', color: c.muted },
+  rowName: { ...type.label },
+  rowHint: { ...type.caption, color: c.muted },
+  points: { ...type.headline, fontSize: 17 },
+  legend: { ...type.caption, color: c.muted, textAlign: 'center' },
 }));
-

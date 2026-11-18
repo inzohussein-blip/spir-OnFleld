@@ -11,7 +11,7 @@ import { adError, liveAdsFor } from '../ads';
 const PROFILE_COLS = 'id, full_name, city, preferred_position, skill_rating, reliability_score, matches_played, attributes, avatar_url, role, public_id';
 const VENUE_COLS = 'id, name, city, address, amenities, is_verified, photos, lat, lng, fields(id, venue_id, name, players_per_side, surface, is_indoor, default_price, open_hour, close_hour)';
 const mapVenue = (v: any): Venue => ({ ...v, photo_url: v.photos?.[0] ?? null });
-const EMPTY_STATS: PlayerStats = { matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0 };
+const EMPTY_STATS: PlayerStats = { matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0, yellow: 0, red: 0 };
 
 /** يحوّل الرقم المحلي العراقي (07xxxxxxxxx) إلى الصيغة الدولية */
 export function toE164(phone: string) {

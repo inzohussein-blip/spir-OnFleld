@@ -11,7 +11,7 @@ import { api } from '../../lib/api';
 import { directionsUrl, distanceKm, formatDistance, hasCoords, IRAQ_CENTER, mainCluster, type LatLng } from '../../lib/geo';
 import { buildMapHtml, type MapMessage } from '../../lib/mapHtml';
 import { useAsync } from '../../lib/session';
-import { fonts, themed, useColors, useTheme } from '../../theme';
+import { cardRadius, ctaShadow, fonts, radius, space, themed, type, useColors, useTheme } from '../../theme';
 
 /** خريطة الملاعب المسجّلة: دبوس لكل ملعب + بطاقات تحت + موقعي + الاتجاهات */
 export default function MapTab() {
@@ -162,7 +162,7 @@ export default function MapTab() {
                   {v.photo_url ? (
                     <Image source={{ uri: v.photo_url }} style={{ width: '100%', height: '100%' }} />
                   ) : (
-                    <Ionicons name="football" size={26} color="rgba(255,255,255,0.85)" />
+                    <Ionicons name="football-outline" size={24} color="rgba(255,255,255,0.9)" />
                   )}
                 </View>
                 <View style={{ flex: 1, gap: 2 }}>
@@ -181,7 +181,7 @@ export default function MapTab() {
                   <Text style={st.btnPrimaryText}>التفاصيل</Text>
                 </Pressable>
                 <Pressable style={st.btn} onPress={() => directions(v)} accessibilityRole="button" accessibilityLabel={`الاتجاهات إلى ${v.name}`}>
-                  <Ionicons name="navigate" size={15} color={c.primary} />
+                  <Ionicons name="navigate-outline" size={16} color={c.text} />
                   <Text style={st.btnText}>الاتجاهات</Text>
                 </Pressable>
               </View>
@@ -198,29 +198,23 @@ const CARD_STEP = CARD_W + 12;
 
 const useStyles = themed((c) => ({
   loading: { position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' },
-  top: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  top: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: space.lg, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   title: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: c.card, borderRadius: 22, paddingHorizontal: 14, paddingVertical: 8,
-    borderWidth: 1, borderColor: c.border, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6,
+    flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 44, backgroundColor: c.card, borderRadius: 22, paddingHorizontal: space.lg,
+    borderWidth: 1, borderColor: c.border, boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
   },
-  titleText: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 26 },
+  titleText: { ...type.headline },
   count: { minWidth: 24, height: 24, borderRadius: 12, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
-  countText: { fontFamily: fonts.bold, fontSize: 13, color: c.primary, lineHeight: 20 },
-  fab: {
-    width: 46, height: 46, borderRadius: 23, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border,
-    shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6,
-  },
-  cardsWrap: { position: 'absolute', left: 0, right: 0, bottom: 96, flexGrow: 0 },
-  cards: { paddingHorizontal: 16, gap: 12, paddingVertical: 6 },
-  card: {
-    width: CARD_W, minHeight: 150, backgroundColor: c.card, borderRadius: 22, padding: 14, gap: 12, borderWidth: 1.5, borderColor: c.border,
-    shadowColor: '#000', shadowOpacity: 0.14, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 7,
-  },
-  cardOn: { borderColor: c.primary },
-  thumb: { width: 56, height: 56, borderRadius: 14, backgroundColor: '#1C8B4A', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  name: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 26 },
-  btn: { flex: 1, height: 40, borderRadius: 20, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: c.primary },
-  btnText: { fontFamily: fonts.bold, fontSize: 14, color: c.primary, lineHeight: 22 },
-  btnPrimary: { backgroundColor: c.primary },
-  btnPrimaryText: { fontFamily: fonts.bold, fontSize: 14, color: '#fff', lineHeight: 22 },
+  countText: { ...type.micro, fontSize: 12, color: c.primary, lineHeight: 20 },
+  fab: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border, boxShadow: '0 2px 8px rgba(0,0,0,0.10)' },
+  cardsWrap: { position: 'absolute', left: 0, right: 0, bottom: space.md, flexGrow: 0 },
+  cards: { paddingHorizontal: space.lg, gap: space.md, paddingVertical: space.xs },
+  card: { width: CARD_W, backgroundColor: c.card, borderRadius: cardRadius, padding: space.md, gap: space.md, borderWidth: 1, borderColor: c.border, boxShadow: '0 4px 14px rgba(0,0,0,0.12)' },
+  cardOn: { borderColor: c.primary, borderWidth: 1.5 },
+  thumb: { width: 56, height: 56, borderRadius: radius, backgroundColor: c.pitch, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  name: { ...type.headline },
+  btn: { flex: 1, minHeight: 44, borderRadius: radius, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border, backgroundColor: c.card },
+  btnText: { ...type.label, color: c.text },
+  btnPrimary: { backgroundColor: c.cta, borderColor: c.cta, boxShadow: ctaShadow(c) },
+  btnPrimaryText: { ...type.label, color: c.onCta },
 }));

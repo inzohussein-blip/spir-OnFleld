@@ -1,4 +1,5 @@
-import { Cairo_400Regular, Cairo_600SemiBold, Cairo_700Bold, useFonts } from '@expo-google-fonts/cairo';
+import { ReadexPro_400Regular, ReadexPro_600SemiBold, ReadexPro_700Bold, useFonts } from '@expo-google-fonts/readex-pro';
+import { ReemKufi_700Bold } from '@expo-google-fonts/reem-kufi';
 import { Stack, usePathname, useRouter, useSegments, type ErrorBoundaryProps, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
@@ -35,11 +36,11 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
     reportCrash(error);
   }, [error]);
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12, backgroundColor: '#F6F5F5' }}>
-      <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: '#0B1226' }}>صار خطأ بهاي الصفحة 😕</Text>
-      <Text style={{ textAlign: 'center', color: '#5B6577' }}>وصل تقرير للإدارة حتى نصلّحه. جرّب مرة ثانية.</Text>
-      <Pressable onPress={() => void retry()} style={{ backgroundColor: '#F2402E', backgroundImage: 'linear-gradient(120deg, #FF6A00 0%, #E8173B 100%)', borderRadius: 14, paddingHorizontal: 22, paddingVertical: 10 }} accessibilityRole="button">
-        <Text style={{ color: '#fff', fontFamily: fonts.bold }}>جرّب مرة ثانية</Text>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12, backgroundColor: '#EEF0FF' }}>
+      <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: '#0B1033' }}>صار خطأ بهاي الصفحة 😕</Text>
+      <Text style={{ textAlign: 'center', color: '#4A5185' }}>وصل تقرير للإدارة حتى نصلّحه. جرّب مرة ثانية.</Text>
+      <Pressable onPress={() => void retry()} style={{ backgroundColor: '#FFD60A', borderRadius: 10, paddingHorizontal: 22, paddingVertical: 10, boxShadow: '0 3px 0 #0B1033' }} accessibilityRole="button">
+        <Text style={{ color: '#0B1033', fontFamily: fonts.bold }}>جرّب مرة ثانية</Text>
       </Pressable>
     </View>
   );
@@ -47,7 +48,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
 function Gate() {
   const { ready, userId, profile } = useSession();
-  const { colors: c, scheme } = useTheme();
+  const { colors: c } = useTheme();
   const segments = useSegments();
   const pathname = usePathname();
   const router = useRouter();
@@ -134,7 +135,8 @@ function Gate() {
 
   return (
     <>
-      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      {/* كل الرؤوس زرقاء: أرقام الساعة والبطارية بيضاء دائماً */}
+      <StatusBar style="light" />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: c.header },
@@ -186,7 +188,7 @@ function Gate() {
 const SPLASH_MS = 1400;
 
 export default function RootLayout() {
-  const [loaded] = useFonts({ Cairo_400Regular, Cairo_600SemiBold, Cairo_700Bold });
+  const [loaded] = useFonts({ ReadexPro_400Regular, ReadexPro_600SemiBold, ReadexPro_700Bold, ReemKufi_700Bold });
   const [minDone, setMinDone] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setMinDone(true), SPLASH_MS);

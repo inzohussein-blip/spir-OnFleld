@@ -480,7 +480,7 @@ function notifyMe(d: DB, kind: AppNotification['kind'], title: string, body: str
 }
 
 function statsOf(d: DB, playerId: string, range?: { from: Date; to: Date }): PlayerStats {
-  const s: PlayerStats = { matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0 };
+  const s: PlayerStats = { matches: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, mvps: 0, yellow: 0, red: 0 };
   for (const m of d.matches) {
     if (m.score_a == null || m.score_b == null) continue;
     if (range && (new Date(m.starts_at) < range.from || new Date(m.starts_at) >= range.to)) continue;
@@ -496,6 +496,8 @@ function statsOf(d: DB, playerId: string, range?: { from: Date; to: Date }): Pla
     }
     s.goals += m.events.filter((e) => e.player_id === playerId && e.kind === 'goal').length;
     s.assists += m.events.filter((e) => e.player_id === playerId && e.kind === 'assist').length;
+    s.yellow += m.events.filter((e) => e.player_id === playerId && e.kind === 'yellow').length;
+    s.red += m.events.filter((e) => e.player_id === playerId && e.kind === 'red').length;
     const votes = new Map<string, number>();
     for (const v of m.mvpVotes) votes.set(v.player_id, (votes.get(v.player_id) ?? 0) + 1);
     const best = [...votes.entries()].sort((a, b) => b[1] - a[1])[0];
