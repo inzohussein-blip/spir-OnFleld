@@ -51,7 +51,7 @@ export default function InviteScreen() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={st.page} keyboardShouldPersistTaps="handled">
       <View style={st.hero}>
-        <BandDecor />
+        <BandDecor dots={false} />
         <View style={st.gift}>
           <Ionicons name="gift" size={30} color="#1A23C9" />
         </View>
