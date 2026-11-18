@@ -51,7 +51,7 @@ export function BrandSplash({
   const barWidth = progress.interpolate({ inputRange: [0, 1], outputRange: ['6%', '100%'] });
 
   return (
-    <Animated.View style={{ flex: 1, backgroundColor: ROYAL, opacity: fade, overflow: 'hidden' }} accessibilityLabel="بالملعب — جاري التحميل">
+    <Animated.View style={{ flex: 1, backgroundColor: ROYAL, opacity: fade, overflow: 'hidden' }} accessibilityLabel="احجزلي بالملعب — جاري التحميل">
       <Halftone rows={64} cols={30} style={{ top: 12, left: 12 }} color="rgba(255,255,255,0.10)" />
       {/* الشريطين الأصفر يدخلون من الطرف */}
       <Animated.View pointerEvents="none" style={{ position: 'absolute', top: -60, bottom: -60, left: -40, width: 90, transform: [{ translateX: stripesX }, { skewX: '-14deg' }], backgroundColor: YELLOW }} />
@@ -62,7 +62,11 @@ export function BrandSplash({
           <Image source={mark} style={{ width: MARK, height: MARK }} accessibilityIgnoresInvertColors />
         </Animated.View>
         <Animated.View style={{ position: 'absolute', top: '50%', marginTop: MARK / 2 - 62, alignItems: 'center', gap: 4, opacity: textOpacity, transform: [{ translateY: textY }] }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 38, lineHeight: 52, fontFamily: fontsReady ? 'ReemKufi_700Bold' : undefined, fontWeight: fontsReady ? undefined : '800' }}>بالملعب</Text>
+          {/* «احجزلي بالملعب» — بشاشة التحميل بس؛ «احجزلي» بالأصفر */}
+          <Text style={{ color: '#FFFFFF', fontSize: 34, lineHeight: 50, fontFamily: fontsReady ? 'ReemKufi_700Bold' : undefined, fontWeight: fontsReady ? undefined : '800' }}>
+            <Text style={{ color: YELLOW }}>احجزلي</Text>
+            {'\u2002'}بالملعب
+          </Text>
           <Text style={{ color: '#C9CEF5', fontSize: 15, fontFamily: fontsReady ? 'ReadexPro_600SemiBold' : undefined }}>احجز · العب · اربح</Text>
         </Animated.View>
       </View>
