@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toWesternDigits } from '../lib/format';
-import { cardRadius, ctaShadow, fonts, radius, space, themed, type, useColors, wideSpaces } from '../theme';
+import { cardRadius, ctaShadow, fonts, fromLeft, radius, space, themed, type, useColors, wideSpaces } from '../theme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 type Variant = 'body' | 'title' | 'h2' | 'muted' | 'small';
@@ -69,7 +69,7 @@ export function PageHeader({ title, subtitle, actions, eyebrow, children }: { ti
   const insets = useSafeAreaInsets();
   return (
     <View style={[s.band, { paddingTop: insets.top + space.md }]}>
-      <Halftone rows={10} cols={13} style={{ top: 10, left: 8 }} />
+      <Halftone rows={10} cols={13} style={{ top: 10, ...fromLeft(8) }} />
       <View style={s.stripeWide} pointerEvents="none" />
       <View style={s.stripeThin} pointerEvents="none" />
       <View style={s.bandRow}>
@@ -384,9 +384,10 @@ export const useStyles = themed((c) => ({
   screen: { flex: 1, backgroundColor: c.bg },
   screenPad: { padding: space.lg, gap: space.md, paddingBottom: space.xxl },
   band: { backgroundColor: c.bandBg, paddingHorizontal: space.lg, paddingBottom: space.xl, overflow: 'hidden', gap: space.md },
-  // شريطين أصفر مايلين على الطرف — علامة «ملكي»
-  stripeWide: { position: 'absolute', top: -20, bottom: -20, left: -36, width: 96, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
-  stripeThin: { position: 'absolute', top: -20, bottom: -20, left: 74, width: 14, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
+  // شريطين أصفر مايلين على الطرف — علامة «ملكي».
+  // «end» = اليسار بالعربي على التلفون والويب؛ «left» الأندرويد يقلبه لليمين فيطلع خلف العنوان
+  stripeWide: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(-36), width: 96, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
+  stripeThin: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(74), width: 14, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
   bandRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm },
   bandEyebrow: { ...type.caption, color: 'rgba(255,255,255,0.75)' },
   bandTitle: { ...type.largeTitle, color: '#FFFFFF' },

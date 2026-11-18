@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Animated, Easing, Image, Platform, Text, View } from 'react-native';
 import mark from '../../assets/splash-icon.png';
+import { fromLeft } from '../theme';
 import { Halftone } from './ui';
 
 const ROYAL = '#1A23C9';
@@ -52,10 +53,10 @@ export function BrandSplash({
 
   return (
     <Animated.View style={{ flex: 1, backgroundColor: ROYAL, opacity: fade, overflow: 'hidden' }} accessibilityLabel="احجزلي بالملعب — جاري التحميل">
-      <Halftone rows={64} cols={30} style={{ top: 12, left: 12 }} color="rgba(255,255,255,0.10)" />
+      <Halftone rows={64} cols={30} style={{ top: 12, ...fromLeft(12) }} color="rgba(255,255,255,0.10)" />
       {/* الشريطين الأصفر يدخلون من الطرف */}
-      <Animated.View pointerEvents="none" style={{ position: 'absolute', top: -60, bottom: -60, left: -40, width: 90, transform: [{ translateX: stripesX }, { skewX: '-14deg' }], backgroundColor: YELLOW }} />
-      <Animated.View pointerEvents="none" style={{ position: 'absolute', top: -60, bottom: -60, left: 66, width: 16, transform: [{ translateX: stripesX }, { skewX: '-14deg' }], backgroundColor: YELLOW }} />
+      <Animated.View pointerEvents="none" style={{ position: 'absolute', top: -60, bottom: -60, ...fromLeft(-40), width: 90, transform: [{ translateX: stripesX }, { skewX: '-14deg' }], backgroundColor: YELLOW }} />
+      <Animated.View pointerEvents="none" style={{ position: 'absolute', top: -60, bottom: -60, ...fromLeft(66), width: 16, transform: [{ translateX: stripesX }, { skewX: '-14deg' }], backgroundColor: YELLOW }} />
 
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <Animated.View style={{ transform: [{ translateY: markY }, { scale: markScale }] }}>
