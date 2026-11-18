@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image, Pressable, View } from 'react-native';
 import { POSITION_CODE } from '../lib/stats';
-import type { Attributes, PlayerCard, Profile } from '../lib/types';
+import type { PlayerCard, PlayerStats, Profile } from '../lib/types';
 import { fonts, themed, wideSpaces } from '../theme';
 import { Halftone, Text } from './ui';
 
@@ -9,21 +9,22 @@ const ROYAL = '#1A23C9';
 const NAVY = '#0B1033';
 const YELLOW = '#FFD60A';
 
-/** الخصائص الست بترتيب بطاقات اللاعبين: عمودين × ثلاث */
-const LEFT: [keyof Attributes, string][] = [
-  ['pace', 'سرعة'],
-  ['shooting', 'تسديد'],
-  ['passing', 'تمرير'],
+/** جهة: المشاركة (مباريات، أهداف، فوز) */
+const PLAY: { key: keyof PlayerStats; label: string }[] = [
+  { key: 'matches', label: 'مباريات' },
+  { key: 'goals', label: 'أهداف' },
+  { key: 'wins', label: 'فوز' },
 ];
-const RIGHT: [keyof Attributes, string][] = [
-  ['dribbling', 'مراوغة'],
-  ['defending', 'دفاع'],
-  ['physical', 'بدنية'],
+/** الجهة الثانية: البطاقات ورجل المباراة — أيقونة بطاقة ملوّنة أو ميدالية */
+const DISCIPLINE: { key: keyof PlayerStats; label: string; chip?: string }[] = [
+  { key: 'yellow', label: 'صفراء', chip: YELLOW },
+  { key: 'red', label: 'حمراء', chip: '#E5252A' },
+  { key: 'mvps', label: 'رجل المباراة' },
 ];
 
 /**
  * بطاقة اللاعب بحسابي — على شكل بطاقات اللاعبين (التقييم والمركز بالزاوية، صورة كبيرة،
- * الاسم، والخصائص الست) بأسلوب «ملكي»: أزرق بنقاط القمصان، شريطين أصفر مايلين،
+ * الاسم، وإحصائياته بجهتين: المشاركة، والبطاقات ورجل المباراة) بأسلوب «ملكي»: أزرق بنقاط القمصان، شريطين أصفر مايلين،
  * إطار أصفر، وأسفل البطاقة مدوّر مثل الدرع.
  */
 export function RoyalPlayerCard({
@@ -40,7 +41,7 @@ export function RoyalPlayerCard({
   onCopyId: () => void;
 }) {
   const st = useStyles();
-  const attr = (k: keyof Attributes) => (card ? String(card.attributes[k]) : '—');
+  const stat = (k: keyof PlayerStats) => (card ? String(card.stats[k]) : '—');
   return (
     <View style={st.card} accessibilityLabel={`بطاقة ${profile.full_name}، التقييم ${card?.overall ?? ''}`}>
       <Halftone rows={30} cols={20} style={{ top: 8, left: 8 }} color="rgba(255,255,255,0.10)" />
@@ -75,18 +76,25 @@ export function RoyalPlayerCard({
       <Text style={st.name} numberOfLines={1}>{wideSpaces(profile.full_name)}</Text>
       <View style={st.nameLine} />
 
-      {/* الخصائص الست */}
+      {/* الإحصائيات بجهتين */}
       <View style={st.attrs}>
-        {([['right', RIGHT], ['left', LEFT]] as const).map(([side, col]) => (
-          <View key={side} style={[st.attrCol, side === 'right' && st.attrColSep]}>
-            {col.map(([k, label]) => (
-              <View key={k} style={st.attrRow}>
-                <Text style={st.attrValue}>{attr(k)}</Text>
-                <Text style={st.attrLabel}>{label}</Text>
-              </View>
-            ))}
-          </View>
-        ))}
+        <View style={[st.attrCol, st.attrColSep]}>
+          {PLAY.map(({ key, label }) => (
+            <View key={key} style={st.attrRow}>
+              <Text style={st.attrValue}>{stat(key)}</Text>
+              <Text style={st.attrLabel}>{label}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={[st.attrCol, st.attrColWide]}>
+          {DISCIPLINE.map(({ key, label, chip }) => (
+            <View key={key} style={st.attrRow}>
+              <Text style={st.attrValue}>{stat(key)}</Text>
+              {chip ? <View style={[st.chip, { backgroundColor: chip }]} /> : <Ionicons name="medal" size={12} color={YELLOW} />}
+              <Text style={st.attrLabel} numberOfLines={1}>{label}</Text>
+            </View>
+          ))}
+        </View>
       </View>
 
       {/* رقم اللاعب بطرف الدرع */}
@@ -118,8 +126,8 @@ const useStyles = themed(() => ({
     alignItems: 'center',
     boxShadow: `0 6px 0 ${NAVY}`,
   },
-  stripeWide: { position: 'absolute', top: -40, bottom: -40, left: -54, width: 96, backgroundColor: YELLOW, transform: [{ skewX: '-14deg' }] },
-  stripeThin: { position: 'absolute', top: -40, bottom: -40, left: 56, width: 12, backgroundColor: YELLOW, transform: [{ skewX: '-14deg' }] },
+  stripeWide: { position: 'absolute', top: -40, bottom: -40, left: -50, width: 62, backgroundColor: YELLOW, transform: [{ skewX: '-14deg' }] },
+  stripeThin: { position: 'absolute', top: -40, bottom: -40, left: 22, width: 9, backgroundColor: YELLOW, transform: [{ skewX: '-14deg' }] },
   // خط رفيع داخل الإطار مثل حافة البطاقة
   inner: { position: 'absolute', top: 7, left: 7, right: 7, bottom: 7, borderWidth: 1, borderColor: 'rgba(255,214,10,0.45)', borderTopLeftRadius: 20, borderTopRightRadius: 20, borderBottomLeftRadius: 112, borderBottomRightRadius: 112 },
   top: { flexDirection: 'row', alignSelf: 'stretch', alignItems: 'flex-start', gap: 8 },
@@ -134,12 +142,16 @@ const useStyles = themed(() => ({
   camera: { position: 'absolute', bottom: 2, right: 18, width: 34, height: 34, borderRadius: 10, backgroundColor: YELLOW, borderWidth: 2, borderColor: NAVY, alignItems: 'center', justifyContent: 'center' },
   name: { fontFamily: fonts.display, fontSize: 28, lineHeight: 40, color: '#FFFFFF', textAlign: 'center', marginTop: 10, maxWidth: '100%' },
   nameLine: { width: '70%', height: 3, borderRadius: 2, backgroundColor: YELLOW, marginTop: 2, marginBottom: 10 },
-  attrs: { flexDirection: 'row', alignSelf: 'stretch', paddingHorizontal: 18 },
-  attrCol: { flex: 1, gap: 4, paddingHorizontal: 10 },
+  attrs: { flexDirection: 'row', alignSelf: 'stretch', paddingStart: 4, paddingEnd: 2 },
+  attrCol: { flex: 1, gap: 4, paddingHorizontal: 8 },
+  // جهة البطاقات أعرض شوية لأن «رجل المباراة» أطول
+  attrColWide: { flex: 1.5, paddingEnd: 0 },
   attrColSep: { borderLeftWidth: 2, borderLeftColor: 'rgba(255,214,10,0.6)' },
-  attrRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  attrValue: { fontFamily: fonts.display, fontSize: 24, lineHeight: 32, color: '#FFFFFF', minWidth: 34 },
-  attrLabel: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 22, color: '#C9CEF5' },
+  attrRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  // بطاقة الحكم الصغيرة (صفراء/حمراء)
+  chip: { width: 10, height: 14, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(255,255,255,0.6)' },
+  attrValue: { fontFamily: fonts.display, fontSize: 22, lineHeight: 30, color: '#FFFFFF', minWidth: 22 },
+  attrLabel: { flexShrink: 1, fontFamily: fonts.semibold, fontSize: 12.5, lineHeight: 20, color: '#E3E6FF' },
   id: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, minHeight: 32, paddingHorizontal: 14, borderRadius: 999, backgroundColor: YELLOW },
   idText: { fontFamily: fonts.bold, fontSize: 12.5, lineHeight: 20, color: NAVY, letterSpacing: 0.5 },
 }));

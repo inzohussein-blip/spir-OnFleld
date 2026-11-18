@@ -7,7 +7,24 @@ import { errMsg, useAsync } from '../../lib/session';
 import type { MatchDetail, MatchEvent, RosterEntry, Team } from '../../lib/types';
 import { fonts, themed, useColors } from '../../theme';
 
-type Counts = Record<string, { goal: number; assist: number }>;
+type Kind = MatchEvent['kind'];
+type Counts = Record<string, Record<Kind, number>>;
+const ZERO: Record<Kind, number> = { goal: 0, assist: 0, yellow: 0, red: 0 };
+const KINDS: Kind[] = ['goal', 'assist', 'yellow', 'red'];
+
+/** عدّاد صغير بعنوان (وأيقونة بطاقة ملوّنة للصفراء والحمراء) */
+function Counter({ label, value, onChange, chip }: { label: string; value: number; onChange: (n: number) => void; chip?: string }) {
+  const st = useStyles();
+  return (
+    <View style={st.counter}>
+      <View style={st.counterHead}>
+        {chip ? <View style={[st.cardChip, { backgroundColor: chip }]} /> : null}
+        <Text style={st.counterLabel}>{label}</Text>
+      </View>
+      <Stepper value={value} onChange={onChange} />
+    </View>
+  );
+}
 
 function Stepper({ value, onChange, big }: { value: number; onChange: (n: number) => void; big?: boolean }) {
   const st = useStyles();
@@ -30,7 +47,7 @@ export default function ResultScreen() {
 function initialCounts(m: MatchDetail): Counts {
   const init: Counts = {};
   for (const e of m.events) {
-    init[e.player_id] ??= { goal: 0, assist: 0 };
+    init[e.player_id] ??= { ...ZERO };
     init[e.player_id][e.kind]++;
   }
   return init;
@@ -45,8 +62,9 @@ function ResultEditor({ m }: { m: MatchDetail }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const joined = m.roster.filter((r) => r.status === 'joined' && r.team);
-  const get = (pid: string, k: 'goal' | 'assist') => counts[pid]?.[k] ?? 0;
-  const set = (pid: string, k: 'goal' | 'assist', n: number) => setCounts((s) => ({ ...s, [pid]: { ...{ goal: 0, assist: 0 }, ...s[pid], [k]: n } }));
+  const get = (pid: string, k: Kind) => counts[pid]?.[k] ?? 0;
+  // البطاقة الحمراء وحدة بالكثير
+  const set = (pid: string, k: Kind, n: number) => setCounts((s) => ({ ...s, [pid]: { ...ZERO, ...s[pid], [k]: k === 'red' ? Math.min(1, n) : n } }));
   const teamGoals = (t: Team) => joined.filter((r) => r.team === t).reduce((s, r) => s + get(r.player_id, 'goal'), 0);
 
   async function submit() {
@@ -56,8 +74,7 @@ function ResultEditor({ m }: { m: MatchDetail }) {
     }
     const events: MatchEvent[] = [];
     for (const [player_id, cnt] of Object.entries(counts)) {
-      for (let i = 0; i < cnt.goal; i++) events.push({ player_id, kind: 'goal' });
-      for (let i = 0; i < cnt.assist; i++) events.push({ player_id, kind: 'assist' });
+      for (const kind of KINDS) for (let i = 0; i < (cnt[kind] ?? 0); i++) events.push({ player_id, kind });
     }
     setBusy(true);
     try {
@@ -76,16 +93,16 @@ function ResultEditor({ m }: { m: MatchDetail }) {
         <Text variant="h2" style={{ color: t === 'A' ? c.teamA : c.teamB }}>{t === 'A' ? 'الفريق الأزرق' : 'الفريق البرتقالي'}</Text>
         <Text variant="small" style={{ color: c.muted }}>أهداف مسجّلة {teamGoals(t)} من {score[t]}</Text>
       </Row>
-      <Row style={{ justifyContent: 'flex-end', gap: 28 }}>
-        <Text variant="small" style={{ color: c.muted }}>⚽ أهداف</Text>
-        <Text variant="small" style={{ color: c.muted }}>🅰️ صناعة</Text>
-      </Row>
       {players.map((r) => (
-        <Row key={r.player_id} style={st.playerRow}>
-          <Text style={{ flex: 1, fontFamily: fonts.semibold }} numberOfLines={2}>{r.profile.full_name}</Text>
-          <Stepper value={get(r.player_id, 'goal')} onChange={(n) => set(r.player_id, 'goal', n)} />
-          <Stepper value={get(r.player_id, 'assist')} onChange={(n) => set(r.player_id, 'assist', n)} />
-        </Row>
+        <View key={r.player_id} style={st.playerRow}>
+          <Text style={{ fontFamily: fonts.semibold }} numberOfLines={1}>{r.profile.full_name}</Text>
+          <View style={st.counters}>
+            <Counter label="أهداف" value={get(r.player_id, 'goal')} onChange={(n) => set(r.player_id, 'goal', n)} />
+            <Counter label="صناعة" value={get(r.player_id, 'assist')} onChange={(n) => set(r.player_id, 'assist', n)} />
+            <Counter label="صفراء" chip="#FFD60A" value={get(r.player_id, 'yellow')} onChange={(n) => set(r.player_id, 'yellow', n)} />
+            <Counter label="حمراء" chip="#E5252A" value={get(r.player_id, 'red')} onChange={(n) => set(r.player_id, 'red', n)} />
+          </View>
+        </View>
       ))}
     </Card>
   );
@@ -109,7 +126,7 @@ function ResultEditor({ m }: { m: MatchDetail }) {
       {teamBlock('B', joined.filter((r) => r.team === 'B'))}
       <ErrorText message={error} />
       <Button title="حفظ النتيجة" icon="checkmark-circle" loading={busy} onPress={submit} />
-      <Text variant="small" style={{ color: c.muted }}>تُحتسب الأهداف والصناعة في إحصائيات اللاعبين وقوائم المتصدرين.</Text>
+      <Text variant="small" style={{ color: c.muted }}>تُحتسب الأهداف والصناعة والبطاقات في إحصائيات اللاعبين وتبين على بطاقاتهم.</Text>
     </Screen>
   );
 }
@@ -119,5 +136,10 @@ const useStyles = themed((c) => ({
   stepBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: c.primarySoft, alignItems: 'center', justifyContent: 'center' },
   stepSign: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 24, color: c.primary },
   stepValue: { fontFamily: fonts.bold, fontSize: 16, minWidth: 22, textAlign: 'center' },
-  playerRow: { flexWrap: 'nowrap', paddingVertical: 6, borderTopWidth: 1, borderTopColor: c.border, gap: 12 },
+  playerRow: { paddingVertical: 8, borderTopWidth: 1, borderTopColor: c.border, gap: 6 },
+  counters: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
+  counter: { alignItems: 'center', gap: 2 },
+  counterHead: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  counterLabel: { fontSize: 11, lineHeight: 16, color: c.muted },
+  cardChip: { width: 9, height: 12, borderRadius: 2 },
 }));

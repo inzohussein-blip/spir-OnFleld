@@ -10,7 +10,7 @@ import { api } from '../../lib/api';
 import { formatIQD } from '../../lib/format';
 import { pickSquareImage } from '../../lib/pickImage';
 import { errMsg, useAsync, useSession } from '../../lib/session';
-import { cardRadius, ctaShadow, fonts, radius, space, themed, type ThemeMode, type, useTheme } from '../../theme';
+import { cardRadius, fonts, space, themed, type, useTheme, type ThemeMode } from '../../theme';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '—';
 
@@ -81,7 +81,6 @@ export default function Profile() {
     }
   }
 
-  const s = card?.stats;
   const pending = invites.data?.length ?? 0;
   const value = (t: string) => <Text style={st.value}>{t}</Text>;
   const go = (href: Parameters<typeof router.push>[0]) => () => router.push(href);
@@ -102,20 +101,6 @@ export default function Profile() {
             toast('انسخ رقمك ✓ دزّه لأصدقائك حتى يضيفوك لفرقهم');
           }}
         />
-        <View style={st.stats}>
-          {(
-            [
-              ['مباريات', s?.matches],
-              ['أهداف', s?.goals],
-              ['فوز', s?.wins],
-            ] as const
-          ).map(([label, v], i) => (
-            <View key={label} style={[st.statCell, i === 2 && st.statCellOn]}>
-              <Text style={st.statValue}>{v ?? 0}</Text>
-              <Text style={[st.statLabel, i === 2 && { color: c.onCta }]}>{label}</Text>
-            </View>
-          ))}
-        </View>
 
         <ListGroup title="نشاطي">
           <ListRow icon="calendar-outline" title="مبارياتي" onPress={go('/my-matches')} />
@@ -181,12 +166,6 @@ const useStyles = themed((c) => ({
   screen: { flex: 1, backgroundColor: c.bg },
   content: { paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.xl },
   card: { backgroundColor: c.card, borderRadius: cardRadius, borderWidth: 1, borderColor: c.border, padding: space.lg, gap: space.lg },
-  stats: { flexDirection: 'row', gap: space.sm, marginTop: -space.sm },
-  statCell: { flex: 1, alignItems: 'center', paddingVertical: space.sm, borderRadius: radius + 2, backgroundColor: c.card, borderWidth: 2, borderColor: c.border },
-  // الفوز بالأصفر مثل تصميم «ملكي»
-  statCellOn: { backgroundColor: c.cta, borderColor: c.cta, boxShadow: ctaShadow(c) },
-  statValue: { fontFamily: fonts.display, fontSize: 26, lineHeight: 34, color: c.text },
-  statLabel: { ...type.caption, color: c.muted },
   value: { ...type.caption, color: c.muted },
   badge: { minWidth: 22, height: 22, borderRadius: 11, backgroundColor: c.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   badgeText: { color: '#fff', fontFamily: fonts.bold, fontSize: 12, lineHeight: 18 },

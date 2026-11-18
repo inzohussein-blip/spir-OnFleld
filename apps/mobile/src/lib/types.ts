@@ -142,6 +142,10 @@ export interface PlayerStats {
   goals: number;
   assists: number;
   mvps: number;
+  /** البطاقات الصفراء */
+  yellow: number;
+  /** البطاقات الحمراء */
+  red: number;
 }
 
 export interface PlayerCard {
@@ -166,7 +170,7 @@ export interface TeamOfWeekEntry {
 // ---------- نتيجة المباراة ----------
 export interface MatchEvent {
   player_id: string;
-  kind: 'goal' | 'assist';
+  kind: 'goal' | 'assist' | 'yellow' | 'red';
 }
 export interface MatchResultInput {
   score_a: number;
