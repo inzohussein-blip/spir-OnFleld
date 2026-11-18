@@ -1,17 +1,16 @@
-import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Platform, Pressable, ScrollView, View } from 'react-native';
-import { Avatar } from '../../components/Avatar';
+import { RoyalPlayerCard } from '../../components/RoyalPlayerCard';
 import { useToast } from '../../components/feedback';
-import { Button, ErrorText, Halftone, ListGroup, ListRow, PageHeader, Row, Text } from '../../components/ui';
+import { Button, ErrorText, ListGroup, ListRow, PageHeader, Row, Text } from '../../components/ui';
 import { api } from '../../lib/api';
-import { formatIQD, POSITION_LABEL } from '../../lib/format';
+import { formatIQD } from '../../lib/format';
 import { pickSquareImage } from '../../lib/pickImage';
 import { errMsg, useAsync, useSession } from '../../lib/session';
-import { cardRadius, ctaShadow, fonts, radius, space, themed, type ThemeMode, type, useTheme, wideSpaces } from '../../theme';
+import { cardRadius, ctaShadow, fonts, radius, space, themed, type ThemeMode, type, useTheme } from '../../theme';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '—';
 
@@ -92,58 +91,30 @@ export default function Profile() {
       <ScrollView contentContainerStyle={{ paddingBottom: space.xl }}>
         <PageHeader title="حسابي" />
         <View style={st.content}>
-        {/* بطاقة اللاعب */}
-        <View style={st.playerCard}>
-          <Halftone rows={14} cols={12} />
-          <View style={st.cardStripe} />
-          <View style={st.cardStripeThin} />
-          <View style={st.cardTop}>
-            <Pressable onPress={changePhoto} accessibilityRole="button" accessibilityLabel="تغيير الصورة الشخصية">
-              <Avatar name={profile.full_name} url={profile.avatar_url} size={64} ring="rgba(255,255,255,0.7)" />
-              <View style={st.camera}>
-                <Ionicons name={uploading ? 'hourglass-outline' : 'camera'} size={13} color={c.onCta} />
-              </View>
-            </Pressable>
-            <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-              <Text style={st.cardName} numberOfLines={1}>{wideSpaces(profile.full_name)}</Text>
-              <Text style={st.cardMeta} numberOfLines={1}>
-                {POSITION_LABEL[profile.preferred_position]}
-                {profile.city ? ` · ${profile.city}` : ''}
-              </Text>
-              {profile.public_id ? (
-                <Pressable
-                  style={st.idPill}
-                  onPress={async () => {
-                    await Clipboard.setStringAsync(profile.public_id ?? '');
-                    toast('انسخ رقمك ✓ دزّه لأصدقائك حتى يضيفوك لفرقهم');
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`رقمك ${profile.public_id} — اضغط للنسخ`}
-                >
-                  <Text style={st.idText}>ID {profile.public_id}</Text>
-                  <Ionicons name="copy-outline" size={13} color="#FFFFFF" />
-                </Pressable>
-              ) : null}
+        {/* بطاقة اللاعب: على شكل بطاقات اللاعبين بأسلوب «ملكي» */}
+        <RoyalPlayerCard
+          profile={profile}
+          card={card}
+          uploading={uploading}
+          onChangePhoto={changePhoto}
+          onCopyId={async () => {
+            await Clipboard.setStringAsync(profile.public_id ?? '');
+            toast('انسخ رقمك ✓ دزّه لأصدقائك حتى يضيفوك لفرقهم');
+          }}
+        />
+        <View style={st.stats}>
+          {(
+            [
+              ['مباريات', s?.matches],
+              ['أهداف', s?.goals],
+              ['فوز', s?.wins],
+            ] as const
+          ).map(([label, v], i) => (
+            <View key={label} style={[st.statCell, i === 2 && st.statCellOn]}>
+              <Text style={st.statValue}>{v ?? 0}</Text>
+              <Text style={[st.statLabel, i === 2 && { color: c.onCta }]}>{label}</Text>
             </View>
-            <View style={st.rating} accessibilityLabel={`التقييم ${card?.overall ?? ''}`}>
-              <Text style={st.ratingLabel}>التقييم</Text>
-              <Text style={st.ratingValue}>{card?.overall ?? '—'}</Text>
-            </View>
-          </View>
-          <View style={st.stats}>
-            {(
-              [
-                ['مباريات', s?.matches],
-                ['أهداف', s?.goals],
-                ['فوز', s?.wins],
-              ] as const
-            ).map(([label, v], i) => (
-              <View key={label} style={[st.statCell, i > 0 && st.statSep]}>
-                <Text style={st.statValue}>{v ?? 0}</Text>
-                <Text style={st.statLabel}>{label}</Text>
-              </View>
-            ))}
-          </View>
+          ))}
         </View>
 
         <ListGroup title="نشاطي">
@@ -210,25 +181,12 @@ const useStyles = themed((c) => ({
   screen: { flex: 1, backgroundColor: c.bg },
   content: { paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.xl },
   card: { backgroundColor: c.card, borderRadius: cardRadius, borderWidth: 1, borderColor: c.border, padding: space.lg, gap: space.lg },
-  playerCard: { backgroundColor: c.bandBg, borderRadius: cardRadius + 2, padding: space.lg, gap: space.lg, overflow: 'hidden' },
-  // شريطين أصفر مايلين — نفس رأس الأقسام
-  cardStripe: { position: 'absolute', top: -20, bottom: -20, left: -40, width: 80, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
-  cardStripeThin: { position: 'absolute', top: -20, bottom: -20, left: 56, width: 12, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
-  cardTop: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  camera: { position: 'absolute', bottom: -2, left: -2, width: 26, height: 26, borderRadius: 8, backgroundColor: c.cta, alignItems: 'center', justifyContent: 'center' },
-  cardName: { fontFamily: fonts.display, fontSize: 24, lineHeight: 34, color: '#FFFFFF' },
-  cardMeta: { ...type.caption, color: 'rgba(255,255,255,0.9)' },
-  idPill: { flexDirection: 'row', alignItems: 'center', gap: space.xs + 2, alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 999, paddingHorizontal: 10, minHeight: 28, marginTop: 2 },
-  idText: { ...type.micro, fontSize: 12, lineHeight: 20, color: '#FFFFFF', letterSpacing: 0.4 },
-  // التقييم بشكل درع أبيض بظل كحلي
-  rating: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 28, borderBottomRightRadius: 28, paddingHorizontal: space.md, paddingTop: space.sm, paddingBottom: space.md, alignItems: 'center', minWidth: 72, boxShadow: ctaShadow(c) },
-  ratingValue: { fontFamily: fonts.display, fontSize: 34, lineHeight: 42, color: '#1A23C9' },
-  ratingLabel: { ...type.micro, color: '#0B1033' },
-  stats: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: radius, paddingVertical: space.sm },
-  statCell: { flex: 1, alignItems: 'center' },
-  statSep: { borderRightWidth: 1, borderRightColor: 'rgba(255,255,255,0.25)' },
-  statValue: { ...type.title, fontSize: 18, lineHeight: 28, color: '#FFFFFF' },
-  statLabel: { ...type.caption, color: 'rgba(255,255,255,0.85)' },
+  stats: { flexDirection: 'row', gap: space.sm, marginTop: -space.sm },
+  statCell: { flex: 1, alignItems: 'center', paddingVertical: space.sm, borderRadius: radius + 2, backgroundColor: c.card, borderWidth: 2, borderColor: c.border },
+  // الفوز بالأصفر مثل تصميم «ملكي»
+  statCellOn: { backgroundColor: c.cta, borderColor: c.cta, boxShadow: ctaShadow(c) },
+  statValue: { fontFamily: fonts.display, fontSize: 26, lineHeight: 34, color: c.text },
+  statLabel: { ...type.caption, color: c.muted },
   value: { ...type.caption, color: c.muted },
   badge: { minWidth: 22, height: 22, borderRadius: 11, backgroundColor: c.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   badgeText: { color: '#fff', fontFamily: fonts.bold, fontSize: 12, lineHeight: 18 },
