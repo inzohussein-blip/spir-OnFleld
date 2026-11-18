@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { LeaderList } from '../components/LeaderList';
 import { Pitch } from '../components/Pitch';
 import { PlayerCardView } from '../components/PlayerCardView';
-import { Card, Empty, Loading, Row, Screen, Segmented, SectionTitle, StatTile, Text } from '../components/ui';
+import { BandDecor, Card, Empty, Loading, Row, Screen, Segmented, SectionTitle, StatTile, Text } from '../components/ui';
 import { api } from '../lib/api';
 import { useAsync } from '../lib/session';
 import { fonts, useColors } from '../theme';
@@ -85,7 +85,8 @@ function PlayerOfMonth() {
   if (!card) return <Empty title="بعد ماكو لاعب للشهر" icon="star-outline" />;
   return (
     <>
-      <View style={{ backgroundColor: c.primary, borderRadius: 20, paddingVertical: 20, gap: 12, alignItems: 'center' }}>
+      <View style={{ backgroundColor: c.bandBg, borderRadius: 16, paddingVertical: 20, gap: 12, alignItems: 'center', overflow: 'hidden' }}>
+        <BandDecor />
         <Text style={{ fontFamily: fonts.bold, fontSize: 26, lineHeight: 38, color: c.accent }}>⭐ لاعب الشهر</Text>
         <PlayerCardView card={card} width={240} onPress={() => router.push({ pathname: '/player/[id]', params: { id: card.profile.id } })} />
       </View>

@@ -37,7 +37,7 @@ export default function AdminVenues() {
       {loading && !data ? <Loading /> : null}
       {data?.map((v) => (
         <View key={v.id} style={{ flexDirection: 'row', gap: 14, alignItems: 'center', backgroundColor: c.card, borderRadius: 18, borderWidth: 1, borderColor: c.border, padding: 14 }}>
-          <View style={{ width: 160, height: 90, borderRadius: 12, backgroundColor: '#1C8B4A', overflow: 'hidden' }}>
+          <View style={{ width: 160, height: 90, borderRadius: 12, backgroundColor: c.pitch, overflow: 'hidden' }}>
             {v.photo_url ? <Image source={{ uri: v.photo_url }} style={{ width: '100%', height: '100%' }} accessibilityLabel={v.name} /> : null}
           </View>
           <View style={{ flex: 1, gap: 6 }}>

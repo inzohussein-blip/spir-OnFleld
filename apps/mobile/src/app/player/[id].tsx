@@ -2,7 +2,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 import { PlayerCardView } from '../../components/PlayerCardView';
 import { PlayerStatsBlock } from '../../components/PlayerStatsBlock';
-import { Badge, ErrorText, Loading, Row, Screen, Text } from '../../components/ui';
+import { BandDecor, Badge, ErrorText, Loading, Row, Screen, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { POSITION_LABEL } from '../../lib/format';
 import { useAsync } from '../../lib/session';
@@ -17,7 +17,8 @@ export default function PlayerScreen() {
   return (
     <Screen>
       <Stack.Screen options={{ title: card.profile.full_name }} />
-      <View style={{ backgroundColor: c.primary, borderRadius: 20, paddingVertical: 20, alignItems: 'center', gap: 10 }}>
+      <View style={{ backgroundColor: c.bandBg, borderRadius: 16, paddingVertical: 20, alignItems: 'center', gap: 10, overflow: 'hidden' }}>
+        <BandDecor />
         <Row style={{ flexWrap: 'nowrap', justifyContent: 'center', gap: 12 }}>
           <PlayerCardView card={card} width={150} mode="arcade" />
           <PlayerCardView card={card} width={150} />

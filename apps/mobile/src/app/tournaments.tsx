@@ -2,11 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { View } from 'react-native';
-import { Badge, Card, Empty, ErrorText, Loading, Progress, Row, Screen, SectionTitle, Text } from '../components/ui';
+import { BandDecor, Badge, Card, Empty, ErrorText, Loading, Progress, Row, Screen, SectionTitle, Text } from '../components/ui';
 import { api } from '../lib/api';
 import { formatDay, formatFormat, formatIQD, TOURNAMENT_STATUS as STATUS_LABEL } from '../lib/format';
 import { useAsync } from '../lib/session';
-import { fonts, useColors } from '../theme';
+import { padLeft, fonts, useColors } from '../theme';
 
 
 export default function Tournaments() {
@@ -25,7 +25,8 @@ export default function Tournaments() {
         const st = STATUS_LABEL[t.status];
         return (
           <Card key={t.id} onPress={() => router.push({ pathname: '/tournament/[id]', params: { id: t.id } })} style={{ padding: 0, overflow: 'hidden' }}>
-            <View style={{ backgroundColor: c.primary, padding: 16, gap: 6 }}>
+            <View style={{ backgroundColor: c.bandBg, padding: 16, ...padLeft(48), gap: 6, overflow: 'hidden' }}>
+              <BandDecor dots={false} />
               <Row style={{ justifyContent: 'space-between' }}>
                 <Ionicons name="trophy" size={28} color={c.accent} />
                 <Badge label={st.label} tone={st.tone} />

@@ -49,8 +49,8 @@ export default function VenueScreen() {
           </>
         )}
         <Pressable onPress={() => void toggleFavoriteVenue(id)} style={st.favBtn} accessibilityRole="button" accessibilityLabel={fav ? 'شيل من المفضلة' : 'أضف للمفضلة'} accessibilityState={{ selected: fav }}>
-          <Ionicons name={fav ? 'star' : 'star-outline'} size={18} color={fav ? '#E0A91F' : '#101828'} />
-          <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: '#101828' }}>{fav ? 'مفضّل' : 'أضف للمفضلة'}</Text>
+          <Ionicons name={fav ? 'star' : 'star-outline'} size={18} color={fav ? c.accent : c.primaryDark} />
+          <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: c.primaryDark }}>{fav ? 'مفضّل' : 'أضف للمفضلة'}</Text>
         </Pressable>
       </View>
 
@@ -98,7 +98,7 @@ export default function VenueScreen() {
 }
 
 const useStyles = themed((c) => ({
-  hero: { height: 200, backgroundColor: '#1C8B4A', overflow: 'hidden' },
+  hero: { height: 200, backgroundColor: c.pitch, overflow: 'hidden' },
   favBtn: { position: 'absolute', bottom: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#fff', borderRadius: 999, paddingHorizontal: 12, height: 34 },
   heroHalf: { position: 'absolute', top: 0, bottom: 0, left: '50%', width: 3, backgroundColor: 'rgba(255,255,255,0.45)' },
   heroCircle: { position: 'absolute', width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: 'rgba(255,255,255,0.45)', top: 50, left: '50%', marginLeft: -49 },

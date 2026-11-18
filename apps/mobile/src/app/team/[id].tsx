@@ -4,11 +4,11 @@ import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Avatar } from '../../components/Avatar';
 import { useToast } from '../../components/feedback';
-import { Button, Empty, ErrorText, Loading, Text } from '../../components/ui';
+import { BandDecor, Button, Empty, ErrorText, Loading, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { POSITION_LABEL } from '../../lib/format';
 import { errMsg, useAsync } from '../../lib/session';
-import { fonts, themed, useColors } from '../../theme';
+import { padLeft, fonts, themed, useColors } from '../../theme';
 
 /** صفحة الفريق: الأعضاء، الطلبات المعلّقة، ومباريات الفريق (للقائد) */
 export default function TeamScreen() {
@@ -49,6 +49,7 @@ export default function TeamScreen() {
     <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={st.content}>
       <Stack.Screen options={{ title: team.name }} />
       <View style={st.hero}>
+        <BandDecor />
         <View style={st.heroIcon}>
           <Ionicons name="shield" size={30} color="#fff" />
         </View>
@@ -155,7 +156,7 @@ export default function TeamScreen() {
 
 const useStyles = themed((c) => ({
   content: { padding: 16, gap: 12, paddingBottom: 48 },
-  hero: { backgroundColor: c.primary, borderRadius: 24, padding: 18, alignItems: 'center', gap: 4 },
+  hero: { backgroundColor: c.bandBg, borderRadius: 16, overflow: 'hidden', padding: 18, ...padLeft(52), alignItems: 'center', gap: 4 },
   heroIcon: { width: 58, height: 58, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
   heroName: { color: '#fff', fontFamily: fonts.bold, fontSize: 20, lineHeight: 32 },
   heroMeta: { color: 'rgba(255,255,255,0.85)', fontFamily: fonts.semibold, fontSize: 14 },

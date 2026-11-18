@@ -121,6 +121,8 @@ export const wideSpaces = (t: string) => t.replace(/ /g, '\u2002');
  * التلفون بالعربي يقلب left لليمين، و end هو اليسار؛ الويب ما يقلب، فـ left هو اليسار.
  */
 export const fromLeft = (n: number) => (Platform.OS === 'web' ? { left: n } : { end: n });
+/** مسافة داخلية من الجهة اليسرى الحقيقية (حتى ما يغطي شريط الهوية النص) */
+export const padLeft = (n: number) => (Platform.OS === 'web' ? { paddingLeft: n } : { paddingEnd: n });
 
 /** ظل الزر الأصفر: خط كحلي حاد تحته مثل أرقام القمصان */
 export const ctaShadow = (c: Palette) => `0 3px 0 ${c.primaryDark}`;
