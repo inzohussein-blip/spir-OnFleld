@@ -3,7 +3,7 @@ name: Web App (PWA)
 
 on:
   push:
-    branches: [main]
+    branches: [main, claude/nifty-goodall-e5gfnl]
     paths: ['apps/mobile/**', '.github/workflows/web.yml']
   workflow_dispatch:
 

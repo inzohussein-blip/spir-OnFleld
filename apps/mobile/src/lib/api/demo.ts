@@ -4,6 +4,8 @@ import type { BusyRange } from '../slots';
 import { formatClock, toWesternDigits } from '../format';
 import { attributesFromRating, monthRange, overallOf, pickTeamOfWeek, pointsOf } from '../stats';
 import type {
+  StaffMember,
+  UserRole,
   Attributes,
   Fixture,
   LeaderKind,
@@ -89,6 +91,7 @@ interface StoredMatch {
   discount_pct?: number;
   motm_player_id?: string | null;
   closed_at?: string | null;
+  cancelled?: boolean;
 }
 
 interface StoredTournament extends Omit<Tournament, 'registered_teams'> {
@@ -456,7 +459,7 @@ function toMatch(d: DB, m: StoredMatch): Match {
   return {
     id: m.id, booking_id: null, organizer_id: m.organizer_id, title: m.title, players_per_side: m.players_per_side, max_players: max,
     reserves: m.reserves, skill_level: m.skill_level, visibility: m.visibility,
-    status: ended ? 'finished' : joined >= max ? 'full' : 'open',
+    status: m.cancelled ? 'cancelled' : ended ? 'finished' : joined >= max ? 'full' : 'open',
     starts_at: m.starts_at, ends_at: m.ends_at, cost_per_player: Math.ceil(m.price / max / 250) * 250,
     venue_name: loc?.venue.name ?? null, field_name: loc?.field.name ?? null, joined_count: joined,
     registration_opens_at: m.registration_opens_at ?? null, venue_address: loc?.venue.address ?? null, my_status: mine?.status ?? null,
@@ -569,7 +572,7 @@ export const demoApi: Api = {
     await delay();
     const d = await db();
     return d.matches
-      .filter((m) => m.visibility === 'public' && new Date(m.ends_at) > new Date())
+      .filter((m) => m.visibility === 'public' && !m.cancelled && new Date(m.ends_at) > new Date())
       .map((m) => toMatch(d, m))
       .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   },
@@ -997,6 +1000,45 @@ export const demoApi: Api = {
   // ---------- لوحة التحكم (في الوضع التجريبي مفتوحة للتجربة) ----------
   async isAdmin() {
     return true;
+  },
+  async myRole(): Promise<UserRole> {
+    return 'admin';
+  },
+  async setRegistrationAlert() {
+    /* الوضع التجريبي: التنبيه محلي بالهاتف */
+  },
+  async staffListMatches() {
+    const d = await db();
+    const from = Date.now() - 24 * 3600_000;
+    return d.matches
+      .filter((m) => new Date(m.starts_at).getTime() >= from)
+      .map((m) => toMatch(d, m))
+      .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  },
+  async staffCancelMatch(matchId, reason) {
+    const d = await db();
+    const m = d.matches.find((x) => x.id === matchId);
+    if (!m) throw new Error('المباراة مو موجودة');
+    if (m.closed_at) throw new Error('المباراة مسكّرة، ما تنلغي');
+    if (m.cancelled) return;
+    m.cancelled = true;
+    if (m.roster.some((r) => r.player_id === ME && (r.status === 'joined' || r.status === 'waitlist'))) {
+      notifyMe(d, 'cancelled', 'انلغت المباراة ❌', reason?.trim() || 'الإدارة لغت المباراة. تكدر تنضم لمباراة ثانية من الرئيسية.', m.id);
+    }
+    await save();
+  },
+  async adminListStaff(): Promise<StaffMember[]> {
+    const d = await db();
+    return d.profiles.filter((p) => p.role === 'staff').map((p) => ({ id: p.id, full_name: p.full_name, public_id: p.public_id ?? null, avatar_url: p.avatar_url ?? null }));
+  },
+  async adminSetStaff(publicId, on) {
+    const d = await db();
+    const p = d.profiles.find((x) => x.public_id === normalizePublicId(publicId));
+    if (!p) throw new Error('ماكو لاعب بهذا الرقم');
+    if (p.id === ME) throw new Error('هذا الحساب مدير');
+    p.role = on ? 'staff' : 'player';
+    await save();
+    return p.full_name;
   },
   async adminCreateMatch(input: AdminMatchInput) {
     const d = await db();

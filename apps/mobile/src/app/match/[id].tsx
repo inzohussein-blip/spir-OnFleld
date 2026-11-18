@@ -88,7 +88,8 @@ export default function MatchScreen() {
     };
   }, [id]);
   const [actionError, setActionError] = useState<string | null>(null);
-  const admin = useAsync(() => api.isAdmin(), []);
+  const role = useAsync(() => api.myRole(), []);
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const watching = useAsync(() => api.isWatching(id), [id]);
 
   if (loading && !m) return <Loading />;
@@ -98,8 +99,10 @@ export default function MatchScreen() {
   const waitlist = m.roster.filter((r) => r.status === 'waitlist');
   const mine = m.roster.find((r) => r.player_id === userId);
   const isOrganizer = m.organizer_id === userId;
-  const isAdmin = admin.data === true;
-  const canManage = isOrganizer || isAdmin;
+  // الموظف والمدير يديرون أي مباراة
+  const isStaff = role.data === 'staff' || role.data === 'admin';
+  const canManage = isOrganizer || isStaff;
+  const cancelled = m.status === 'cancelled';
   const started = new Date(m.starts_at).getTime() < now;
   const finished = new Date(m.ends_at).getTime() < now;
   const hasTeams = joined.some((r) => r.team);
@@ -125,7 +128,9 @@ export default function MatchScreen() {
   const share = () => shareMatch(m);
   const remindRegistration = async () => {
     const ok = await scheduleRegistrationAlert(m);
-    if (ok) {
+    // نفس التنبيه من الخادم: يوصل حتى لو التطبيق مسكّر أو انحذف التذكير المحلي
+    const server = await api.setRegistrationAlert(m.id, true).then(() => true, () => false);
+    if (ok || server) {
       setAlertSet(true);
       toast('راح نبلّغك أول ما يفتح التسجيل 🔔');
     } else toast(notificationsSupported ? 'فعّل الإشعارات من إعدادات الهاتف حتى نكدر نبلّغك' : 'التنبيهات تشتغل بتطبيق الهاتف');
@@ -139,7 +144,7 @@ export default function MatchScreen() {
   const fill = Math.min(1, joined.length / Math.max(1, m.max_players));
   const emptySlots = Math.max(0, m.max_players - joined.length);
 
-  const spotsText = finished ? 'انتهت' : spots.left === 0 ? 'مكتملة' : spots.left === 1 ? 'باقي مكان واحد' : spots.left === 2 ? 'باقي مكانين' : `باقي ${spots.left} أماكن`;
+  const spotsText = m.status === 'cancelled' ? 'ملغية' : finished ? 'انتهت' : spots.left === 0 ? 'مكتملة' : spots.left === 1 ? 'باقي مكان واحد' : spots.left === 2 ? 'باقي مكانين' : `باقي ${spots.left} أماكن`;
   const bar = actionLabel(action);
 
   return (
@@ -302,10 +307,22 @@ export default function MatchScreen() {
             {finished && mine?.status === 'joined' ? (
               <SmallAction icon="star-outline" label="قيّم اللاعبين" onPress={() => router.push({ pathname: '/match/rate', params: { id: m.id } })} />
             ) : null}
-            {isOrganizer && !finished && joined.length >= 2 ? (
+            {isStaff && !finished && !cancelled && !m.closed_at ? (
+              <SmallAction
+                icon="close-circle-outline"
+                danger
+                label={confirmCancel ? 'متأكد؟ اضغط مرة ثانية للإلغاء' : 'ألغِ المباراة'}
+                onPress={() => {
+                  if (!confirmCancel) return setConfirmCancel(true);
+                  setConfirmCancel(false);
+                  void act(() => api.staffCancelMatch(m.id)).then(() => toast('انلغت المباراة وانبلّغ اللاعبين'));
+                }}
+              />
+            ) : null}
+            {(isOrganizer || isStaff) && !finished && !cancelled && joined.length >= 2 ? (
               <SmallAction icon="git-compare-outline" label={hasTeams ? 'أعد التقسيم' : 'قسّم الفريقين'} onPress={autoBalance} />
             ) : null}
-            {isOrganizer && started && hasTeams ? (
+            {(isOrganizer || isStaff) && started && hasTeams ? (
               <SmallAction icon="create-outline" label={hasResult ? 'تعديل النتيجة' : 'سجّل النتيجة'} onPress={() => router.push({ pathname: '/match/result', params: { id: m.id } })} />
             ) : null}
           </Row>
@@ -323,7 +340,7 @@ export default function MatchScreen() {
           accessibilityLabel={bar.text}
         >
           <View style={[st.ctaIcon, !bar.enabled && { backgroundColor: c.cardAlt }]}>
-            {actions.busyId === m.id ? <ActivityIndicator color={c.onCta} /> : <Ionicons name={bar.enabled ? 'chevron-back' : action.kind === 'joined' ? 'checkmark' : 'time-outline'} size={20} color={bar.enabled ? c.onCta : c.muted} />}
+            {actions.busyId === m.id ? <ActivityIndicator color={c.onCta} /> : <Ionicons name={bar.enabled ? 'chevron-back' : action.kind === 'joined' ? 'checkmark' : action.kind === 'cancelled' ? 'close' : 'time-outline'} size={20} color={bar.enabled ? c.onCta : c.muted} />}
           </View>
           <Text style={[st.ctaText, !bar.enabled && { color: c.muted }]} numberOfLines={1}>{bar.text}</Text>
           {m.cost_per_player ? (

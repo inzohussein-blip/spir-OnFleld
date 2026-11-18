@@ -23,6 +23,8 @@ const ICON: Record<NotificationKind, IconName> = {
   motm: 'medal',
   referral: 'gift',
   no_show: 'wallet',
+  one_left: 'hourglass',
+  cancelled: 'close-circle',
 };
 
 /** مركز الإشعارات: كل جديد يخص اللاعب، وتُعلَّم كمقروءة عند الفتح */

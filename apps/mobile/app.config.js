@@ -6,9 +6,18 @@ function versionCodeOf(v) {
   return Math.max(1, Number(m[1]) * 10000 + Number(m[2] ?? 0) * 100 + Number(m[3] ?? 0));
 }
 
+// إشعارات الخادم بالأندرويد: ملف Firebase (البناء على GitHub يكتبه من سر GOOGLE_SERVICES_JSON)
+const fs = require('fs');
+const path = require('path');
+const googleServices = path.join(__dirname, 'google-services.json');
+
 module.exports = ({ config }) => ({
   ...config,
-  android: { ...config.android, versionCode: versionCodeOf(config.version) },
+  android: {
+    ...config.android,
+    versionCode: versionCodeOf(config.version),
+    ...(fs.existsSync(googleServices) ? { googleServicesFile: './google-services.json' } : {}),
+  },
   experiments: {
     ...config.experiments,
     typedRoutes: false,

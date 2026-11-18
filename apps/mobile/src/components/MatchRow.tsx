@@ -24,6 +24,8 @@ export function actionLabel(a: MatchAction, short = false) {
       return { text: short ? `بعد ${formatCountdown(a.ms).split(' و')[0]}` : `التسجيل بعد ${formatCountdown(a.ms)}`, tone: 'muted' as const, enabled: false };
     case 'finished':
       return { text: short ? 'انتهت' : 'انتهت المباراة', tone: 'muted' as const, enabled: false };
+    case 'cancelled':
+      return { text: short ? 'انلغت' : 'انلغت المباراة', tone: 'muted' as const, enabled: false };
   }
 }
 
