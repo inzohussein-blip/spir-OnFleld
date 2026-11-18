@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, ErrorText, Halftone, Input, Text } from '../components/ui';
 import { api } from '../lib/api';
 import { errMsg, useSession } from '../lib/session';
-import { fonts, themed, useColors, wideSpaces } from '../theme';
+import { fonts, fromLeft, themed, useColors, wideSpaces } from '../theme';
 
 export default function Login() {
   const { refresh } = useSession();
@@ -34,7 +34,7 @@ export default function Login() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.hero}>
           {/* نفس هوية شاشة التحميل: نقاط القمصان والشريطين الأصفر والشعار */}
-          <Halftone rows={24} cols={30} style={{ top: 8, left: 8 }} color="rgba(255,255,255,0.10)" />
+          <Halftone rows={24} cols={30} style={{ top: 8, ...fromLeft(8) }} color="rgba(255,255,255,0.10)" />
           <View style={styles.stripeWide} pointerEvents="none" />
           <View style={styles.stripeThin} pointerEvents="none" />
           <Image source={mark} style={styles.logo} accessibilityLabel="شعار بالملعب" />
@@ -80,8 +80,8 @@ export default function Login() {
 
 const useStyles = themed((colors) => ({
   hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, overflow: 'hidden' },
-  stripeWide: { position: 'absolute', top: -60, bottom: -60, left: -40, width: 90, backgroundColor: colors.cta, transform: [{ skewX: '-14deg' }] },
-  stripeThin: { position: 'absolute', top: -60, bottom: -60, left: 66, width: 16, backgroundColor: colors.cta, transform: [{ skewX: '-14deg' }] },
+  stripeWide: { position: 'absolute', top: -60, bottom: -60, ...fromLeft(-40), width: 90, backgroundColor: colors.cta, transform: [{ skewX: '-14deg' }] },
+  stripeThin: { position: 'absolute', top: -60, bottom: -60, ...fromLeft(66), width: 16, backgroundColor: colors.cta, transform: [{ skewX: '-14deg' }] },
   logo: { width: 140, height: 140, marginBottom: -24 },
   brand: { fontFamily: fonts.display, fontSize: 38, color: '#fff', lineHeight: 54 },
   tagline: { color: '#C9CEF5', fontSize: 15 },

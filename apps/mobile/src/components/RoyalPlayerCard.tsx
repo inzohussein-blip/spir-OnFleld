@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image, Pressable, View } from 'react-native';
 import { POSITION_CODE } from '../lib/stats';
 import type { PlayerCard, PlayerStats, Profile } from '../lib/types';
-import { fonts, themed, wideSpaces } from '../theme';
+import { fonts, fromLeft, themed, wideSpaces } from '../theme';
 import { Halftone, Text } from './ui';
 
 const ROYAL = '#1A23C9';
@@ -44,7 +44,7 @@ export function RoyalPlayerCard({
   const stat = (k: keyof PlayerStats) => (card ? String(card.stats[k]) : '—');
   return (
     <View style={st.card} accessibilityLabel={`بطاقة ${profile.full_name}، التقييم ${card?.overall ?? ''}`}>
-      <Halftone rows={30} cols={20} style={{ top: 8, left: 8 }} color="rgba(255,255,255,0.10)" />
+      <Halftone rows={30} cols={20} style={{ top: 8, ...fromLeft(8) }} color="rgba(255,255,255,0.10)" />
       <View style={st.stripeWide} pointerEvents="none" />
       <View style={st.stripeThin} pointerEvents="none" />
       <View style={st.inner} pointerEvents="none" />
@@ -126,8 +126,8 @@ const useStyles = themed(() => ({
     alignItems: 'center',
     boxShadow: `0 6px 0 ${NAVY}`,
   },
-  stripeWide: { position: 'absolute', top: -40, bottom: -40, left: -50, width: 62, backgroundColor: YELLOW, transform: [{ skewX: '-14deg' }] },
-  stripeThin: { position: 'absolute', top: -40, bottom: -40, left: 22, width: 9, backgroundColor: YELLOW, transform: [{ skewX: '-14deg' }] },
+  stripeWide: { position: 'absolute', top: -40, bottom: -40, ...fromLeft(-50), width: 62, backgroundColor: YELLOW, transform: [{ skewX: '-14deg' }] },
+  stripeThin: { position: 'absolute', top: -40, bottom: -40, ...fromLeft(22), width: 9, backgroundColor: YELLOW, transform: [{ skewX: '-14deg' }] },
   // خط رفيع داخل الإطار مثل حافة البطاقة
   inner: { position: 'absolute', top: 7, left: 7, right: 7, bottom: 7, borderWidth: 1, borderColor: 'rgba(255,214,10,0.45)', borderTopLeftRadius: 20, borderTopRightRadius: 20, borderBottomLeftRadius: 112, borderBottomRightRadius: 112 },
   top: { flexDirection: 'row', alignSelf: 'stretch', alignItems: 'flex-start', gap: 8 },

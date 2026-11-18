@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { StyleSheet, useColorScheme } from 'react-native';
+import { Platform, StyleSheet, useColorScheme } from 'react-native';
 
 /**
  * نظام التصميم «ملكي»: أزرق ملكي وأصفر بلون القمصان، وكحلي للكتابة.
@@ -115,6 +115,12 @@ export const headerText = (_c: Palette) => '#FFFFFF';
 
 /** خط العناوين الكوفي مسافته بين الكلمات ضيقة: نوسّعها حتى ما تلتصق الكلمات */
 export const wideSpaces = (t: string) => t.replace(/ /g, '\u2002');
+
+/**
+ * مكان من اليسار «الحقيقي» للزخارف (الشريطين الأصفر والنقاط):
+ * التلفون بالعربي يقلب left لليمين، و end هو اليسار؛ الويب ما يقلب، فـ left هو اليسار.
+ */
+export const fromLeft = (n: number) => (Platform.OS === 'web' ? { left: n } : { end: n });
 
 /** ظل الزر الأصفر: خط كحلي حاد تحته مثل أرقام القمصان */
 export const ctaShadow = (c: Palette) => `0 3px 0 ${c.primaryDark}`;
