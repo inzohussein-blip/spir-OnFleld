@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
+import { PullRefreshScroll } from '../../components/PullRefreshScroll';
 import { useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Avatar } from '../../components/Avatar';
 import { OfflineBanner } from '../../components/feedback';
 import { Empty, IconButton, ListGroup, Loading, PageHeader, Text } from '../../components/ui';
@@ -19,7 +20,7 @@ export default function Rankings() {
   const c = useColors();
   const st = useStyles();
   const [offset, setOffset] = useState(0);
-  const { data, loading, refreshing, reload, offline } = useAsync(() => api.getRankings(offset), [offset], { cacheKey: 'rankings' });
+  const { data, loading, reload, offline } = useAsync(() => api.getRankings(offset), [offset], { cacheKey: 'rankings' });
   const open = (id: string) => router.push({ pathname: '/player/[id]', params: { id } });
   const { from } = monthRange(offset);
   const rows = data ?? [];
@@ -28,9 +29,9 @@ export default function Rankings() {
 
   return (
     <View style={st.screen}>
-      <ScrollView
+      <PullRefreshScroll
         contentContainerStyle={st.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={c.primary} colors={[c.primary]} />}
+        onRefresh={reload}
       >
         <PageHeader title="التصنيفات" subtitle="النقاط من نتائج مباريات الشهر" />
         <View style={st.body}>
@@ -88,7 +89,7 @@ export default function Rankings() {
         ) : null}
         {rows.length ? <Text style={st.legend}>النقاط: فوز 3 · تعادل 1 · هدف 2 · صناعة 1 · رجل المباراة 3</Text> : null}
         </View>
-      </ScrollView>
+      </PullRefreshScroll>
     </View>
   );
 }

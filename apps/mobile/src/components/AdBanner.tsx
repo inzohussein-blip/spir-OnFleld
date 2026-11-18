@@ -50,7 +50,6 @@ export function AdBanner({ ad, now, onPress, onPressIn, onPressOut, style }: { a
       {!photo ? <PitchLines faint={ad.template === 'league'} wide={ad.template === 'partner'} /> : null}
       {ad.template !== 'partner' ? <View style={shine} /> : null}
       {ad.template === 'league' ? <View style={goldGlow} /> : null}
-      <Text style={adTag}>{ad.template === 'partner' ? 'إعلان · شريك' : 'إعلان'}</Text>
 
       {/* النص */}
       <View style={{ flex: 1, minWidth: 0, alignItems: 'flex-start' }}>
@@ -213,7 +212,6 @@ const fill: ViewStyle = { position: 'absolute', top: 0, bottom: 0, left: 0, righ
 const box: ViewStyle = { height: AD_HEIGHT, borderRadius: 16, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 18 };
 const shine: ViewStyle = { position: 'absolute', width: 260, height: 260, borderRadius: 130, top: -170, right: -60, backgroundColor: 'rgba(255,255,255,0.10)' };
 const goldGlow: ViewStyle = { position: 'absolute', width: 170, height: 170, borderRadius: 85, top: -10, left: -30, backgroundColor: 'rgba(245,196,49,0.16)' };
-const adTag = { position: 'absolute' as const, top: 7, left: 12, color: 'rgba(255,255,255,0.65)', fontFamily: fonts.semibold, fontSize: 9.5, lineHeight: 14 };
 const eyebrow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: '100%', backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', borderRadius: 999, paddingHorizontal: 9, marginBottom: 2 };
 const eyebrowText = { color: '#fff', fontFamily: fonts.bold, fontSize: 10.5, lineHeight: 18 };
 const title = { color: '#fff', fontFamily: fonts.bold, fontSize: 18.5, lineHeight: 29 };
