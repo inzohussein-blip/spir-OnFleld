@@ -40,15 +40,14 @@ export default function Profile() {
   const toast = useToast();
   const role = useAsync(() => api.myRole(), [userId]);
   const admin = { data: role.data === 'admin' };
-  // كل دور يشوف صفحته بس: الموظف ← إدارة المباريات، صاحب الملعب ← ملاعبي، المدير ← لوحة التحكم (المتصفح)
-  const isStaff = role.data === 'staff';
+  const isStaff = role.data === 'staff' || role.data === 'admin';
   const invites = useAsync(() => api.listTeamInvites(), [userId]);
   const wallet = useAsync(() => api.getWallet(), [userId]);
   const reloadInvites = invites.reload;
   const reloadWallet = wallet.reload;
   const showAdmin = Platform.OS === 'web' && admin.data === true;
-  // صاحب الملعب بس يشوف صفحة ملاعبه — على التلفون والويب
-  const showOwner = role.data === 'owner' || profile?.role === 'owner';
+  // صاحب الملعب (أو المدير) يشوف صفحة ملاعبه — على التلفون والويب
+  const showOwner = profile?.role === 'owner' || admin.data === true;
   const [error, setError] = useState<string | null>(null);
   useFocusEffect(
     useCallback(() => {
@@ -132,7 +131,7 @@ export default function Profile() {
           <ListRow icon="bulb-outline" title="اقترح مباراة" onPress={go('/suggest')} />
           {showOwner ? <ListRow icon="business-outline" title="ملاعبي (صاحب الملعب)" onPress={go('/owner')} /> : null}
           {showAdmin ? <ListRow icon="speedometer-outline" title="لوحة التحكم (للإدارة)" onPress={go('/admin')} /> : null}
-          {isStaff ? <ListRow icon="football-outline" title="لوحة الموظفين: إدارة المباريات" onPress={go('/admin')} /> : null}
+          {isStaff && !showAdmin ? <ListRow icon="football-outline" title="لوحة الموظفين: إدارة المباريات" onPress={go('/admin')} /> : null}
         </ListGroup>
 
         <ListGroup title="الإعدادات">
