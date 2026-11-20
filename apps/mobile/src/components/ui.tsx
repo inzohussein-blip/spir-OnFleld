@@ -76,7 +76,7 @@ export function BandDecor({ dots = true }: { dots?: boolean }) {
  * رأس الأقسام الرئيسية «ملكي»: أزرق ملكي بنقاط القمصان وشريطين أصفر مايلين على الطرف،
  * عنوان أبيض كوفي كبير وسطر صغير تحته، وأزرار أيقونات. نفس الشكل بكل التبويبات.
  */
-export function PageHeader({ title, subtitle, actions, eyebrow, children }: { title: string; subtitle?: string; actions?: ReactNode; eyebrow?: string; children?: ReactNode }) {
+export function PageHeader({ title, subtitle, actions, eyebrow, children, slogan }: { title: string; subtitle?: string; actions?: ReactNode; eyebrow?: string; children?: ReactNode; /** العنوان بخط الشعار (الرقعة) بدل الكوفي */ slogan?: boolean }) {
   const s = useStyles();
   const c = useColors();
   const insets = useSafeAreaInsets();
@@ -88,7 +88,7 @@ export function PageHeader({ title, subtitle, actions, eyebrow, children }: { ti
       <View style={s.bandRow}>
         <View style={{ flex: 1, minWidth: 0 }}>
           {eyebrow ? <Text style={s.bandEyebrow} numberOfLines={1}>{eyebrow}</Text> : null}
-          <Text style={s.bandTitle} numberOfLines={1}>{wideSpaces(title)}</Text>
+          <Text style={[s.bandTitle, slogan && s.bandSlogan]} numberOfLines={slogan ? 2 : 1}>{slogan ? title : wideSpaces(title)}</Text>
           {subtitle ? <Text style={s.bandSubtitle} numberOfLines={1}>{subtitle}</Text> : null}
         </View>
         {actions ? <View style={s.pageActions}>{actions}</View> : null}
@@ -99,7 +99,7 @@ export function PageHeader({ title, subtitle, actions, eyebrow, children }: { ti
 }
 
 /** زر أيقونة دائري بحجم ثابت (44) — `onBand` للزر فوق الرأس الغامق، مع نقطة تنبيه اختيارية */
-export function IconButton({ icon, onPress, label, dot, disabled, onBand }: { icon: IconName; onPress: () => void; label: string; dot?: boolean; disabled?: boolean; onBand?: boolean }) {
+export function IconButton({ icon, onPress, label, dot, disabled, onBand, active }: { icon: IconName; onPress: () => void; label: string; dot?: boolean; disabled?: boolean; onBand?: boolean; /** مفعّل (مثل «المفضلة»): خلفية صفرة */ active?: boolean }) {
   const s = useStyles();
   const c = useColors();
   return (
@@ -109,9 +109,10 @@ export function IconButton({ icon, onPress, label, dot, disabled, onBand }: { ic
       hitSlop={4}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={({ pressed }) => [s.iconBtn, onBand && s.iconBtnBand, disabled && { opacity: 0.35 }, pressed && { opacity: 0.75 }]}
+      accessibilityState={active !== undefined ? { selected: active } : undefined}
+      style={({ pressed }) => [s.iconBtn, onBand && s.iconBtnBand, active && s.iconBtnActive, disabled && { opacity: 0.35 }, pressed && { opacity: 0.75 }]}
     >
-      <Ionicons name={icon} size={21} color={onBand ? c.onHeader : c.primary} />
+      <Ionicons name={icon} size={21} color={active ? c.onCta : onBand ? c.onHeader : c.primary} />
       {dot ? <View style={[s.iconDot, onBand && { borderColor: 'transparent' }]} /> : null}
     </Pressable>
   );
@@ -407,9 +408,11 @@ export const useStyles = themed((c) => ({
   bandRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm },
   bandEyebrow: { ...type.caption, color: c.onHeaderMuted },
   bandTitle: { ...type.largeTitle, color: c.onHeader },
+  bandSlogan: { fontFamily: fonts.slogan, fontSize: 27, lineHeight: 44 },
   bandSubtitle: { ...type.caption, color: c.onHeaderMuted, marginTop: -4 },
   pageActions: { flexDirection: 'row', gap: space.sm, paddingBottom: 4 },
   iconBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: c.card, borderWidth: 2, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
+  iconBtnActive: { backgroundColor: c.cta, borderColor: c.cta, boxShadow: ctaShadow(c) },
   iconBtnBand: { backgroundColor: c.headerBg, borderColor: c.onHeader === '#FFFFFF' ? 'rgba(255,255,255,0.45)' : c.border },
   iconDot: { position: 'absolute', top: 10, right: 11, width: 9, height: 9, borderRadius: 5, backgroundColor: '#FF5A5F', borderWidth: 2, borderColor: c.card },
   card: { backgroundColor: c.card, borderRadius: cardRadius, padding: space.lg, gap: space.sm, borderWidth: 2, borderColor: c.border },

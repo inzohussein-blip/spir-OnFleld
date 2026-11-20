@@ -1,5 +1,6 @@
 import { ReadexPro_400Regular, ReadexPro_600SemiBold, ReadexPro_700Bold, useFonts } from '@expo-google-fonts/readex-pro';
 import { ReemKufi_700Bold } from '@expo-google-fonts/reem-kufi';
+import { ArefRuqaa_700Bold } from '@expo-google-fonts/aref-ruqaa';
 import { StackHeader } from '../components/StackHeader';
 import { Stack, usePathname, useRouter, useSegments, type ErrorBoundaryProps, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -187,10 +188,11 @@ function Gate() {
 }
 
 /** شاشة الشعار تبقى على الأقل هالمدة عند الفتح (وأكثر إذا الخطوط بعدها ما تحمّلت) */
-const SPLASH_MS = 1300;
+// وقت كافي حتى تطلع عبارة الترحيب كلمة كلمة
+const SPLASH_MS = 2300;
 
 export default function RootLayout() {
-  const [loaded] = useFonts({ ReadexPro_400Regular, ReadexPro_600SemiBold, ReadexPro_700Bold, ReemKufi_700Bold });
+  const [loaded] = useFonts({ ReadexPro_400Regular, ReadexPro_600SemiBold, ReadexPro_700Bold, ReemKufi_700Bold, ArefRuqaa_700Bold });
   const [minDone, setMinDone] = useState(false);
   // الشاشة تبقى فوق التطبيق لحد ما يخلص تلاشيها
   const [splashGone, setSplashGone] = useState(false);

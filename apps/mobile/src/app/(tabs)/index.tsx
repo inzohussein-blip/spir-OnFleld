@@ -3,14 +3,13 @@ import { PullRefreshScroll } from '../../components/PullRefreshScroll';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { AdCarousel } from '../../components/AdCarousel';
-import { FilterBar } from '../../components/FilterBar';
 import { MatchRow } from '../../components/MatchRow';
 import { OfflineBanner, SkeletonList } from '../../components/feedback';
 import { Button, Empty, ErrorText, IconButton, PageHeader, SectionTitle, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { useFavoriteVenues } from '../../lib/favorites';
-import { applyFilters, EMPTY_FILTERS, filterOptions, type MatchFilters } from '../../lib/filters';
-import { formatMatchCount, greetingFor, readyHeadline, shortWeekday, weekdayName } from '../../lib/format';
+import { applyFilters, EMPTY_FILTERS, type MatchFilters } from '../../lib/filters';
+import { formatMatchCount, greetingFor, shortWeekday, weekdayName } from '../../lib/format';
 import { dayCounts, firstDayWithMatches } from '../../lib/schedule';
 import { useAsync, useNow, useSession } from '../../lib/session';
 import { nextDays } from '../../lib/slots';
@@ -44,7 +43,6 @@ export default function Home() {
 
   const [filters, setFilters] = useState<MatchFilters>(EMPTY_FILTERS);
   const favVenues = useFavoriteVenues();
-  const options = useMemo(() => filterOptions(data ?? []), [data]);
   const filtered = useMemo(() => applyFilters(data ?? [], filters, favVenues), [data, filters, favVenues]);
   const counts = useMemo(() => dayCounts(filtered, days), [filtered, days]);
   const dayIdx = chosenDay ?? firstDayWithMatches(counts);
@@ -52,15 +50,8 @@ export default function Home() {
   const dayMatches = filtered.filter((m) => new Date(m.starts_at).toDateString() === day.toDateString());
   const isFiltered = filtered.length !== (data ?? []).length;
   const hasUnread = (notes ?? []).some((n) => !n.read);
-  const weekTotal = dayCounts(data ?? [], days).reduce((a, b) => a + b, 0);
-  const venueTotal = new Set((data ?? []).map((m) => m.venue_id ?? m.venue_name)).size;
   const hour = new Date(now).getHours();
   const firstName = (profile?.full_name ?? '').split(' ')[0];
-  const summary = data
-    ? weekTotal
-      ? `${formatMatchCount(weekTotal)} هذا الأسبوع${venueTotal ? ` · ${venueTotal === 1 ? 'ملعب واحد' : venueTotal === 2 ? 'ملعبين' : `${venueTotal} ملاعب`}` : ''}`
-      : 'ماكو مباريات هذا الأسبوع بعد'
-    : undefined;
 
   return (
     <View style={st.screen}>
@@ -70,11 +61,19 @@ export default function Home() {
       >
         <PageHeader
             eyebrow={`${greetingFor(hour)}${firstName ? `، ${firstName}` : ''}`}
-            title={readyHeadline(hour)}
-            subtitle={summary}
+            title="الملعب علينا واللعب عليك"
+            slogan
+            subtitle="جاهز ؟"
             actions={
               <>
-                  <IconButton onBand icon="search-outline" label="ابحث عن ملعب أو منطقة" onPress={() => router.push('/venues')} />
+                  {/* ملاعبي المفضلة: تبيّن مباريات الملاعب المعلّمة بنجمة بس */}
+                  <IconButton
+                    onBand
+                    active={filters.favOnly}
+                    icon={filters.favOnly ? 'star' : 'star-outline'}
+                    label={filters.favOnly ? 'ملاعبي المفضلة — مفعّلة' : 'ملاعبي المفضلة'}
+                    onPress={() => setFilters({ ...filters, favOnly: !filters.favOnly })}
+                  />
                   <IconButton onBand icon="notifications-outline" label={hasUnread ? 'الإشعارات — يوجد جديد' : 'الإشعارات'} dot={hasUnread} onPress={() => router.push('/notifications')} />
               </>
             }
@@ -105,8 +104,6 @@ export default function Home() {
           })}
         </View>
 
-        <FilterBar value={filters} onChange={setFilters} formats={options.formats} areas={options.areas} />
-
         <SectionTitle title={`مباريات ${weekdayName(day)}`} action={dayMatches.length ? <Text style={st.count}>{formatMatchCount(dayMatches.length)}</Text> : undefined} />
 
         <OfflineBanner show={offline} />
@@ -115,8 +112,8 @@ export default function Home() {
         {data && dayMatches.length === 0 ? (
           <View style={{ alignItems: 'center' }}>
             <Empty
-              title={isFiltered ? 'ماكو مباريات تطابق الفلترة' : 'ماكو مباريات بهذا اليوم'}
-              hint={isFiltered ? 'غيّر الفلترة أو امسحها' : 'شوف يوم ثاني، أو اقترح مباراة على الإدارة'}
+              title={isFiltered ? 'ماكو مباريات بملاعبك المفضلة' : 'ماكو مباريات بهذا اليوم'}
+              hint={isFiltered ? 'علّم ملاعب ثانية بنجمة من «الملاعب»، أو طفّي النجمة فوك' : 'شوف يوم ثاني، أو اقترح مباراة على الإدارة'}
               icon="calendar-outline"
             />
             <Button title="اقترح مباراة" icon="bulb-outline" variant="outline" onPress={() => router.push('/suggest')} style={{ paddingHorizontal: space.xl }} />

@@ -371,6 +371,8 @@ export const fonts = {
   bold: 'ReadexPro_700Bold',
   /** خط العناوين والأرقام الكبيرة (كوفي) */
   display: 'ReemKufi_700Bold',
+  /** خط الشعار «الملعب علينا واللعب عليك» (رقعة) */
+  slogan: 'ArefRuqaa_700Bold',
 };
 
 /** المسافات: كلها من مضاعفات 4 */
