@@ -120,9 +120,9 @@ const useStyles = themed((c) => ({
   card: { flexDirection: 'row', alignItems: 'stretch', backgroundColor: c.card, borderRadius: cardRadius, borderWidth: 2, borderColor: c.border, overflow: 'hidden' },
   main: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.md },
   // عمود الوقت الأزرق على طرف البطاقة
-  time: { width: 76, alignSelf: 'stretch', minHeight: 84, backgroundColor: c.bandBg, alignItems: 'center', justifyContent: 'center' },
-  clock: { fontFamily: fonts.display, fontSize: 22, lineHeight: 30, color: '#FFFFFF' },
-  mer: { ...type.micro, color: c.cta },
+  time: { width: 76, alignSelf: 'stretch', minHeight: 84, backgroundColor: c.timeBg, alignItems: 'center', justifyContent: 'center' },
+  clock: { fontFamily: fonts.display, fontSize: 22, lineHeight: 30, color: c.onTime },
+  mer: { ...type.micro, color: c.onTimeSub },
   venue: { ...type.headline, fontSize: 15, lineHeight: 24 },
   meta: { ...type.caption, color: c.muted },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },

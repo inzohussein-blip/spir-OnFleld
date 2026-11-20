@@ -137,7 +137,7 @@ function Gate() {
   return (
     <>
       {/* كل الرؤوس زرقاء: أرقام الساعة والبطارية بيضاء دائماً */}
-      <StatusBar style="light" />
+      <StatusBar style={c.onHeader === '#FFFFFF' ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           header: (props) => <StackHeader {...props} />,

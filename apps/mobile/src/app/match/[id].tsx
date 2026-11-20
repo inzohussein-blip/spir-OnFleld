@@ -393,7 +393,7 @@ const useStyles = themed((c) => ({
   initial: { width: 48, height: 48, borderRadius: 24, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' },
   teamCol: { flex: 1, borderWidth: 2, borderRadius: 14, padding: 10, gap: 2, backgroundColor: c.card },
   // ليلة الملعب: سماء زرقاء غامقة متدرجة بالكشافات
-  hero: { minHeight: 300, backgroundColor: '#141C8F', backgroundImage: 'radial-gradient(120% 90% at 50% 0%, #2B3BFF 0%, #141C8F 55%, #0B1033 100%)', overflow: 'hidden', justifyContent: 'flex-end' },
+  hero: { minHeight: 300, backgroundColor: c.bandBg, backgroundImage: c.heroSky, overflow: 'hidden', justifyContent: 'flex-end' },
   photoShade: { backgroundColor: 'rgba(11,16,51,0.45)', backgroundImage: 'linear-gradient(180deg, rgba(11,16,51,0.2) 0%, rgba(11,16,51,0.85) 100%)' },
   light: { position: 'absolute', width: 70, height: 70, marginLeft: -35, borderRadius: 35, backgroundColor: 'rgba(255,255,240,0.18)', backgroundImage: 'radial-gradient(circle, rgba(255,255,235,0.95) 0%, rgba(255,255,220,0.35) 18%, rgba(255,255,220,0) 70%)', boxShadow: '0 0 40px rgba(255,255,220,0.35)' },
   stands: { position: 'absolute', left: 0, right: 0, height: 70, backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 3px, transparent 3px, transparent 9px)', opacity: 0.9 },
@@ -435,7 +435,7 @@ const useStyles = themed((c) => ({
   ctaIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.cta, alignItems: 'center', justifyContent: 'center', boxShadow: ctaShadow(c) },
   ctaText: { flex: 1, fontFamily: fonts.bold, fontSize: 17, lineHeight: 26, color: '#0B1033' },
   ctaDivider: { width: 2, height: 30, borderRadius: 1, backgroundColor: '#C9CEF5' },
-  price: { fontFamily: fonts.bold, fontSize: 19, lineHeight: 28, color: '#1A23C9' },
+  price: { fontFamily: fonts.bold, fontSize: 19, lineHeight: 28, color: c.bandBg },
   oldPrice: { color: '#4A5185', fontSize: 11, lineHeight: 15, textDecorationLine: 'line-through' },
   motm: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, padding: 12, backgroundColor: c.cta, borderWidth: 2, borderColor: c.primaryDark, boxShadow: '0 3px 0 #0B1033' },
   motmIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.6)', alignItems: 'center', justifyContent: 'center' },

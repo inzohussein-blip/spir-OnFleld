@@ -10,7 +10,7 @@ import { api } from '../../lib/api';
 import { formatIQD } from '../../lib/format';
 import { pickSquareImage } from '../../lib/pickImage';
 import { errMsg, useAsync, useSession } from '../../lib/session';
-import { cardRadius, fonts, space, themed, type, useTheme, type ThemeMode } from '../../theme';
+import { cardRadius, fonts, space, themed, THEMES, type, useTheme, type ThemeMode, type ThemeName } from '../../theme';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '—';
 
@@ -29,9 +29,27 @@ function ThemePicker({ mode, onChange }: { mode: ThemeMode; onChange: (m: ThemeM
   );
 }
 
+/** الثيم: أربع هويات ألوان — تشتغل ويّا الفاتح والداكن */
+function ThemeSwatches({ theme, onChange }: { theme: ThemeName; onChange: (t: ThemeName) => void }) {
+  const st = useStyles();
+  return (
+    <View style={st.swatches} accessibilityRole="radiogroup">
+      {THEMES.map((t) => {
+        const on = theme === t.id;
+        return (
+          <Pressable key={t.id} onPress={() => onChange(t.id)} style={[st.swatch, on && st.swatchOn]} accessibilityRole="radio" accessibilityState={{ checked: on }} accessibilityLabel={`ثيم ${t.label}`}>
+            <View style={[st.swatchDot, { backgroundImage: `linear-gradient(135deg, ${t.swatch[0]} 0%, ${t.swatch[0]} 50%, ${t.swatch[1]} 50%, ${t.swatch[1]} 100%)`, backgroundColor: t.swatch[0] }]} />
+            <Text style={[st.swatchText, on && st.swatchTextOn]} numberOfLines={1}>{t.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export default function Profile() {
   const { profile, signOut, refresh, userId } = useSession();
-  const { colors: c, mode, setMode } = useTheme();
+  const { colors: c, mode, setMode, theme, setTheme } = useTheme();
   const st = useStyles();
   const router = useRouter();
   const { data: card, reload } = useAsync(() => (userId ? api.getPlayerCard(userId) : Promise.resolve(null)), [userId]);
@@ -136,6 +154,8 @@ export default function Profile() {
 
         <ListGroup title="الإعدادات">
           <ListRow icon="contrast-outline" title="المظهر" right={<ThemePicker mode={mode} onChange={setMode} />} />
+          <ListRow icon="color-palette-outline" title="الثيم" chevron={false} />
+          <ThemeSwatches theme={theme} onChange={setTheme} />
           <ListRow icon="person-outline" title="المعلومات الشخصية" onPress={go('/onboarding')} />
           <ListRow icon="chatbubbles-outline" title="الدعم الفني" onPress={go({ pathname: '/chat/[id]', params: { id: 'support' } })} />
           <ListRow icon="information-circle-outline" title="حول" onPress={go('/info')} right={value(`الإصدار ${APP_VERSION}`)} />
@@ -177,4 +197,10 @@ const useStyles = themed((c) => ({
   pickOn: { backgroundColor: c.cta },
   pickText: { ...type.micro, fontSize: 12, lineHeight: 20, color: c.muted },
   pickTextOn: { color: c.onCta },
+  swatches: { flexDirection: 'row', gap: 8, backgroundColor: c.card, paddingHorizontal: 12, paddingBottom: 14, paddingTop: 2 },
+  swatch: { flex: 1, alignItems: 'center', gap: 6, paddingVertical: 10, borderRadius: 12, borderWidth: 2, borderColor: c.border, backgroundColor: c.card },
+  swatchOn: { borderColor: c.cta, backgroundColor: c.primarySoft, boxShadow: `0 3px 0 ${c.primaryDark}` },
+  swatchDot: { width: 34, height: 34, borderRadius: 17, borderWidth: 1.5, borderColor: c.border },
+  swatchText: { ...type.micro, fontSize: 11.5, lineHeight: 18, color: c.muted },
+  swatchTextOn: { fontFamily: fonts.bold, color: c.text },
 }));

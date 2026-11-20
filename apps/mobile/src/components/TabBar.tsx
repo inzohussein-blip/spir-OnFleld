@@ -41,7 +41,7 @@ export function TabBar({ state, descriptors, navigateToTab, insets }: TabBarProp
             style={st.item}
             testID={`tab-${route.name}`}
           >
-            <Ionicons name={focused ? filled : outline} size={24} color={focused ? c.cta : ON_BAR_MUTED} />
+            <Ionicons name={focused ? filled : outline} size={24} color={focused ? c.tabActive : c.tabInactive} />
             <Text style={[st.label, focused && st.labelOn]} numberOfLines={1}>{title}</Text>
           </Pressable>
         );
@@ -50,12 +50,9 @@ export function TabBar({ state, descriptors, navigateToTab, insets }: TabBarProp
   );
 }
 
-/** لون الأقسام غير المختارة فوق الأزرق */
-const ON_BAR_MUTED = '#C9CEF5';
-
 const useStyles = themed((c) => ({
-  bar: { flexDirection: 'row', backgroundColor: c.bandBg, paddingTop: 8 },
+  bar: { flexDirection: 'row', backgroundColor: c.tabBg, paddingTop: 8, borderTopWidth: c.tabBg === '#FFFFFF' ? 1 : 0, borderTopColor: c.border },
   item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: 52 },
-  label: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 16, color: ON_BAR_MUTED },
-  labelOn: { fontFamily: fonts.bold, color: c.cta },
+  label: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 16, color: c.tabInactive },
+  labelOn: { fontFamily: fonts.bold, color: c.tabActive },
 }));
