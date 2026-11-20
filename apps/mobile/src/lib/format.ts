@@ -53,7 +53,9 @@ export const SKILL_LABEL: Record<SkillLevel, string> = {
   open: 'مفتوح للجميع',
 };
 
-export const formatFormat = (perSide: number) => `${perSide} × ${perSide}`;
+/** نوع المباراة بالاسم: خماسي، سداسي، سباعي… و«11 لاعب» للملعب الكبير */
+const FORMAT_NAME: Record<number, string> = { 3: 'ثلاثي', 4: 'رباعي', 5: 'خماسي', 6: 'سداسي', 7: 'سباعي', 8: 'ثماني', 9: 'تساعي', 10: 'عشاري', 11: '11 لاعب' };
+export const formatFormat = (perSide: number) => FORMAT_NAME[perSide] ?? `${perSide} × ${perSide}`;
 
 export const stars = (r: number) => `★ ${r.toFixed(1)}`;
 

@@ -368,8 +368,8 @@ begin
   loop
     update matches set reminder_sent_at = now() where id = r.id;
     insert into notifications (user_id, kind, title, body, match_id)
-    select mp.player_id, 'reminder', 'مباراتك بعد ساعة ⚽',
-           match_venue_name(r.id) || ' — تبدأ ' || baghdad_clock(r.starts_at) || '. لا تتأخر!', r.id
+    select mp.player_id, 'reminder', 'مباراتك بعد ساعة ⚽🔥',
+           match_venue_name(r.id) || ' — الساعة ' || baghdad_clock(r.starts_at) || '. تعال قبل ربع ساعة، الملعب علينا واللعب عليك 😎', r.id
       from match_players mp where mp.match_id = r.id and mp.status = 'joined';
     get diagnostics v_n = row_count; v_count := v_count + v_n;
   end loop;

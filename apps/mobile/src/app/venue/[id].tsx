@@ -9,7 +9,7 @@ import { MatchRow } from '../../components/MatchRow';
 import { Badge, Button, Empty, ErrorText, Row, Text } from '../../components/ui';
 import { api } from '../../lib/api';
 import { hasCoords } from '../../lib/geo';
-import { formatFormat, formatHour, formatIQD } from '../../lib/format';
+import { formatHour, formatIQD } from '../../lib/format';
 import { useAsync, useNow } from '../../lib/session';
 import { useMatchActions } from '../../lib/useMatchActions';
 import { fonts, themed, useColors } from '../../theme';
@@ -70,7 +70,7 @@ export default function VenueScreen() {
             {v.amenities.length ? <Row>{v.amenities.map((a) => <Badge key={a} label={a} tone="gray" />)}</Row> : null}
             {v.fields.map((f) => (
               <View key={f.id} style={st.field}>
-                <Text style={{ fontFamily: fonts.bold }}>{f.name} · {formatFormat(f.players_per_side)}</Text>
+                <Text style={{ fontFamily: fonts.bold }}>{f.name}</Text>
                 <Text variant="small" style={{ color: c.muted }}>
                   {f.surface ?? ''}{f.is_indoor ? ' · مغطى' : ' · مكشوف'} · {formatHour(f.open_hour)} – {formatHour(f.close_hour)} · {formatIQD(f.default_price)} بالساعة
                 </Text>

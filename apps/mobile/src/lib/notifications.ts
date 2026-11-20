@@ -4,7 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { api } from './api';
 import { formatClock } from './format';
-import { reminderAt } from './schedule';
+import { joinAlertPlan } from './schedule';
 import type { Match } from './types';
 
 /**
@@ -51,13 +51,14 @@ async function ensurePermission(): Promise<boolean> {
   return asked.granted;
 }
 
-async function scheduleAt(key: string, date: Date, title: string, body: string, matchId: string) {
+/** `date` = null: يطلع فوراً */
+async function scheduleAt(key: string, date: Date | null, title: string, body: string, matchId: string) {
   if (!(await ensurePermission())) return false;
   const scheduled = await readScheduled();
   if (scheduled[key]) await Notifications.cancelScheduledNotificationAsync(scheduled[key]).catch(() => {});
   const id = await Notifications.scheduleNotificationAsync({
     content: { title, body, data: { match_id: matchId } },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date, channelId: 'matches' },
+    trigger: date ? { type: Notifications.SchedulableTriggerInputTypes.DATE, date, channelId: 'matches' } : { channelId: 'matches' },
   });
   scheduled[key] = id;
   await writeScheduled(scheduled);
@@ -73,14 +74,41 @@ async function cancel(key: string) {
   await writeScheduled(scheduled);
 }
 
-/** بعد الانضمام: تذكير قبل المباراة بساعتين */
+/** كلمات تزيد الحماس — وحدة عشوائية بكل إشعار */
+const HYPE = ['جهّز جزمتك وتعال نار 🔥⚽', 'اليوم يومك يا بطل 💪🔥', 'الملعب علينا واللعب عليك 😎⚽', 'خلّي الكل يحچي عن لعبك 🏆🔥', 'دفّي عضلاتك وتعال جاهز ⚡⚽'];
+const hype = () => HYPE[Math.floor(Math.random() * HYPE.length)];
+const SERVER_PUSH_KEY = 'balmalaab-server-push';
+
+/**
+ * بعد الانضمام:
+ * - «تم الحجز ✅» بعد نص ساعة (أو فوراً إذا المباراة أقرب من نص ساعة) ويّا «تعال قبل ربع ساعة».
+ * - تذكير قبل المباراة بساعة بكلمة حماس — إلا إذا الخادم يدز التذكير (إشعارات الخادم مفعّلة).
+ */
 export async function scheduleMatchReminder(m: Match) {
-  const at = reminderAt(m, Date.now());
-  if (!at) return false;
-  return scheduleAt(`reminder:${m.id}`, at, 'مباراتك بعد ساعتين ⚽', `${m.venue_name ?? 'المباراة'} — تبدأ ${formatClock(m.starts_at)}`, m.id);
+  const plan = joinAlertPlan(m.starts_at, Date.now());
+  if (!plan) return false;
+  const venue = m.venue_name ?? 'المباراة';
+  const clock = formatClock(m.starts_at);
+  const confirmed = await scheduleAt(
+    `confirm:${m.id}`,
+    plan.soon ? null : new Date(plan.confirmAt),
+    plan.soon ? 'تم الحجز ✅ مباراتك قريبة!' : 'تم الحجز ✅ مكانك محجوز',
+    plan.soon
+      ? `${venue} — الساعة ${clock}. تحرّك هسه وكون بالملعب قبل ربع ساعة ⏱️ ${hype()}`
+      : `${venue} — الساعة ${clock}. لازم تكون بالملعب قبل ربع ساعة من البداية ⏱️ ${hype()}`,
+    m.id,
+  );
+  const serverReminds = (await AsyncStorage.getItem(SERVER_PUSH_KEY).catch(() => null)) === '1';
+  if (plan.reminderAt && !serverReminds) {
+    await scheduleAt(`reminder:${m.id}`, new Date(plan.reminderAt), 'مباراتك بعد ساعة ⚽🔥', `${venue} — الساعة ${clock}. تعال قبل ربع ساعة. ${hype()}`, m.id);
+  }
+  return confirmed;
 }
 
-export const cancelMatchReminder = (matchId: string) => cancel(`reminder:${matchId}`);
+export async function cancelMatchReminder(matchId: string) {
+  await cancel(`confirm:${matchId}`);
+  await cancel(`reminder:${matchId}`);
+}
 
 /** «ذكّرني عند فتح التسجيل» */
 export async function scheduleRegistrationAlert(m: Match) {
@@ -111,7 +139,11 @@ export async function registerForPush() {
     const token = projectId
       ? (await Notifications.getExpoPushTokenAsync({ projectId })).data
       : String((await Notifications.getDevicePushTokenAsync()).data);
-    if (token) await api.savePushToken(token, Platform.OS === 'ios' ? 'ios' : 'android');
+    if (token) {
+      await api.savePushToken(token, Platform.OS === 'ios' ? 'ios' : 'android');
+      // الخادم صار يدز «مباراتك بعد ساعة» — ما نكرره محلياً
+      if (!api.isDemo) await AsyncStorage.setItem(SERVER_PUSH_KEY, '1').catch(() => {});
+    }
   } catch {
     /* بدون إعداد Firebase ما يتوفر رمز — الإشعارات المحلية تبقى تعمل */
   }

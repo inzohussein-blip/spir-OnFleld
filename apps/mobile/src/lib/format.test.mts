@@ -73,3 +73,12 @@ test('short weekday', async () => {
   assert.equal(shortWeekday(new Date(2026, 10, 21)), 'سبت');
   assert.equal(shortWeekday(new Date(2026, 10, 23)), 'اثنين');
 });
+
+test('نوع المباراة بالاسم', async () => {
+  const { formatFormat } = await import('./format.ts');
+  assert.equal(formatFormat(5), 'خماسي');
+  assert.equal(formatFormat(6), 'سداسي');
+  assert.equal(formatFormat(7), 'سباعي');
+  assert.equal(formatFormat(9), 'تساعي');
+  assert.equal(formatFormat(11), '11 لاعب');
+});

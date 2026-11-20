@@ -1,7 +1,8 @@
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { directionsUrl, hasCoords } from '../../lib/geo';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { actionLabel, useSpotsColor } from '../../components/MatchRow';
 import { Avatar } from '../../components/Avatar';
@@ -11,12 +12,11 @@ import { shareMatch } from '../../lib/share';
 import { useMatchActions } from '../../lib/useMatchActions';
 import { ErrorText, Halftone, Loading, Row, Screen, Text, type IconName } from '../../components/ui';
 import { api } from '../../lib/api';
-import { formatFormat, formatIQD, formatTimeRange, MONTHS, POSITION_LABEL, SKILL_LABEL, weekdayName } from '../../lib/format';
+import { formatFormat, formatIQD, formatTimeRange, MONTHS, POSITION_LABEL, weekdayName } from '../../lib/format';
 import { finalPrice } from '../../lib/pricing';
 import { spotsInfo } from '../../lib/schedule';
 import { matchAction } from '../../lib/matchAction';
 import { errMsg, useAsync, useNow, useSession } from '../../lib/session';
-import { balanceTeams } from '../../lib/teamBalance';
 import type { MatchDetail, RosterEntry, Team } from '../../lib/types';
 import { ctaShadow, fonts, fromLeft, themed, useColors, wideSpaces } from '../../theme';
 
@@ -91,6 +91,7 @@ export default function MatchScreen() {
   const role = useAsync(() => api.myRole(), []);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const watching = useAsync(() => api.isWatching(id), [id]);
+  const venue = useAsync(() => (m?.venue_id ? api.getVenue(m.venue_id) : Promise.resolve(null)), [m?.venue_id]);
 
   if (loading && !m) return <Loading />;
   if (!m) return <Screen><ErrorText message={error ?? 'المباراة مو موجودة'} /></Screen>;
@@ -119,13 +120,16 @@ export default function MatchScreen() {
     }
   }
 
-  const autoBalance = () =>
-    act(() => {
-      const res = balanceTeams(joined.map((r) => ({ id: r.player_id, rating: r.profile.skill_rating, position: r.position ?? r.profile.preferred_position })));
-      return api.saveTeams(m.id, res.assignments);
-    });
-
   const share = () => shareMatch(m);
+  // الاتجاهات للملعب: بالإحداثيات إذا موجودة، وإلا بحث باسم الملعب ومنطقته
+  const openMaps = () => {
+    const v = venue.data;
+    const label = [m.venue_name, m.venue_address].filter(Boolean).join('، ');
+    const url = v && hasCoords(v)
+      ? directionsUrl(Platform.OS === 'ios' ? 'apple' : 'google', v, m.venue_name ?? undefined)
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(label || 'ملعب')}`;
+    void Linking.openURL(url);
+  };
   const remindRegistration = async () => {
     const ok = await scheduleRegistrationAlert(m);
     // نفس التنبيه من الخادم: يوصل حتى لو التطبيق مسكّر أو انحذف التذكير المحلي
@@ -188,7 +192,7 @@ export default function MatchScreen() {
           </Pressable>
           <View style={st.heroInfo}>
             <View style={st.heroChip}>
-              <Text style={st.heroChipText}>{formatFormat(m.players_per_side)} · {SKILL_LABEL[m.skill_level]}</Text>
+              <Text style={st.heroChipText}>{formatFormat(m.players_per_side)}</Text>
             </View>
             <Text style={st.heroTitle} numberOfLines={1}>{wideSpaces(m.venue_name ?? 'مباراة')}</Text>
             <View style={st.heroTimeRow}>
@@ -207,10 +211,9 @@ export default function MatchScreen() {
             <View style={[st.sectionLine, { backgroundImage: `linear-gradient(270deg, transparent, ${c.primary})` }]} />
           </View>
           <View style={st.grid}>
-            <Tile icon="location-outline" label="المنطقة" value={m.venue_address ?? '—'} />
-            <Tile icon="football-outline" label="الساحة" value={m.field_name ?? m.venue_name ?? '—'} />
-            <Tile icon="calendar-outline" label="اليوم" value={`${startsDate.getDate()} ${MONTHS[startsDate.getMonth()]}`} />
-            <Tile icon="stats-chart-outline" label="المستوى" value={SKILL_LABEL[m.skill_level]} />
+            {/* الموقع: الضغط يفتح الخرائط على الملعب */}
+            <Tile icon="location-outline" label="الموقع" value={m.venue_address ?? m.venue_name ?? '—'} onPress={openMaps} hint="افتح بالخرائط" />
+            <Tile icon="calendar-outline" label="اليوم" value={`${dayText} ${MONTHS[startsDate.getMonth()]}`} hint={formatTimeRange(m.starts_at, m.ends_at)} />
           </View>
 
           {hasResult ? (
@@ -282,9 +285,6 @@ export default function MatchScreen() {
           {/* روابط صغيرة فقط عند الحاجة */}
           <Row style={{ flexWrap: 'wrap' }}>
             {!finished && mine ? <SmallAction icon="exit-outline" label="انسحاب" danger onPress={() => void actions.leave(m)} /> : null}
-            {mine?.status === 'joined' || canManage ? (
-              <SmallAction icon="chatbubbles-outline" label="محادثة المباراة" onPress={() => router.push({ pathname: '/match/chat', params: { id: m.id } })} />
-            ) : null}
             {!finished && !mine && spots.left === 0 ? (
               <SmallAction
                 icon={watching.data ? 'notifications' : 'notifications-outline'}
@@ -318,9 +318,6 @@ export default function MatchScreen() {
                   void act(() => api.staffCancelMatch(m.id)).then(() => toast('انلغت المباراة وانبلّغ اللاعبين'));
                 }}
               />
-            ) : null}
-            {(isOrganizer || isStaff) && !finished && !cancelled && joined.length >= 2 ? (
-              <SmallAction icon="git-compare-outline" label={hasTeams ? 'أعد التقسيم' : 'قسّم الفريقين'} onPress={autoBalance} />
             ) : null}
             {(isOrganizer || isStaff) && started && hasTeams ? (
               <SmallAction icon="create-outline" label={hasResult ? 'تعديل النتيجة' : 'سجّل النتيجة'} onPress={() => router.push({ pathname: '/match/result', params: { id: m.id } })} />
@@ -358,11 +355,11 @@ export default function MatchScreen() {
   );
 }
 
-function Tile({ icon, label, value }: { icon: IconName; label: string; value: string }) {
+function Tile({ icon, label, value, hint, onPress }: { icon: IconName; label: string; value: string; hint?: string; onPress?: () => void }) {
   const st = useStyles();
   const c = useColors();
   return (
-    <View style={st.tile}>
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => [st.tile, pressed && { backgroundColor: c.cardAlt }]} accessibilityRole={onPress ? 'button' : undefined} accessibilityLabel={`${label}: ${value}`}>
       {/* زاوية صفرة: مربع مايل 45° نص ظاهر */}
       <View style={[st.tileCorner, fromLeft(-22)]} />
       <View style={st.tileIcon}>
@@ -371,8 +368,14 @@ function Tile({ icon, label, value }: { icon: IconName; label: string; value: st
       <View style={{ flex: 1 }}>
         <Text variant="small" style={{ color: c.muted }}>{label}</Text>
         <Text style={{ fontFamily: fonts.bold, fontSize: 14 }} numberOfLines={2}>{value}</Text>
+        {hint ? (
+          <Text variant="small" style={{ color: onPress ? c.primary : c.muted, fontFamily: onPress ? fonts.semibold : undefined }} numberOfLines={1}>
+            {hint}
+            {onPress ? ' ←' : ''}
+          </Text>
+        ) : null}
       </View>
-    </View>
+    </Pressable>
   );
 }
 

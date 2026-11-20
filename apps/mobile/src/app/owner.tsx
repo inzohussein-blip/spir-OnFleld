@@ -6,7 +6,7 @@ import { RevenueView } from '../components/RevenueView';
 import { useToast } from '../components/feedback';
 import { Button, Chip, Empty, ErrorText, Loading, Text } from '../components/ui';
 import { api } from '../lib/api';
-import { formatClock, formatHour, weekdayName } from '../lib/format';
+import { formatClock, formatFormat, formatHour, weekdayName } from '../lib/format';
 import { summarize } from '../lib/revenue';
 import { errMsg, useAsync } from '../lib/session';
 import { nextDays } from '../lib/slots';
@@ -81,7 +81,7 @@ function Bookings({ venue }: { venue: Venue }) {
             <Pressable onPress={() => router.push({ pathname: '/match/[id]', params: { id: m.id } })} style={st.item} accessibilityRole="button">
               <Text style={st.time}>{formatClock(m.starts_at)}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: fonts.bold }}>{m.field_name ?? 'الساحة'} · {m.players_per_side} × {m.players_per_side}</Text>
+                <Text style={{ fontFamily: fonts.bold }}>{m.field_name ?? 'الساحة'} · {formatFormat(m.players_per_side)}</Text>
                 <Text variant="small" style={{ color: c.muted }}>{m.joined_count} من {m.max_players} لاعب</Text>
               </View>
               <Ionicons name="chevron-back" size={18} color={c.muted} />

@@ -10,6 +10,13 @@ const NAVY = '#0B1033';
 /** نفس حجم الشعار بشاشة البداية مال النظام (imageWidth بـ app.json) حتى ما يقفز */
 const MARK = 180;
 const NATIVE = Platform.OS !== 'web';
+/** عبارة الترحيب [الكلمة، بالأصفر؟] */
+const SLOGAN: [string, boolean][] = [
+  ['الملعب', false],
+  ['علينا', true],
+  ['واللعب', false],
+  ['عليك', true],
+];
 
 /**
  * شاشة التحميل «ملكي»: تبدي مطابقة لشاشة البداية مال النظام (أزرق ملكي وبالنص الشعار بنفس الحجم)
@@ -33,11 +40,17 @@ export function BrandSplash({
   const [intro] = useState(() => new Animated.Value(0));
   const [progress] = useState(() => new Animated.Value(0));
   const [fade] = useState(() => new Animated.Value(1));
+  // عبارة الترحيب: كل كلمة تطلع وراء الثانية بنطّة خفيفة
+  const [words] = useState(() => SLOGAN.map(() => new Animated.Value(0)));
 
   useEffect(() => {
     Animated.timing(intro, { toValue: 1, duration: 650, delay: 120, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }).start();
     Animated.timing(progress, { toValue: 1, duration: durationMs, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start();
-  }, [intro, progress, durationMs]);
+    Animated.stagger(
+      170,
+      words.map((w) => Animated.spring(w, { toValue: 1, delay: 620, friction: 5, tension: 90, useNativeDriver: NATIVE })),
+    ).start();
+  }, [intro, progress, durationMs, words]);
 
   useEffect(() => {
     if (!done) return;
@@ -68,7 +81,30 @@ export function BrandSplash({
             <Text style={{ color: YELLOW }}>احجزلي</Text>
             {'\u2002'}بالملعب
           </Text>
-          <Text style={{ color: '#C9CEF5', fontSize: 15, fontFamily: fontsReady ? 'ReadexPro_600SemiBold' : undefined }}>احجز · العب · اربح</Text>
+          {/* «الملعب علينا واللعب عليك» بخط الرقعة: «علينا» و«عليك» بالأصفر */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 8, marginTop: 6 }} accessibilityLabel="الملعب علينا واللعب عليك">
+            {SLOGAN.map(([word, gold], i) => (
+              <Animated.Text
+                key={word}
+                style={{
+                  color: gold ? YELLOW : '#FFFFFF',
+                  fontSize: 24,
+                  lineHeight: 40,
+                  fontFamily: fontsReady ? 'ArefRuqaa_700Bold' : undefined,
+                  textShadowColor: 'rgba(11,16,51,0.55)',
+                  textShadowOffset: { width: 0, height: 2 },
+                  textShadowRadius: 4,
+                  opacity: words[i],
+                  transform: [
+                    { translateY: words[i].interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) },
+                    { scale: words[i].interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }) },
+                  ],
+                }}
+              >
+                {word}
+              </Animated.Text>
+            ))}
+          </View>
         </Animated.View>
       </View>
 

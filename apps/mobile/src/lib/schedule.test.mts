@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dayCounts, firstDayWithMatches, reminderAt, spotsInfo } from './schedule.ts';
+import { dayCounts, firstDayWithMatches, joinAlertPlan, reminderAt, spotsInfo } from './schedule.ts';
 
 test('باقي الأماكن ولونها', () => {
   assert.deepEqual(spotsInfo({ joined_count: 2, max_players: 10 }), { left: 8, label: 'باقي 8', tone: 'ok' });
@@ -27,4 +27,17 @@ test('التذكير قبل المباراة بساعتين، ولا تذكير 
   const r = reminderAt({ starts_at: new Date(2026, 10, 14, 20).toISOString() }, now);
   assert.equal(r?.getHours(), 18);
   assert.equal(reminderAt({ starts_at: new Date(2026, 10, 14, 13).toISOString() }, now), null);
+});
+
+test('إشعارات الحجز: تأكيد بعد نص ساعة وتذكير قبل ساعة', () => {
+  const now = Date.UTC(2026, 10, 20, 12, 0);
+  const at = (min: number) => new Date(now + min * 60_000).toISOString();
+  // المباراة بعد 4 ساعات: تأكيد بعد 30 دقيقة، وتذكير قبلها بساعة
+  assert.deepEqual(joinAlertPlan(at(240), now), { confirmAt: now + 30 * 60_000, reminderAt: now + 180 * 60_000, soon: false });
+  // بعد 20 دقيقة: التأكيد فوراً وبدون تذكير
+  assert.deepEqual(joinAlertPlan(at(20), now), { confirmAt: now, reminderAt: null, soon: true });
+  // بعد 80 دقيقة: التذكير (بعد 20 دقيقة) قبل التأكيد — نكتفي بالتأكيد
+  assert.deepEqual(joinAlertPlan(at(80), now), { confirmAt: now + 30 * 60_000, reminderAt: null, soon: false });
+  // بدت: ولا شي
+  assert.equal(joinAlertPlan(at(-5), now), null);
 });

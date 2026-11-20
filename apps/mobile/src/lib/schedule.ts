@@ -25,6 +25,26 @@ export function firstDayWithMatches(counts: number[]): number {
 }
 
 /** موعد تذكير اللاعب: قبل المباراة بساعتين (null إذا فات) */
+/** تأكيد الحجز يوصل بعد نص ساعة من الانضمام */
+export const CONFIRM_DELAY_MS = 30 * 60_000;
+/** والتذكير قبل المباراة بساعة */
+export const REMIND_BEFORE_MS = 60 * 60_000;
+
+/**
+ * مواعيد إشعارات الحجز:
+ * - «تم الحجز» بعد نص ساعة من الانضمام، ويّاه «تعال قبل ربع ساعة».
+ * - إذا المباراة أقرب من نص ساعة: التأكيد يوصل فوراً (`soon`) وما نحتاج تذكير.
+ * - تذكير قبل المباراة بساعة، بس إذا يجي بعد التأكيد بوقت كافي (5 دقايق).
+ */
+export function joinAlertPlan(startsAt: string, now: number): { confirmAt: number; reminderAt: number | null; soon: boolean } | null {
+  const start = new Date(startsAt).getTime();
+  if (!(start > now)) return null;
+  if (start - now <= CONFIRM_DELAY_MS) return { confirmAt: now, reminderAt: null, soon: true };
+  const confirmAt = now + CONFIRM_DELAY_MS;
+  const remind = start - REMIND_BEFORE_MS;
+  return { confirmAt, reminderAt: remind > confirmAt + 5 * 60_000 ? remind : null, soon: false };
+}
+
 export function reminderAt(m: Pick<Match, 'starts_at'>, now: number, hoursBefore = 2): Date | null {
   const at = new Date(m.starts_at).getTime() - hoursBefore * 3600_000;
   return at > now ? new Date(at) : null;
