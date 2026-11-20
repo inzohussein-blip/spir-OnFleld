@@ -78,10 +78,11 @@ export function BandDecor({ dots = true }: { dots?: boolean }) {
  */
 export function PageHeader({ title, subtitle, actions, eyebrow, children }: { title: string; subtitle?: string; actions?: ReactNode; eyebrow?: string; children?: ReactNode }) {
   const s = useStyles();
+  const c = useColors();
   const insets = useSafeAreaInsets();
   return (
     <View style={[s.band, { paddingTop: insets.top + space.md }]}>
-      <Halftone rows={10} cols={13} style={{ top: 10, ...fromLeft(8) }} />
+      <Halftone rows={10} cols={13} color={c.headerDots} style={{ top: 10, ...fromLeft(8) }} />
       <View style={s.stripeWide} pointerEvents="none" />
       <View style={s.stripeThin} pointerEvents="none" />
       <View style={s.bandRow}>
@@ -110,7 +111,7 @@ export function IconButton({ icon, onPress, label, dot, disabled, onBand }: { ic
       accessibilityLabel={label}
       style={({ pressed }) => [s.iconBtn, onBand && s.iconBtnBand, disabled && { opacity: 0.35 }, pressed && { opacity: 0.75 }]}
     >
-      <Ionicons name={icon} size={21} color={onBand ? '#FFFFFF' : c.primary} />
+      <Ionicons name={icon} size={21} color={onBand ? c.onHeader : c.primary} />
       {dot ? <View style={[s.iconDot, onBand && { borderColor: 'transparent' }]} /> : null}
     </Pressable>
   );
@@ -398,18 +399,18 @@ export const useStyles = themed((c) => ({
   mutedText: { color: c.muted },
   screen: { flex: 1, backgroundColor: c.bg },
   screenPad: { padding: space.lg, gap: space.md, paddingBottom: space.xxl },
-  band: { backgroundColor: c.bandBg, paddingHorizontal: space.lg, paddingBottom: space.xl, overflow: 'hidden', gap: space.md },
+  band: { backgroundColor: c.headerBg, ...(c.headerImage ? { backgroundImage: c.headerImage } : null), paddingHorizontal: space.lg, paddingBottom: space.xl, overflow: 'hidden', gap: space.md },
   // شريطين أصفر مايلين على الطرف — علامة «ملكي».
   // «end» = اليسار بالعربي على التلفون والويب؛ «left» الأندرويد يقلبه لليمين فيطلع خلف العنوان
   stripeWide: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(-36), width: 96, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
   stripeThin: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(74), width: 14, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
   bandRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm },
-  bandEyebrow: { ...type.caption, color: 'rgba(255,255,255,0.75)' },
-  bandTitle: { ...type.largeTitle, color: '#FFFFFF' },
-  bandSubtitle: { ...type.caption, color: 'rgba(255,255,255,0.8)', marginTop: -4 },
+  bandEyebrow: { ...type.caption, color: c.onHeaderMuted },
+  bandTitle: { ...type.largeTitle, color: c.onHeader },
+  bandSubtitle: { ...type.caption, color: c.onHeaderMuted, marginTop: -4 },
   pageActions: { flexDirection: 'row', gap: space.sm, paddingBottom: 4 },
   iconBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: c.card, borderWidth: 2, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
-  iconBtnBand: { backgroundColor: c.bandBg, borderColor: 'rgba(255,255,255,0.45)' },
+  iconBtnBand: { backgroundColor: c.headerBg, borderColor: c.onHeader === '#FFFFFF' ? 'rgba(255,255,255,0.45)' : c.border },
   iconDot: { position: 'absolute', top: 10, right: 11, width: 9, height: 9, borderRadius: 5, backgroundColor: '#FF5A5F', borderWidth: 2, borderColor: c.card },
   card: { backgroundColor: c.card, borderRadius: cardRadius, padding: space.lg, gap: space.sm, borderWidth: 2, borderColor: c.border },
   btn: { minHeight: 48, borderRadius: radius, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.lg },

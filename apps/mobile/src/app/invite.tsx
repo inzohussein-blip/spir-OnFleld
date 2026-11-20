@@ -14,7 +14,7 @@ import { padLeft, fonts, themed, useColors } from '../theme';
 const STATUS = {
   joined: { label: 'سجّل — بعده ما لعب', color: '#B45309', icon: 'time-outline' },
   played: { label: 'لعب أول مباراة ✓', color: '#167A43', icon: 'checkmark-circle' },
-  rewarded: { label: 'انحسب بمكافأة 🎁', color: '#1A23C9', icon: 'gift' },
+  rewarded: { label: 'انحسب بمكافأة 🎁', color: '#5B3FD0', icon: 'gift' },
 } as const;
 
 /** ادعُ أصدقاءك: رقمك ورابطك، التقدّم نحو المكافأة، وقائمة أصدقائك — وتسجيل رقم صديق دعاك */
@@ -52,7 +52,7 @@ export default function InviteScreen() {
       <View style={st.hero}>
         <BandDecor dots={false} />
         <View style={st.gift}>
-          <Ionicons name="gift" size={30} color="#1A23C9" />
+          <Ionicons name="gift" size={30} color={c.bandBg} />
         </View>
         <Text style={st.heroTitle}>
           ادعُ {needed} أصدقاء واكسب مكافأة

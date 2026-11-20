@@ -5,7 +5,6 @@ import type { PlayerCard, PlayerStats, Profile } from '../lib/types';
 import { fonts, fromLeft, themed, wideSpaces } from '../theme';
 import { Halftone, Text } from './ui';
 
-const ROYAL = '#1A23C9';
 const NAVY = '#0B1033';
 const YELLOW = '#FFD60A';
 
@@ -108,13 +107,14 @@ export function RoyalPlayerCard({
   );
 }
 
-const useStyles = themed(() => ({
+const useStyles = themed((c) => ({
   card: {
     alignSelf: 'center',
     width: 300,
-    backgroundColor: ROYAL,
+    backgroundColor: c.bandBg,
+    backgroundImage: c.primaryGradient,
     borderWidth: 3,
-    borderColor: YELLOW,
+    borderColor: c.cta,
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
     borderBottomLeftRadius: 120,
@@ -124,21 +124,21 @@ const useStyles = themed(() => ({
     paddingBottom: 30,
     paddingHorizontal: 18,
     alignItems: 'center',
-    boxShadow: `0 6px 0 ${NAVY}`,
+    boxShadow: `0 6px 0 ${c.primaryDark}`,
   },
-  stripeWide: { position: 'absolute', top: -40, bottom: -40, ...fromLeft(-50), width: 62, backgroundColor: YELLOW, transform: [{ skewX: '-14deg' }] },
-  stripeThin: { position: 'absolute', top: -40, bottom: -40, ...fromLeft(22), width: 9, backgroundColor: YELLOW, transform: [{ skewX: '-14deg' }] },
+  stripeWide: { position: 'absolute', top: -40, bottom: -40, ...fromLeft(-50), width: 62, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
+  stripeThin: { position: 'absolute', top: -40, bottom: -40, ...fromLeft(22), width: 9, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
   // خط رفيع داخل الإطار مثل حافة البطاقة
   inner: { position: 'absolute', top: 7, left: 7, right: 7, bottom: 7, borderWidth: 1, borderColor: 'rgba(255,214,10,0.45)', borderTopLeftRadius: 20, borderTopRightRadius: 20, borderBottomLeftRadius: 112, borderBottomRightRadius: 112 },
   top: { flexDirection: 'row', alignSelf: 'stretch', alignItems: 'flex-start', gap: 8 },
   ratingCol: { width: 74, alignItems: 'center', gap: 2 },
-  rating: { fontFamily: fonts.display, fontSize: 54, lineHeight: 64, color: YELLOW },
+  rating: { fontFamily: fonts.display, fontSize: 54, lineHeight: 64, color: c.cta },
   position: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 22, color: '#FFFFFF' },
   rule: { width: 34, height: 2, backgroundColor: 'rgba(255,255,255,0.5)', marginVertical: 6 },
   city: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 16, color: '#C9CEF5', marginTop: 4 },
   photoWrap: { flex: 1, alignItems: 'center', paddingTop: 4 },
-  photo: { width: 150, height: 150, borderRadius: 75, backgroundColor: '#E3E6FF', borderWidth: 4, borderColor: YELLOW, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  initial: { fontFamily: fonts.display, fontSize: 72, lineHeight: 92, color: ROYAL },
+  photo: { width: 150, height: 150, borderRadius: 75, backgroundColor: '#E3E6FF', borderWidth: 4, borderColor: c.cta, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  initial: { fontFamily: fonts.display, fontSize: 72, lineHeight: 92, color: c.bandBg },
   camera: { position: 'absolute', bottom: 2, right: 18, width: 34, height: 34, borderRadius: 10, backgroundColor: YELLOW, borderWidth: 2, borderColor: NAVY, alignItems: 'center', justifyContent: 'center' },
   name: { fontFamily: fonts.display, fontSize: 28, lineHeight: 40, color: '#FFFFFF', textAlign: 'center', marginTop: 10, maxWidth: '100%' },
   nameLine: { width: '70%', height: 3, borderRadius: 2, backgroundColor: YELLOW, marginTop: 2, marginBottom: 10 },
