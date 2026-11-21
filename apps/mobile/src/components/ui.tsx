@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { createElement, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   Text as RNText,
@@ -88,7 +89,16 @@ export function PageHeader({ title, subtitle, actions, eyebrow, children, slogan
       <View style={s.bandRow}>
         <View style={{ flex: 1, minWidth: 0 }}>
           {eyebrow ? <Text style={s.bandEyebrow} numberOfLines={1}>{eyebrow}</Text> : null}
-          <Text style={[s.bandTitle, slogan && s.bandSlogan]} numberOfLines={slogan ? 2 : 1}>{wideSpaces(title)}</Text>
+          {/* الشعار دائماً بسطر واحد: يصغر تلقائياً إذا الشاشة ضيقة أو خط الهاتف كبير */}
+          <Text
+            style={[s.bandTitle, slogan && s.bandSlogan]}
+            numberOfLines={1}
+            adjustsFontSizeToFit={slogan}
+            minimumFontScale={0.6}
+            maxFontSizeMultiplier={slogan ? 1 : undefined}
+          >
+            {wideSpaces(title)}
+          </Text>
           {subtitle ? <Text style={s.bandSubtitle} numberOfLines={1}>{subtitle}</Text> : null}
         </View>
         {actions ? <View style={s.pageActions}>{actions}</View> : null}
@@ -408,7 +418,8 @@ export const useStyles = themed((c) => ({
   bandRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm },
   bandEyebrow: { ...type.caption, color: c.onHeaderMuted },
   bandTitle: { ...type.largeTitle, color: c.onHeader },
-  bandSlogan: { fontFamily: fonts.display, fontSize: 21, lineHeight: 36 },
+  // بالمتصفح ماكو تصغير تلقائي: الحجم يتبع عرض الشاشة
+  bandSlogan: { fontFamily: fonts.display, fontSize: Platform.OS === 'web' ? ('min(21px, 5.1vw)' as unknown as number) : 21, lineHeight: 36, flexShrink: 1 },
   bandSubtitle: { ...type.caption, color: c.onHeaderMuted, marginTop: -4 },
   pageActions: { flexDirection: 'row', gap: space.sm, paddingBottom: 4 },
   iconBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: c.card, borderWidth: 2, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
