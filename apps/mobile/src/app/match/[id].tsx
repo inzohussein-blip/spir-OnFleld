@@ -184,7 +184,7 @@ export default function MatchScreen() {
             </>
           )}
           <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} style={[st.back, { top: insets.top + 12 }]} accessibilityLabel="رجوع" hitSlop={8}>
-            <Ionicons name="chevron-forward" size={22} color="#0B1033" />
+            <Ionicons name="chevron-forward" size={22} color={c.primaryDark} />
           </Pressable>
           <Pressable onPress={share} style={[st.shareBtn, { top: insets.top + 12 }]} accessibilityRole="button" accessibilityLabel="شارك المباراة">
             <Ionicons name="share-social" size={17} color={c.primary} />
@@ -404,13 +404,13 @@ const useStyles = themed((c) => ({
   grassShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 120, backgroundImage: 'linear-gradient(180deg, rgba(11,16,51,0.55) 0%, rgba(11,16,51,0.05) 45%, rgba(11,16,51,0.35) 100%)' },
   ball: { position: 'absolute', bottom: 18, ...fromLeft(18), width: 118, height: 118, borderRadius: 59, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 24px rgba(0,0,0,0.45)' },
   heroInfo: { paddingHorizontal: 20, paddingBottom: 22, paddingTop: 80, alignItems: 'flex-start', gap: 4, maxWidth: '64%', alignSelf: 'flex-start' },
-  heroChip: { backgroundColor: c.cta, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 3, boxShadow: '0 2px 0 #0B1033' },
+  heroChip: { backgroundColor: c.cta, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 3, boxShadow: `0 2px 0 ${c.primaryDark}` },
   heroChipText: { color: c.onCta, fontFamily: fonts.bold, fontSize: 12, lineHeight: 20 },
   heroTitle: { color: '#fff', fontSize: 28, lineHeight: 42, fontFamily: fonts.display, textShadowColor: 'rgba(0,0,0,0.4)', textShadowRadius: 8 },
   heroTimeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   heroTime: { color: '#fff', fontSize: 14, lineHeight: 22, fontFamily: fonts.bold },
   heroBand: { height: 8, backgroundColor: c.cta, transform: [{ skewY: '-1.2deg' }], marginTop: -4 },
-  shareBtn: { position: 'absolute', left: 16, height: 40, paddingHorizontal: 14, borderRadius: 20, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', gap: 6, boxShadow: '0 3px 0 #0B1033' },
+  shareBtn: { position: 'absolute', left: 16, height: 40, paddingHorizontal: 14, borderRadius: 20, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', gap: 6, boxShadow: `0 3px 0 ${c.primaryDark}` },
   shareText: { color: c.primary, fontFamily: fonts.bold, fontSize: 14, lineHeight: 22 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 4 },
   sectionLine: { width: 64, height: 3, borderRadius: 2, backgroundColor: c.primary },
@@ -425,7 +425,7 @@ const useStyles = themed((c) => ({
   fillBar: { height: '100%', borderRadius: 4 },
   slots: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginTop: 4 },
   slot: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderStyle: 'dashed', borderColor: c.border },
-  back: { position: 'absolute', right: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 0 #0B1033' },
+  back: { position: 'absolute', right: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', boxShadow: `0 3px 0 ${c.primaryDark}` },
   body: { padding: 16, gap: 12 },
   small: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.primarySoft, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   scoreBoard: { backgroundColor: c.primaryDark, borderWidth: 2, borderColor: c.cta, borderRadius: 18, paddingVertical: 18, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center' },
@@ -434,12 +434,12 @@ const useStyles = themed((c) => ({
   scoreBig: { fontFamily: fonts.display, fontSize: 40, lineHeight: 56, color: c.cta, minWidth: 36, textAlign: 'center' },
   scoreDash: { fontFamily: fonts.bold, fontSize: 32, lineHeight: 56, color: 'rgba(255,255,255,0.6)', marginHorizontal: 6 },
   bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: c.bandBg, borderTopWidth: 4, borderTopColor: c.cta, paddingTop: 14, paddingHorizontal: 16, overflow: 'hidden' },
-  cta: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FFFFFF', borderRadius: 999, minHeight: 56, paddingStart: 6, paddingEnd: 18, boxShadow: '0 4px 0 #0B1033' },
+  cta: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FFFFFF', borderRadius: 999, minHeight: 56, paddingStart: 6, paddingEnd: 18, boxShadow: `0 4px 0 ${c.primaryDark}` },
   ctaIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.cta, alignItems: 'center', justifyContent: 'center', boxShadow: ctaShadow(c) },
-  ctaText: { flex: 1, fontFamily: fonts.bold, fontSize: 17, lineHeight: 26, color: '#0B1033' },
-  ctaDivider: { width: 2, height: 30, borderRadius: 1, backgroundColor: '#C9CEF5' },
+  ctaText: { flex: 1, fontFamily: fonts.bold, fontSize: 17, lineHeight: 26, color: c.primaryDark === '#000000' ? '#0B1033' : c.primaryDark },
+  ctaDivider: { width: 2, height: 30, borderRadius: 1, backgroundColor: c.border },
   price: { fontFamily: fonts.bold, fontSize: 19, lineHeight: 28, color: c.bandBg },
   oldPrice: { color: '#4A5185', fontSize: 11, lineHeight: 15, textDecorationLine: 'line-through' },
-  motm: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, padding: 12, backgroundColor: c.cta, borderWidth: 2, borderColor: c.primaryDark, boxShadow: '0 3px 0 #0B1033' },
+  motm: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, padding: 12, backgroundColor: c.cta, borderWidth: 2, borderColor: c.primaryDark, boxShadow: `0 3px 0 ${c.primaryDark}` },
   motmIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.6)', alignItems: 'center', justifyContent: 'center' },
 }));

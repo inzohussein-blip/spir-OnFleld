@@ -4,7 +4,8 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
 import { OfflineBanner, SkeletonList } from '../../components/feedback';
-import { Empty, ErrorText, PageHeader, SearchField, Text } from '../../components/ui';
+import { Chip, Empty, ErrorText, IconButton, PageHeader, SearchField, Text } from '../../components/ui';
+import { formatFormat } from '../../lib/format';
 import { api } from '../../lib/api';
 import { toggleFavoriteVenue, useFavoriteVenues } from '../../lib/favorites';
 import { useAsync } from '../../lib/session';
@@ -24,9 +25,23 @@ export default function Venues() {
   const { data, error, loading, offline, reload } = useAsync(() => api.listVenues(), [], { cacheKey: 'venues' });
   const [q, setQ] = useState('');
   const favs = useFavoriteVenues();
+  // الفلترة: المنطقة، نوع الساحة، والمفضلة — تنفتح من الزر الصغير جنب البحث
+  const [open, setOpen] = useState(false);
+  const [city, setCity] = useState<string | null>(null);
+  const [size, setSize] = useState<number | null>(null);
+  const [favOnly, setFavOnly] = useState(false);
+  const cities = [...new Set((data ?? []).map((v) => v.city))].sort();
+  const sizes = [...new Set((data ?? []).flatMap((v) => v.fields.map((f) => f.players_per_side)))].sort((a, b) => a - b);
+  const active = (city ? 1 : 0) + (size ? 1 : 0) + (favOnly ? 1 : 0);
 
   const needle = q.trim();
-  const list = (data ?? []).filter((v) => !needle || v.name.includes(needle) || (v.address ?? '').includes(needle) || v.city.includes(needle));
+  const list = (data ?? []).filter(
+    (v) =>
+      (!needle || v.name.includes(needle) || (v.address ?? '').includes(needle) || v.city.includes(needle)) &&
+      (!city || v.city === city) &&
+      (!size || v.fields.some((f) => f.players_per_side === size)) &&
+      (!favOnly || favs.has(v.id)),
+  );
 
   return (
     <View style={st.screen}>
@@ -37,12 +52,44 @@ export default function Venues() {
       >
         <PageHeader title="الملاعب" subtitle={data ? venuesCount(data.length) : undefined} />
         <View style={st.body}>
-        <SearchField value={q} onChange={setQ} placeholder="ابحث عن ملعب أو منطقة" />
+        <View style={st.searchRow}>
+          <View style={{ flex: 1 }}>
+            <SearchField value={q} onChange={setQ} placeholder="ابحث عن ملعب أو منطقة" />
+          </View>
+          <View>
+            <IconButton icon="options-outline" label={active ? `فلترة (${active})` : 'فلترة'} active={open || active > 0} onPress={() => setOpen(!open)} />
+            {active ? (
+              <View style={st.badge}>
+                <Text style={st.badgeText}>{active}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+        {open ? (
+          <View style={st.panel}>
+            <Text style={st.panelTitle}>المنطقة</Text>
+            <View style={st.chips}>
+              {cities.map((x) => (
+                <Chip key={x} label={x} active={city === x} onPress={() => setCity(city === x ? null : x)} />
+              ))}
+            </View>
+            <Text style={st.panelTitle}>نوع الساحة</Text>
+            <View style={st.chips}>
+              {sizes.map((n) => (
+                <Chip key={n} label={formatFormat(n)} active={size === n} onPress={() => setSize(size === n ? null : n)} />
+              ))}
+            </View>
+            <View style={st.chips}>
+              <Chip icon={favOnly ? 'star' : 'star-outline'} label="المفضلة بس" active={favOnly} onPress={() => setFavOnly(!favOnly)} />
+              {active ? <Chip icon="close" label="امسح" active={false} onPress={() => { setCity(null); setSize(null); setFavOnly(false); }} /> : null}
+            </View>
+          </View>
+        ) : null}
 
         <OfflineBanner show={offline} />
         <ErrorText message={error} />
         {loading && !data ? <SkeletonList count={3} height={96} /> : null}
-        {data && list.length === 0 ? <Empty title="ماكو ملعب بهذا الاسم" icon="search-outline" /> : null}
+        {data && list.length === 0 ? <Empty title={active ? 'ماكو ملعب يطابق الفلترة' : 'ماكو ملعب بهذا الاسم'} icon="search-outline" /> : null}
 
         {list.map((v) => {
           const capacity = Math.max(...v.fields.map((f) => f.players_per_side * 2));
@@ -107,4 +154,10 @@ const useStyles = themed((c) => ({
   meta: { ...type.caption, color: c.muted, flexShrink: 1 },
   line: { flexDirection: 'row', alignItems: 'center', gap: space.xs + 1 },
   fav: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  badge: { position: 'absolute', top: -5, left: -5, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: c.primaryDark, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  badgeText: { color: '#FFFFFF', fontSize: 10, lineHeight: 14, fontWeight: '700' },
+  panel: { backgroundColor: c.card, borderRadius: cardRadius, borderWidth: 2, borderColor: c.border, padding: space.md, gap: space.sm },
+  panelTitle: { ...type.micro, color: c.muted },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
 }));

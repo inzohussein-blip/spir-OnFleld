@@ -35,8 +35,8 @@ export function ActionPill({ action, busy, onPress, big, onBar, short }: { actio
   const c = useColors();
   const { text, tone, enabled } = actionLabel(action, short);
   // على الشريط البرتقالي أسفل صفحة المباراة: زر أبيض
-  const box = onBar ? (enabled ? st.pOnBar : st.pOnBarMuted) : { primary: st.pPrimary, soft: st.pSoft, done: st.pSoft, muted: st.pMuted }[tone];
-  const fg = onBar ? (enabled ? c.onCta : '#FFFFFF') : { primary: c.onCta, soft: c.primary, done: c.primary, muted: c.muted }[tone];
+  const box = onBar ? (enabled ? st.pOnBar : st.pOnBarMuted) : { primary: st.pPrimary, soft: st.pSoft, done: st.pDone, muted: st.pMuted }[tone];
+  const fg = onBar ? (enabled ? c.onCta : '#FFFFFF') : { primary: c.onCta, soft: c.primary, done: c.doneFg, muted: c.muted }[tone];
   return (
     <Pressable
       accessibilityRole="button"
@@ -136,9 +136,10 @@ const useStyles = themed((c) => ({
   pillShort: { minHeight: 40, minWidth: 72, maxWidth: 104, paddingHorizontal: space.md },
   pillBig: { minHeight: 52, paddingHorizontal: space.xl },
   pPrimary: { backgroundColor: c.cta, boxShadow: ctaShadow(c) },
-  pOnBar: { backgroundColor: c.cta, boxShadow: '0 3px 0 #0B1033' },
+  pOnBar: { backgroundColor: c.cta, boxShadow: `0 3px 0 ${c.primaryDark}` },
   pOnBarMuted: { backgroundColor: 'rgba(255,255,255,0.18)' },
   pSoft: { backgroundColor: c.primarySoft },
+  pDone: { backgroundColor: c.doneBg },
   pMuted: { backgroundColor: c.cardAlt },
   pillText: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 20, textAlign: 'center' },
 }));

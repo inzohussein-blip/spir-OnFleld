@@ -74,8 +74,8 @@ export default function InviteScreen() {
           </Pressable>
         ) : null}
         <Pressable onPress={() => void shareInvite(data?.code)} style={st.share} accessibilityRole="button">
-          <Ionicons name="share-social-outline" size={20} color="#0B1033" />
-          <Text style={{ color: '#0B1033', fontFamily: fonts.bold, fontSize: 16 }}>دز الرابط لأصدقائك</Text>
+          <Ionicons name="share-social-outline" size={20} color={c.onCta} />
+          <Text style={{ color: c.onCta, fontFamily: fonts.bold, fontSize: 16 }}>دز الرابط لأصدقائك</Text>
         </Pressable>
       </View>
 
