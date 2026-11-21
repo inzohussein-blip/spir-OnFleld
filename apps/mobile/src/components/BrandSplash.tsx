@@ -81,6 +81,8 @@ export function BrandSplash({
             <Text style={{ color: YELLOW }}>احجزلي</Text>
             {'\u2002'}بالملعب
           </Text>
+          {/* الاسم بالإنكليزي */}
+          <Text style={{ color: YELLOW, fontSize: 16, lineHeight: 22, letterSpacing: 3, fontFamily: fontsReady ? 'ReadexPro_700Bold' : undefined, fontWeight: fontsReady ? undefined : '800', writingDirection: 'ltr' }}>EHJEZLY</Text>
           {/* «المَلعب عَلينا واللِعب عَليك» بالخط الكوفي: «عَلينا» و«عَليك» بالأصفر */}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 8, marginTop: 6 }} accessibilityLabel="المَلعب عَلينا واللِعب عَليك">
             {SLOGAN.map(([word, gold], i) => (

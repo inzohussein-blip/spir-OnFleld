@@ -37,12 +37,13 @@ export default function Login() {
           <Halftone rows={24} cols={30} style={{ top: 8, ...fromLeft(8) }} color="rgba(255,255,255,0.10)" />
           <View style={styles.stripeWide} pointerEvents="none" />
           <View style={styles.stripeThin} pointerEvents="none" />
-          <Image source={mark} style={styles.logo} accessibilityLabel="شعار بالملعب" />
+          <Image source={mark} style={styles.logo} accessibilityLabel="شعار احجزلي بالملعب — EHJEZLY" />
           {/* «احجزلي بالملعب» مثل شاشة التحميل — «احجزلي» بالأصفر */}
           <Text style={styles.brand}>
             <Text style={[styles.brand, { color: colors.cta }]}>احجزلي</Text>
             {'\u2002'}بالملعب
           </Text>
+          <Text style={styles.english}>EHJEZLY</Text>
           <Text style={styles.tagline}>احجز ساحتك، كمّل فريقك، والعب</Text>
         </View>
         <View style={styles.sheet}>
@@ -88,6 +89,7 @@ const useStyles = themed((colors) => ({
   stripeThin: { position: 'absolute', top: -60, bottom: -60, ...fromLeft(66), width: 16, backgroundColor: colors.cta, transform: [{ skewX: '-14deg' }] },
   logo: { width: 140, height: 140, marginBottom: -24 },
   brand: { fontFamily: fonts.display, fontSize: 38, color: '#fff', lineHeight: 54 },
+  english: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 20, letterSpacing: 3, color: colors.cta, writingDirection: 'ltr', marginTop: 2 },
   tagline: { color: '#C9CEF5', fontSize: 15 },
   sheet: { backgroundColor: colors.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, gap: 14, paddingBottom: 40 },
   demo: { backgroundColor: colors.warnSoft, padding: 10, borderRadius: 10 },
