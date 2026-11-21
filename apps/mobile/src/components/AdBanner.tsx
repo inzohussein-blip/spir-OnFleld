@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react';
 import { Image, Pressable, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
 import { countdownParts } from '../lib/ads';
 import type { Ad } from '../lib/types';
-import { fonts } from '../theme';
+import { fonts, useColors } from '../theme';
 import { Text } from './ui';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -26,6 +26,9 @@ export const AD_HEIGHT = 168;
 /** إعلان واحد بأحد القوالب الستة. `now` للعد التنازلي */
 export function AdBanner({ ad, now, onPress, onPressIn, onPressOut, style }: { ad: Ad; now: number; onPress?: (e: GestureResponderEvent) => void; onPressIn?: (e: GestureResponderEvent) => void; onPressOut?: () => void; style?: ViewStyle }) {
   const look = LOOK[ad.template];
+  const c = useColors();
+  // الإعلانات الزرقاء تاخذ لون الثيم (الأسود: ملعب ليلي، برشلونة: بلاوغرانا، الريال: أزرق الشعار)
+  const themedBg = c.adSky && (ad.template === 'services' || ad.template === 'league') ? c.adSky : null;
   const countdown = ad.template === 'league' ? countdownParts(ad.countdown_to, now) : null;
   const photo = ad.template === 'partner' && ad.image_url ? ad.image_url : null;
   return (
@@ -36,7 +39,7 @@ export function AdBanner({ ad, now, onPress, onPressIn, onPressOut, style }: { a
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={`إعلان: ${ad.title}`}
-      style={({ pressed }) => [box, { backgroundColor: look.base, backgroundImage: look.bg }, pressed && { opacity: 0.92 }, style]}
+      style={({ pressed }) => [box, { backgroundColor: themedBg ? c.bandBg : look.base, backgroundImage: themedBg ?? look.bg }, pressed && { opacity: 0.92 }, style]}
     >
       {/* الخلفية */}
       {photo ? (

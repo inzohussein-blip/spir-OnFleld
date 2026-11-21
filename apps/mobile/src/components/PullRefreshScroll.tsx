@@ -12,9 +12,8 @@ import {
   type ScrollViewProps,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useColors } from '../theme';
 
-const YELLOW = '#FFD60A';
-const NAVY = '#0B1033';
 /** مسافة السحب اللي تبدّي التحديث */
 const THRESHOLD = 80;
 const MAX_PULL = 140;
@@ -42,6 +41,7 @@ export function PullRefreshScroll({
   children: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
+  const { cta: YELLOW, primaryDark: NAVY } = useColors();
   const [pull] = useState(() => new Animated.Value(0));
   const [spin] = useState(() => new Animated.Value(0));
   const [phase, setPhase] = useState<Phase>('idle');
@@ -184,6 +184,7 @@ export function PullRefreshScroll({
 
 /** الكرة الصفرة بإطار كحلي */
 function Ball() {
+  const { cta: YELLOW, primaryDark: NAVY } = useColors();
   return (
     <View style={{ width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: YELLOW, borderWidth: 2, borderColor: NAVY, boxShadow: `0 4px 0 ${NAVY}` }}>
       <Ionicons name="football" size={30} color={NAVY} />

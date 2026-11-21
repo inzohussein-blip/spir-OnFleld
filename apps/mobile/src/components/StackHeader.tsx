@@ -42,7 +42,7 @@ export function StackHeader({ options, back, navigation }: HeaderProps) {
 const useStyles = themed((c) => ({
   bar: { backgroundColor: c.headerBg, ...(c.headerImage ? { backgroundImage: c.headerImage } : null), paddingHorizontal: 14, paddingBottom: 12, overflow: 'hidden', borderBottomWidth: 4, borderBottomColor: c.cta },
   stripeWide: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(-30), width: 64, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
-  stripeThin: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(46), width: 10, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
+  stripeThin: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(46), width: 10, backgroundColor: c.stripeAlt, transform: [{ skewX: '-14deg' }] },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingEnd: 96 },
   back: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', boxShadow: `0 3px 0 ${c.primaryDark}`, borderWidth: c.onHeader === '#FFFFFF' ? 0 : 1.5, borderColor: c.border },
   title: { flex: 1, fontFamily: fonts.display, fontSize: 21, lineHeight: 32, color: c.onHeader },

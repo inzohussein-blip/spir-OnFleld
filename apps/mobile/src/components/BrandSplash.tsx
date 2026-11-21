@@ -12,10 +12,10 @@ const MARK = 180;
 const NATIVE = Platform.OS !== 'web';
 /** عبارة الترحيب [الكلمة، بالأصفر؟] */
 const SLOGAN: [string, boolean][] = [
-  ['الملعب', false],
-  ['علينا', true],
-  ['واللعب', false],
-  ['عليك', true],
+  ['المَلعب', false],
+  ['عَلينا', true],
+  ['واللِعب', false],
+  ['عَليك', true],
 ];
 
 /**
@@ -81,8 +81,8 @@ export function BrandSplash({
             <Text style={{ color: YELLOW }}>احجزلي</Text>
             {'\u2002'}بالملعب
           </Text>
-          {/* «الملعب علينا واللعب عليك» بخط الرقعة: «علينا» و«عليك» بالأصفر */}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 8, marginTop: 6 }} accessibilityLabel="الملعب علينا واللعب عليك">
+          {/* «المَلعب عَلينا واللِعب عَليك» بالخط الكوفي: «عَلينا» و«عَليك» بالأصفر */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 8, marginTop: 6 }} accessibilityLabel="المَلعب عَلينا واللِعب عَليك">
             {SLOGAN.map(([word, gold], i) => (
               <Animated.Text
                 key={word}
@@ -90,7 +90,7 @@ export function BrandSplash({
                   color: gold ? YELLOW : '#FFFFFF',
                   fontSize: 24,
                   lineHeight: 40,
-                  fontFamily: fontsReady ? 'ArefRuqaa_700Bold' : undefined,
+                  fontFamily: fontsReady ? 'ReemKufi_700Bold' : undefined,
                   textShadowColor: 'rgba(11,16,51,0.55)',
                   textShadowOffset: { width: 0, height: 2 },
                   textShadowRadius: 4,

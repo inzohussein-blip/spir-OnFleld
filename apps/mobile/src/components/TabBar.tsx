@@ -51,8 +51,8 @@ export function TabBar({ state, descriptors, navigateToTab, insets }: TabBarProp
 }
 
 const useStyles = themed((c) => ({
-  bar: { flexDirection: 'row', backgroundColor: c.tabBg, paddingTop: 8, borderTopWidth: c.tabBg === '#FFFFFF' ? 1 : 0, borderTopColor: c.border },
+  bar: { flexDirection: 'row', backgroundColor: c.tabBg, paddingTop: c.tabRound ? 10 : 8, borderTopLeftRadius: c.tabRound, borderTopRightRadius: c.tabRound, overflow: 'hidden', borderTopWidth: c.tabBg === '#FFFFFF' ? 1 : 0, borderTopColor: c.border },
   item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: 52 },
   label: { fontFamily: fonts.semibold, fontSize: 11, lineHeight: 16, color: c.tabInactive },
-  labelOn: { fontFamily: fonts.bold, color: c.tabActive },
+  labelOn: { fontFamily: fonts.bold, color: c.tabActive, ...(c.tabUnderline ? { borderBottomWidth: 2, borderBottomColor: c.cta, paddingBottom: 1 } : null) },
 }));

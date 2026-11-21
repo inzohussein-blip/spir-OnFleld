@@ -61,7 +61,7 @@ export default function Home() {
       >
         <PageHeader
             eyebrow={`${greetingFor(hour)}${firstName ? `، ${firstName}` : ''}`}
-            title="الملعب علينا واللعب عليك"
+            title="المَلعب عَلينا واللِعب عَليك"
             slogan
             subtitle="جاهز ؟"
             actions={

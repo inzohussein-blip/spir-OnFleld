@@ -62,6 +62,16 @@ export type Palette = {
   onTimeSub: string;
   /** سماء صفحة المباراة */
   heroSky: string;
+  /** الشريط المايل الرفيع (الثاني) بالرأس */
+  stripeAlt: string;
+  /** زوايا الشريط السفلي من فوك، وخط تحت القسم النشط */
+  tabRound: number;
+  tabUnderline: boolean;
+  /** زر «✓ منضم» */
+  doneBg: string;
+  doneFg: string;
+  /** خلفية الإعلانات الزرقاء (فارغ = ألوان القالب نفسه) */
+  adSky: string;
 };
 
 /** الثيمات: الأزرق (ملكي)، الأسود، برشلونة، ريال مدريد */
@@ -70,7 +80,7 @@ export const THEMES: { id: ThemeName; label: string; swatch: [string, string] }[
   { id: 'royal', label: 'الأزرق', swatch: ['#1A23C9', '#FFD60A'] },
   { id: 'black', label: 'الأسود', swatch: ['#121D33', '#FFCC03'] },
   { id: 'barca', label: 'برشلونة', swatch: ['#004D98', '#A50044'] },
-  { id: 'madrid', label: 'ريال مدريد', swatch: ['#FFFFFF', '#FEBE10'] },
+  { id: 'madrid', label: 'ريال مدريد', swatch: ['#00529F', '#FEBE10'] },
 ];
 
 const ROYAL = '#1A23C9';
@@ -119,6 +129,12 @@ export const light: Palette = {
   onTime: '#FFFFFF',
   onTimeSub: YELLOW,
   heroSky: 'radial-gradient(120% 90% at 50% 0%, #2B3BFF 0%, #141C8F 55%, #0B1033 100%)',
+  stripeAlt: YELLOW,
+  tabRound: 0,
+  tabUnderline: false,
+  doneBg: '#E3E6FF',
+  doneFg: ROYAL,
+  adSky: '',
 };
 
 export const dark: Palette = {
@@ -161,6 +177,12 @@ export const dark: Palette = {
   onTime: '#FFFFFF',
   onTimeSub: YELLOW,
   heroSky: 'radial-gradient(120% 90% at 50% 0%, #2B3BFF 0%, #141C8F 55%, #0B1033 100%)',
+  stripeAlt: YELLOW,
+  tabRound: 0,
+  tabUnderline: false,
+  doneBg: '#1B2160',
+  doneFg: '#C9CEF5',
+  adSky: '',
 };
 
 // ---------- الأسود: كحلي غامق وأصفر (مثل الصورة المرجعية) ----------
@@ -186,6 +208,11 @@ const blackBase = {
   onTime: B_NAVY,
   onTimeSub: B_NAVY,
   heroSky: 'radial-gradient(120% 90% at 50% 0%, #3A4C78 0%, #1B2A4A 55%, #0B1222 100%)',
+  stripeAlt: B_YELLOW,
+  tabRound: 22,
+  tabUnderline: true,
+  // إعلان بمشهد ملعب ليلي بالعشب والكشافات (مثل البطاقة بالصورة)
+  adSky: 'radial-gradient(18% 30% at 30% 8%, rgba(255,255,240,0.95) 0%, rgba(255,255,240,0) 70%), radial-gradient(14% 24% at 55% 5%, rgba(255,255,240,0.8) 0%, rgba(255,255,240,0) 70%), radial-gradient(14% 24% at 80% 10%, rgba(255,255,240,0.7) 0%, rgba(255,255,240,0) 70%), repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 26px, transparent 26px, transparent 52px), linear-gradient(180deg, #1D2A44 0%, #24375A 34%, #2F4A3A 52%, #2E8B3E 64%, #1F7A33 100%)',
 };
 const blackLight: Palette = {
   ...light,
@@ -202,6 +229,8 @@ const blackLight: Palette = {
   success: '#0D8025',
   successSoft: '#E3ECE0',
   teamA: B_NAVY,
+  doneBg: '#E3ECE0',
+  doneFg: '#0D8025',
 };
 const blackDark: Palette = {
   ...dark,
@@ -217,47 +246,59 @@ const blackDark: Palette = {
   muted: '#A3ABBE',
   border: '#24304A',
   teamA: '#C9D2E6',
+  doneBg: '#13261F',
+  doneFg: '#34C38F',
 };
 
-// ---------- برشلونة: أزرق وعنّابي (بلاوغرانا) وذهبي ----------
+// ---------- برشلونة: هوية النادي — أزرق #004D98، عنّابي #A50044، ذهبي #EDBB00 (وأحمر السنييرا #DB0030) ----------
 const BL = '#004D98';
 const GR = '#A50044';
 const GOLD_B = '#EDBB00';
-const BLAUGRANA = 'repeating-linear-gradient(90deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 34px, rgba(165,0,68,0.92) 34px, rgba(165,0,68,0.92) 68px), linear-gradient(180deg, #0B5CB0 0%, #004D98 100%)';
+const BARCA_NAVY = '#0A1234';
+// خطوط القميص العمودية (بلاوغرانا) ويّا ظل كحلي من تحت حتى الكتابة تنقرى
+const BLAUGRANA = `linear-gradient(180deg, rgba(10,18,52,0.05) 0%, rgba(10,18,52,0.55) 100%), repeating-linear-gradient(90deg, ${BL} 0px, ${BL} 36px, ${GR} 36px, ${GR} 72px)`;
+const BARCA_SKY = `linear-gradient(135deg, ${BL} 0%, #1B2F7A 50%, ${GR} 100%)`;
 const barcaBase = {
   cta: GOLD_B,
-  onCta: '#061A40',
+  onCta: BARCA_NAVY,
   bandBg: BL,
   header: BL,
   bandGradient: flat(BL),
-  primaryGradient: `linear-gradient(135deg, ${BL} 0%, ${GR} 100%)`,
+  primaryGradient: BARCA_SKY,
   headerBg: BL,
   headerImage: BLAUGRANA,
   onHeader: '#FFFFFF',
-  onHeaderMuted: 'rgba(255,255,255,0.85)',
-  headerDots: 'rgba(255,255,255,0.14)',
-  tabBg: '#061A40',
+  onHeaderMuted: 'rgba(255,255,255,0.88)',
+  headerDots: 'rgba(255,255,255,0.12)',
+  tabBg: BARCA_NAVY,
   tabActive: GOLD_B,
   tabInactive: '#A9BCDB',
   timeBg: GR,
   onTime: '#FFFFFF',
   onTimeSub: GOLD_B,
   heroSky: `radial-gradient(120% 90% at 50% 0%, #1A6FC4 0%, ${BL} 45%, #3A0A2E 100%)`,
+  stripeAlt: '#DB0030',
+  tabRound: 22,
+  tabUnderline: true,
+  adSky: BARCA_SKY,
 };
 const barcaLight: Palette = {
   ...light,
   ...barcaBase,
   primary: BL,
-  primaryDark: '#061A40',
+  primaryDark: BARCA_NAVY,
   primarySoft: '#E3ECF8',
   accent: '#C99A00',
-  bg: '#F2F5FA',
+  bg: '#F3F5FA',
   cardAlt: '#E5ECF6',
-  text: '#061A40',
+  text: BARCA_NAVY,
   muted: '#4A5B78',
-  border: '#CFDAEA',
+  border: '#D3DCEB',
+  danger: '#DB0030',
   teamA: BL,
   teamB: GR,
+  doneBg: '#E3ECF8',
+  doneFg: BL,
 };
 const barcaDark: Palette = {
   ...dark,
@@ -274,71 +315,83 @@ const barcaDark: Palette = {
   border: '#1C3463',
   teamA: '#7FB2EA',
   teamB: '#FF5C9A',
+  doneBg: '#0E2650',
+  doneFg: '#7FB2EA',
 };
 
-// ---------- ريال مدريد: أبيض وذهبي وبنفسجي ----------
-const RM_PURPLE = '#3D195B';
+// ---------- ريال مدريد: هوية النادي — أبيض، أزرق الشعار #00529F، ذهبي #FEBE10 ----------
+const RM_BLUE = '#00529F';
 const RM_GOLD = '#FEBE10';
-const RM_INK = '#1B1035';
+const RM_INK = '#0A1A3D';
+const RM_SKY = `linear-gradient(160deg, ${RM_BLUE} 0%, #063A78 55%, ${RM_INK} 100%)`;
 const madridBase = {
   cta: RM_GOLD,
   onCta: RM_INK,
-  bandBg: RM_PURPLE,
-  header: '#FFFFFF',
-  bandGradient: flat(RM_PURPLE),
-  primaryGradient: flat(RM_PURPLE),
-  timeBg: RM_PURPLE,
+  bandBg: RM_BLUE,
+  bandGradient: flat(RM_BLUE),
+  primaryGradient: RM_SKY,
+  timeBg: RM_BLUE,
   onTime: '#FFFFFF',
   onTimeSub: RM_GOLD,
-  heroSky: `radial-gradient(120% 90% at 50% 0%, #6A3A93 0%, ${RM_PURPLE} 50%, #160A26 100%)`,
+  heroSky: `radial-gradient(120% 90% at 50% 0%, #2E7BD0 0%, ${RM_BLUE} 50%, ${RM_INK} 100%)`,
+  // الشريط العريض ذهبي والرفيع أزرق — مثل الشريط المايل بالشعار
+  stripeAlt: RM_BLUE,
+  tabRound: 0,
+  tabUnderline: true,
+  adSky: RM_SKY,
 };
 const madridLight: Palette = {
   ...light,
   ...madridBase,
-  primary: RM_PURPLE,
+  primary: RM_BLUE,
   primaryDark: RM_INK,
-  primarySoft: '#EFE8F6',
+  primarySoft: '#E6EEF8',
   accent: '#C48F00',
-  bg: '#F7F6FA',
-  cardAlt: '#EFEDF4',
+  bg: '#F6F8FC',
+  cardAlt: '#EDF1F7',
   text: RM_INK,
-  muted: '#5D5670',
-  border: '#E1DCEA',
-  teamA: RM_PURPLE,
-  // الرأس والشريط أبيض بكتابة بنفسجية غامقة — مثل قميص الريال
+  muted: '#5A6A86',
+  border: '#DCE3EE',
+  teamA: RM_BLUE,
+  doneBg: '#E6EEF8',
+  doneFg: RM_BLUE,
+  // الرأس والشريط أبيض بكتابة كحلية — مثل قميص الريال
+  header: '#FFFFFF',
   headerBg: '#FFFFFF',
-  headerImage: 'linear-gradient(180deg, #FFFFFF 0%, #F4F1F8 100%)',
+  headerImage: 'linear-gradient(180deg, #FFFFFF 0%, #F1F4F9 100%)',
   onHeader: RM_INK,
-  onHeaderMuted: '#5D5670',
-  headerDots: 'rgba(61,25,91,0.12)',
+  onHeaderMuted: '#5A6A86',
+  headerDots: 'rgba(0,82,159,0.12)',
   tabBg: '#FFFFFF',
-  tabActive: RM_PURPLE,
-  tabInactive: '#8C86A0',
+  tabActive: RM_BLUE,
+  tabInactive: '#8A97AE',
 };
 const madridDark: Palette = {
   ...dark,
   ...madridBase,
-  primary: '#C7A8F0',
+  primary: '#8DB8E8',
   primaryDark: '#000000',
-  primarySoft: '#26163A',
+  primarySoft: '#0F2547',
   accent: RM_GOLD,
-  bg: '#0C0716',
-  card: '#170E27',
-  cardAlt: '#211536',
-  text: '#F4EFFA',
-  muted: '#ADA3C2',
-  border: '#33224D',
-  teamA: '#C7A8F0',
-  // بالداكن الرأس بنفسجي غامق (الأبيض يعمي بالليل)
-  header: '#1E1236',
-  headerBg: '#1E1236',
+  bg: '#060D1D',
+  card: '#0D1A33',
+  cardAlt: '#132443',
+  text: '#F1F5FB',
+  muted: '#A2B1CB',
+  border: '#1E3358',
+  teamA: '#8DB8E8',
+  doneBg: '#0F2547',
+  doneFg: '#8DB8E8',
+  // بالداكن الرأس كحلي (الأبيض يعمي بالليل)
+  header: RM_INK,
+  headerBg: RM_INK,
   headerImage: '',
   onHeader: '#FFFFFF',
   onHeaderMuted: 'rgba(255,255,255,0.8)',
   headerDots: 'rgba(255,255,255,0.12)',
-  tabBg: '#1E1236',
+  tabBg: RM_INK,
   tabActive: RM_GOLD,
-  tabInactive: '#9C90B8',
+  tabInactive: '#93A3BE',
 };
 
 const PALETTES: Record<ThemeName, { light: Palette; dark: Palette }> = {
@@ -371,8 +424,6 @@ export const fonts = {
   bold: 'ReadexPro_700Bold',
   /** خط العناوين والأرقام الكبيرة (كوفي) */
   display: 'ReemKufi_700Bold',
-  /** خط الشعار «الملعب علينا واللعب عليك» (رقعة) */
-  slogan: 'ArefRuqaa_700Bold',
 };
 
 /** المسافات: كلها من مضاعفات 4 */

@@ -88,7 +88,7 @@ export function PageHeader({ title, subtitle, actions, eyebrow, children, slogan
       <View style={s.bandRow}>
         <View style={{ flex: 1, minWidth: 0 }}>
           {eyebrow ? <Text style={s.bandEyebrow} numberOfLines={1}>{eyebrow}</Text> : null}
-          <Text style={[s.bandTitle, slogan && s.bandSlogan]} numberOfLines={slogan ? 2 : 1}>{slogan ? title : wideSpaces(title)}</Text>
+          <Text style={[s.bandTitle, slogan && s.bandSlogan]} numberOfLines={slogan ? 2 : 1}>{wideSpaces(title)}</Text>
           {subtitle ? <Text style={s.bandSubtitle} numberOfLines={1}>{subtitle}</Text> : null}
         </View>
         {actions ? <View style={s.pageActions}>{actions}</View> : null}
@@ -404,11 +404,11 @@ export const useStyles = themed((c) => ({
   // شريطين أصفر مايلين على الطرف — علامة «ملكي».
   // «end» = اليسار بالعربي على التلفون والويب؛ «left» الأندرويد يقلبه لليمين فيطلع خلف العنوان
   stripeWide: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(-36), width: 96, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
-  stripeThin: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(74), width: 14, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
+  stripeThin: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(74), width: 14, backgroundColor: c.stripeAlt, transform: [{ skewX: '-14deg' }] },
   bandRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm },
   bandEyebrow: { ...type.caption, color: c.onHeaderMuted },
   bandTitle: { ...type.largeTitle, color: c.onHeader },
-  bandSlogan: { fontFamily: fonts.slogan, fontSize: 27, lineHeight: 44 },
+  bandSlogan: { fontFamily: fonts.display, fontSize: 21, lineHeight: 36 },
   bandSubtitle: { ...type.caption, color: c.onHeaderMuted, marginTop: -4 },
   pageActions: { flexDirection: 'row', gap: space.sm, paddingBottom: 4 },
   iconBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: c.card, borderWidth: 2, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
@@ -453,7 +453,7 @@ export const useStyles = themed((c) => ({
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionMark: { width: 6, height: 18, borderRadius: 2, backgroundColor: c.cta, transform: [{ skewX: '-14deg' }] },
   decorWide: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(-44), width: 70, backgroundColor: c.cta, opacity: 0.95, transform: [{ skewX: '-14deg' }] },
-  decorThin: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(36), width: 10, backgroundColor: c.cta, opacity: 0.95, transform: [{ skewX: '-14deg' }] },
+  decorThin: { position: 'absolute', top: -20, bottom: -20, ...fromLeft(36), width: 10, backgroundColor: c.stripeAlt, opacity: 0.95, transform: [{ skewX: '-14deg' }] },
   sectionHint: { ...type.caption, color: c.muted },
   stat: { flex: 1, backgroundColor: c.card, borderRadius: cardRadius, padding: space.md, alignItems: 'center', gap: 2, borderWidth: 2, borderColor: c.border },
   statValue: { ...type.title },
