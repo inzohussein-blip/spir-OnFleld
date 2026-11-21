@@ -44,7 +44,9 @@
 
 للربط بقاعدة بيانات حقيقية:
 
-1. أنشئ مشروعاً على [supabase.com](https://supabase.com) ونفّذ ملفات `supabase/migrations` بالترتيب.
+> **الدليل الكامل خطوة بخطوة:** [docs/supabase-setup.md](docs/supabase-setup.md)
+
+1. أنشئ مشروعاً على [supabase.com](https://supabase.com) ونفّذ الملف `supabase/setup.sql` (كل الجداول بملف واحد) بـ SQL Editor.
 2. فعّل الدخول برقم الهاتف (Authentication ← Providers ← Phone) واربطه بمزوّد SMS.
 3. أضف في **Settings ← Secrets and variables ← Actions**:
    - `EXPO_PUBLIC_SUPABASE_URL`
